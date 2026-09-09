@@ -111,6 +111,7 @@ test('initial HTML shows animated dots before application scripts load and hands
     await page.goto('/landing/', { waitUntil: 'commit' });
     const indicator = page.getByRole('status', { name: '正在加载页面' });
     await expect(indicator).toBeVisible();
+    await expect(indicator).toHaveCSS('color', 'rgb(22, 99, 72)');
     await expect(indicator.locator('.pkg-ui-dots span')).toHaveCount(3);
     const originalDot = await indicator
       .locator('.pkg-ui-dots span')
@@ -138,6 +139,10 @@ test('initial HTML shows animated dots before application scripts load and hands
       ),
     ).toBe(true);
     await expect(page.locator('.pkg-ui-loading')).toBeVisible();
+    await expect(page.locator('.pkg-ui-loading')).toHaveCSS(
+      'color',
+      'rgb(22, 99, 72)',
+    );
   } finally {
     release();
     releaseConfig();

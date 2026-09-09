@@ -16,5 +16,8 @@
     "@packages/feedback": "workspace:*",
     "preact": "10.29.8",
     "preact-iso": "2.12.2"
+  },
+  "devDependencies": {
+    "@packages/theme": "workspace:*"
   }
 }

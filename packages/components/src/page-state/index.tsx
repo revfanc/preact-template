@@ -28,7 +28,7 @@ export function PageState({
             <svg viewBox="0 0 80 80" fill="none" focusable="false">
               <path
                 d="M23 12h23l12 12v42H23a5 5 0 0 1-5-5V17a5 5 0 0 1 5-5Z"
-                fill="#fff"
+                class={styles.paper}
                 stroke="currentColor"
                 stroke-width="2"
                 stroke-linejoin="round"
@@ -40,14 +40,14 @@ export function PageState({
                 stroke-linecap="round"
                 stroke-linejoin="round"
               />
-              <circle cx="57" cy="58" r="15" fill="#166348" />
+              <circle cx="57" cy="58" r="15" class={styles.badge} />
               <path
                 d="M57 50v9"
-                stroke="#fff"
+                class={styles.mark}
                 stroke-width="2.5"
                 stroke-linecap="round"
               />
-              <circle cx="57" cy="64" r="1.5" fill="#fff" />
+              <circle cx="57" cy="64" r="1.5" class={styles.dot} />
             </svg>
           )}
         </div>

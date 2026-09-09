@@ -4,6 +4,8 @@ import { fileURLToPath } from 'node:url';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
 import { cssTargets } from '../../tooling/compatibility.ts';
 
+const theme = fileURLToPath(new URL('./src/theme.css', import.meta.url));
+
 const root = fileURLToPath(new URL('.', import.meta.url));
 const mode = process.env.AGREEMENT_MODE ?? 'test';
 if (mode !== 'test' && mode !== 'prod')
@@ -63,7 +65,7 @@ export default defineConfig({
     },
   ],
   vite: {
-    css: { postcss: { plugins: createPostcssPlugins() } },
+    css: { postcss: { plugins: createPostcssPlugins(false, theme) } },
     build: { cssTarget: cssTargets },
     server: { strictPort: true },
   },

@@ -4,10 +4,20 @@ import { fileURLToPath } from 'node:url';
 import path from 'node:path';
 import { parse } from 'acorn';
 import { loadEnv } from 'vite';
+import postcss from 'postcss';
 
 const mode = process.argv[2] ?? 'test';
 assert(['test', 'prod'].includes(mode), 'mode must be test or prod');
 const root = fileURLToPath(new URL('..', import.meta.url));
+
+function checkTheme(css, app) {
+  postcss.parse(css).walkDecls((declaration) => {
+    assert(
+      !/\$[a-z]+|var\(/i.test(declaration.value),
+      `${app}: uncompiled theme value in ${declaration.prop}`,
+    );
+  });
+}
 
 {
   const app = 'landing';
@@ -65,6 +75,7 @@ const root = fileURLToPath(new URL('..', import.meta.url));
     `${app}: CSS exceeds the template compatibility rules`,
   );
   assert(css.includes('rem'), 'landing: px-to-rem missing');
+  checkTheme(css, app);
   console.log(
     `${app}/${mode}: environment, static HTML, CSS and ${legacy.length} legacy scripts checked`,
   );
@@ -153,6 +164,7 @@ assert(
   'agreement: CSS exceeds the template compatibility rules',
 );
 assert(css.includes('16px'), 'agreement: normal text sizing missing');
+checkTheme(css, 'agreement');
 console.log(
   `agreement/${mode}: ${pages.length} HTML pages, environment, CSS and one classic script checked`,
 );

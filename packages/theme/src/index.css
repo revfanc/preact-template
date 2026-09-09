@@ -1,0 +1,14 @@
+:root {
+  --primary: #166348;
+  --active: #104c37;
+  --inverse: #ffffff;
+  --text: #243c32;
+  --muted: #637368;
+  --background: #f3f4ef;
+  --surface: #ffffff;
+  --border: #dfe5dc;
+  --outline: #9baaa0;
+  --soft: #e5ebe1;
+  --decoration: #789783;
+  --overlay: rgba(24, 28, 36, 0.92);
+}

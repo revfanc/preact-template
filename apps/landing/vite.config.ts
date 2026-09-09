@@ -1,12 +1,17 @@
+import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
 import { defineConfig, mergeConfig, type ViteDevServer } from 'vite';
 import { createWebConfig } from '../../tooling/vite.ts';
 import { readFileSync, readdirSync } from 'node:fs';
 import { createFileRoutes } from './src/router/file-routes.ts';
 import { loadingHtml } from '../../packages/feedback/src/markup.ts';
+import postcss from 'postcss';
+import { createPostcssPlugins } from '../../tooling/postcss.ts';
+
+const theme = fileURLToPath(new URL('./src/theme.css', import.meta.url));
 
 export default defineConfig(({ mode }) =>
-  mergeConfig(createWebConfig(mode, 5173, true), {
+  mergeConfig(createWebConfig(mode, 5173, true, theme), {
     resolve: { dedupe: ['preact'] },
     // The preset sets the JSX runtime but omits its source in the Vite 8 scanner.
     optimizeDeps: {
@@ -17,19 +22,32 @@ export default defineConfig(({ mode }) =>
         name: 'initial-page-loading',
         transformIndexHtml: {
           order: 'pre',
-          handler(html: string) {
+          async handler(html: string) {
+            // HTML styles bypass Vite's CSS pipeline, so compile the same theme here.
+            const compile = async (source: string) =>
+              (
+                await postcss(createPostcssPlugins(true, theme)).process(
+                  source,
+                  {
+                    from: undefined,
+                  },
+                )
+              ).css;
             return {
               html: html.replace('<!-- page-loading -->', loadingHtml),
               tags: [
                 {
                   tag: 'style',
                   attrs: { id: 'page-loading-style' },
-                  children: readFileSync(
-                    new URL(
-                      '../../packages/feedback/src/style.css',
-                      import.meta.url,
-                    ),
-                    'utf8',
+                  children: await compile(
+                    'html { background: var(--background); }\n' +
+                      readFileSync(
+                        new URL(
+                          '../../packages/feedback/src/style.css',
+                          import.meta.url,
+                        ),
+                        'utf8',
+                      ),
                   ),
                   injectTo: 'head',
                 },

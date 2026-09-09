@@ -13,6 +13,7 @@ packages/
   request/       # @packages/request：请求、错误、超时、取消与浏览器适配
   feedback/      # @packages/feedback：函数式 Toast / Loading，原生 DOM 实现
   components/    # @packages/components：跨应用复用的 Preact 展示组件
+  theme/         # @packages/theme：标准 CSS 主题默认值，构建时使用
 tooling/         # 共享 Vite/PostCSS 配置、兼容目标
 tests/          # 请求与样式单元测试、浏览器测试
 scripts/        # 构建结果检查
@@ -122,6 +123,48 @@ apps/agreement/
 ```
 
 只转换 CSS 声明，不转换 JS 内联样式。`html`、包含 `.no-rem` 的选择器、媒体查询条件、小于 2px 的尺寸不转换；单个固定尺寸也可使用大写 `PX`（PostCSS 约定）。根字号放在 HTML 头部，避免启动脚本执行前后的布局跳动。协议项目使用正常字号和响应式宽度，不进行整页 rem 缩放。
+
+## 主题颜色
+
+公共颜色定义在 `packages/theme/src/index.css`，使用标准 CSS 自定义属性。每个应用通过 `src/theme.css` 中的 `:root` 覆盖需要的颜色，未覆盖的值沿用公共默认值。变量名统一使用单个小写英文单词，不加 color 前缀，也不使用驼峰或额外连字符。
+
+| 变量       | 用途                     |
+| ---------- | ------------------------ |
+| primary    | 主色、链接、Loading 圆点 |
+| active     | 主色按钮按下状态         |
+| inverse    | 深色背景上的文字与图标   |
+| text       | 正文与标题               |
+| muted      | 次要文字                 |
+| background | 页面底色                 |
+| surface    | 卡片、输入框底色         |
+| border     | 普通边框                 |
+| outline    | 输入框边框               |
+| soft       | 装饰背景                 |
+| decoration | 装饰图形线条             |
+| overlay    | Toast 背景               |
+
+```css
+/* apps/<应用>/src/theme.css：只写需要覆盖的值 */
+:root {
+  --primary: #166348;
+}
+
+/* 页面和公共组件样式 */
+.button {
+  background: var(--primary);
+  color: var(--inverse);
+}
+```
+
+源码使用标准 CSS，编辑器无需 SCSS 语言关联。共享 `createPostcssPlugins(rem, theme)` 的第二个参数是应用主题 CSS 的绝对路径。`postcss-global-data` 为每个独立 CSS 文件提供公共默认值和应用覆盖，再由 `postcss-custom-properties` 将 `var()` 替换成具体值；定义仅供编译使用，不额外输出全局变量。随后执行 px 转 rem 和兼容处理。未知变量且没有有效回退值时构建报错。
+
+应用、公共组件与首屏 Loading 都使用同一份应用主题。协议的 Astro 页面 CSS 和普通脚本 CSS 也读取同一份配置，首屏无需等待 JavaScript 设置颜色。SVG 颜色通过 CSS 控制。
+
+此方案用于构建时配色，旧设备收到普通 CSS，无需主题运行库或 CSS 自定义属性支持。运行时通过 class、媒体查询或 JavaScript 动态覆盖变量不在当前方案范围内；活动专属装饰色可以留在自己的样式内。修改主题后重新构建部署。
+
+新应用需声明 `"@packages/theme": "workspace:*"` 为开发依赖，并将自己的 `theme.css` 路径传入共享 PostCSS 配置。`components` 和 `feedback` 导出的 CSS 是源码，必须经过这套主题编译后再部署。
+
+参考：[postcss-custom-properties](https://github.com/csstools/postcss-plugins/tree/main/plugins/postcss-custom-properties)、[postcss-global-data](https://github.com/csstools/postcss-plugins/tree/main/plugins/postcss-global-data)。
 
 ## 公共请求与 API
 
