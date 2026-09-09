@@ -1,0 +1,35 @@
+import { useEffect, useState } from 'preact/hooks';
+import type { SiteConfig } from '@packages/api';
+import { createBrowserAbortController } from '@packages/request/browser';
+import { loading } from '@packages/ui';
+import { api } from '../api';
+
+export function useSiteConfig() {
+  const [config, setConfig] = useState<SiteConfig>();
+  const [error, setError] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+
+  useEffect(() => {
+    const controller = createBrowserAbortController();
+    const closeLoading = loading('正在加载页面信息…');
+    let active = true;
+    setError(false);
+    api.getConfig(controller.signal).then(
+      (value) => {
+        closeLoading();
+        if (active) setConfig(value);
+      },
+      () => {
+        closeLoading();
+        if (active) setError(true);
+      },
+    );
+    return () => {
+      active = false;
+      controller.abort();
+      closeLoading();
+    };
+  }, [attempt]);
+
+  return { config, error, reload: () => setAttempt((value) => value + 1) };
+}

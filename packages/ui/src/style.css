@@ -1,12 +1,18 @@
-/* The shared no-rem convention keeps these sizes independent of page scaling. */
-.pkg-ui-toast.no-rem,
-.pkg-ui-loading.no-rem {
+/* Dimensions follow content; measured size changes animate in older browsers too. */
+.pkg-ui-notice.no-rem {
   position: fixed;
+  top: 50%;
   left: 50%;
+  z-index: 2000;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
   box-sizing: border-box;
+  width: auto;
   width: max-content;
   max-width: calc(100% - 32px);
-  padding: 12px 18px;
+  padding: 20px;
   border-radius: 8px;
   background: rgba(24, 28, 36, 0.92);
   color: #fff;
@@ -18,32 +24,47 @@
   white-space: pre-wrap;
   word-wrap: break-word;
   pointer-events: none;
+  transform: translate(-50%, -50%);
+  opacity: 0;
+  overflow: hidden;
+  transition:
+    opacity 140ms ease-out,
+    width 180ms ease-out,
+    height 180ms ease-out;
+}
+
+.pkg-ui-notice.no-rem.pkg-ui-visible {
+  opacity: 1;
+}
+
+.pkg-ui-notice.no-rem .pkg-ui-content {
+  flex-shrink: 0;
+  max-width: 100%;
+}
+
+.pkg-ui-notice.no-rem .pkg-ui-label {
+  display: block;
 }
 
 .pkg-ui-toast.no-rem {
-  bottom: 64px;
-  z-index: 2001;
-  transform: translateX(-50%);
+  padding: 12px 18px;
 }
 
-.pkg-ui-loading.no-rem {
-  top: 50%;
-  z-index: 2000;
-  min-width: 96px;
-  padding: 20px;
-  transform: translate(-50%, -50%);
-}
-
-.pkg-ui-loading.no-rem .pkg-ui-spinner {
+.pkg-ui-notice.no-rem .pkg-ui-spinner {
   display: block;
+  flex-shrink: 0;
   box-sizing: border-box;
   width: 24px;
   height: 24px;
-  margin: 0 auto 10px;
+  margin: 0 auto 12px;
   border: 2px solid rgba(255, 255, 255, 0.35);
   border-top-color: #fff;
   border-radius: 50%;
   animation: pkg-ui-spin 0.8s linear infinite;
+}
+
+.pkg-ui-notice.no-rem .pkg-ui-spinner[hidden] {
+  display: none;
 }
 
 @keyframes pkg-ui-spin {
@@ -53,7 +74,10 @@
 }
 
 @media (prefers-reduced-motion: reduce) {
-  .pkg-ui-loading.no-rem .pkg-ui-spinner {
+  .pkg-ui-notice.no-rem {
+    transition: none;
+  }
+  .pkg-ui-notice.no-rem .pkg-ui-spinner {
     animation: none;
   }
 }

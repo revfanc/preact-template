@@ -13,11 +13,12 @@ test('landing configuration, keyboard form and agreement navigation', async ({
   );
   await page.getByLabel('你的称呼').fill('小明');
   await page.getByLabel('你的称呼').press('Enter');
-  await expect(page.locator('.greeting')).toHaveText(
+  await expect(page.locator('form').getByRole('status')).toHaveText(
     '你好，小明。欢迎开启新的体验。',
   );
   await expect(page.locator('.pkg-ui-toast')).toHaveText('欢迎语已生成');
   await expect(page.getByLabel('你的称呼')).toBeFocused();
+  await expect(page.locator('.pkg-ui-toast')).toHaveCSS('opacity', '1');
   await page.screenshot({ path: 'test-results/landing.png', fullPage: true });
   await expect(page.locator('.pkg-ui-toast')).toHaveCount(0);
   await page.getByRole('link', { name: '阅读示例协议' }).click();
@@ -47,6 +48,7 @@ for (const app of [
       await expect(indicator).toBeVisible();
       await expect(indicator).toHaveAttribute('role', 'status');
       await page.emulateMedia({ reducedMotion: 'reduce' });
+      await expect(indicator).toHaveCSS('transition-duration', '0s');
       await expect(page.locator('.pkg-ui-spinner')).toHaveCSS(
         'animation-name',
         'none',
@@ -143,6 +145,8 @@ for (const legacyCase of [
       'AbortController',
       'AbortSignal',
       'Promise',
+      'URL',
+      'URLSearchParams',
     ],
   },
   {
@@ -160,6 +164,16 @@ for (const legacyCase of [
       if (request.resourceType() === 'script') loaded.push(request.url());
     });
     await page.addInitScript((apis) => {
+      Object.defineProperty(Event.prototype, 'composedPath', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
+      Object.defineProperty(Object, 'fromEntries', {
+        value: undefined,
+        writable: true,
+        configurable: true,
+      });
       for (const key of apis) {
         Object.defineProperty(window, key, {
           value: undefined,
@@ -178,6 +192,9 @@ for (const legacyCase of [
       await route.fulfill({ response, body });
     });
     await page.goto('/');
+    const landingEntry = await page
+      .locator('#vite-legacy-entry')
+      .getAttribute('data-src');
     await page.evaluate(async () => {
       const system = (
         window as unknown as {
@@ -191,16 +208,86 @@ for (const legacyCase of [
     await expect(page.locator('footer')).toContainText('示例服务提供方');
     await page.getByLabel('你的称呼').fill('旧版浏览器');
     await page.getByRole('button', { name: '预览欢迎语' }).click();
-    await expect(page.locator('.greeting')).toContainText('你好，旧版浏览器');
+    await expect(page.locator('form').getByRole('status')).toContainText(
+      '你好，旧版浏览器',
+    );
     await expect(page.locator('.pkg-ui-toast')).toHaveText('欢迎语已生成');
     await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
+    await page
+      .getByRole('link', { name: '查看结果页' })
+      .locator('span')
+      .click();
+    await expect(
+      page.getByRole('heading', { name: '欢迎语结果' }),
+    ).toBeVisible();
+    await expect(page.getByText('你好，旧版浏览器')).toBeVisible();
+    await page.goBack();
+    await expect(page.getByLabel('你的称呼')).toBeVisible();
+    await page.getByLabel('你的称呼').fill('旧版浏览器');
     await page.getByRole('link', { name: '阅读示例协议' }).click();
     await expect(page.locator('#display-name')).toHaveText('旧版浏览器');
     await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
     await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
-    expect(loaded.filter((url) => url.includes('index-legacy-'))).toHaveLength(
-      2,
+    const agreementEntry = await page
+      .locator('#vite-legacy-entry')
+      .getAttribute('data-src');
+    expect(loaded).toEqual(
+      expect.arrayContaining([
+        new URL(landingEntry!, 'http://127.0.0.1:4173/').href,
+        new URL(agreementEntry!, 'http://127.0.0.1:4173/agreement/').href,
+      ]),
     );
     expect(errors).toEqual([]);
   });
 }
+
+test('a compact toast replaces loading in the same element and survives an old request', async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/site-config.json', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  try {
+    await page.goto('/');
+    const card = page.locator('.pkg-ui-notice');
+    await expect(page.locator('.pkg-ui-loading')).toHaveCSS('opacity', '1');
+    const before = await card.boundingBox();
+    const original = await card.elementHandle();
+    await page.getByLabel('你的称呼').fill('小明');
+    await page.getByRole('button', { name: '预览欢迎语' }).click();
+    await expect(card).toHaveCount(1);
+    await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
+    await expect(page.locator('.pkg-ui-toast')).toHaveText('欢迎语已生成');
+    expect(
+      await original!.evaluate(
+        (node) => node === document.querySelector('.pkg-ui-toast'),
+      ),
+    ).toBe(true);
+    await expect
+      .poll(() => card.evaluate((node) => (node as HTMLElement).style.width))
+      .toBe('');
+    const after = await card.boundingBox();
+    expect(after!.height).toBeLessThan(before!.height);
+    expect(after!.width).toBeLessThan(before!.width);
+    expect(after!.x + after!.width / 2).toBeCloseTo(
+      before!.x + before!.width / 2,
+      1,
+    );
+    expect(after!.y + after!.height / 2).toBeCloseTo(
+      before!.y + before!.height / 2,
+      1,
+    );
+    await expect(page.locator('.pkg-ui-spinner')).toBeHidden();
+    release();
+    await expect(page.locator('footer')).toContainText('示例服务提供方');
+    await expect(page.locator('.pkg-ui-toast')).toHaveText('欢迎语已生成');
+    await expect(card).toHaveCount(0);
+  } finally {
+    release();
+  }
+});

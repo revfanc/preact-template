@@ -6,7 +6,7 @@
 
 ```text
 apps/
-  landing/       # Preact CSR；原生 CSS，px 自动转 rem
+  landing/       # Preact CSR + preact-iso 文件路由；原生 CSS，px 自动转 rem
   agreement/     # 静态 HTML 正文；TypeScript 更新局部字段
 packages/
   api/           # @packages/api：公共业务接口、类型、配置数据校验
@@ -114,6 +114,92 @@ const config = await api.getConfig();
 
 兼容请求层只承诺常规 JSON/文本请求，不提供 Streams、keepalive 等 fetch 高级特性；不自动重试写请求。框架之外的环境可使用 `@packages/request` 的核心入口，并按运行环境注入 fetch 与 AbortController。
 
+## landing 目录约定
+
+```text
+apps/landing/src/
+  main.tsx                      # HTML 脚本入口，先加载兼容处理
+  app.tsx                       # 应用组件、路由加载状态
+  polyfills.ts                  # 浏览器兼容处理
+  style.css                     # 基础重置、字体和全局交互样式
+  router/                       # 文件路由解析和懒加载注册
+  pages/
+    index.tsx                   # 首页路由组件
+    index.module.css
+    result/index.tsx
+    result/index.module.css
+    detail/[id]/index.tsx
+    detail/[id]/index.module.css
+    _404/index.tsx
+    _404/index.module.css
+  components/
+    page-load-error/index.tsx
+    page-load-error/index.module.css
+  hooks/
+    use-route-loading.ts        # 路由加载状态及卸载清理
+    use-site-config.ts          # 配置加载、重试和卸载取消
+    use-greeting.ts             # 欢迎语状态与提交逻辑
+  api/index.ts                  # 当前应用的请求配置和公共 API 接入
+```
+
+- `pages` 放路由组件及配套样式，负责页面布局和路由参数适配；不强制再拆完整 View。
+- `components` 放提取出来的 UI 组件，每个组件使用独立文件夹与 `index.tsx`。
+- `hooks` 放状态、数据加载、校验和提交逻辑；公共接口继续定义在 `packages/api`，网络行为留在 `packages/request`。
+- 页面及组件使用 `index.module.css`，照常写 px，由 PostCSS 转换为 rem。全局样式只保留应用级基础规则。
+
+活动页例如 `pages/p1/p2026090901/index.tsx`、`pages/p1/p2026090901/result/index.tsx`。需要拆分时，专用组件放 `components/p1/p2026090901/<组件名>/index.tsx`，专用逻辑放 `hooks/p1/p2026090901/use-activity.ts`；公共组件和 hook 放各自目录下。仅在实际需要时建立对应目录，不为每个活动生成空目录，也不引入 modules/features/shared 层。
+
+## 约定式路由
+
+落地页使用 `preact-iso`，Vite 通过 `import.meta.glob` 扫描 `apps/landing/src/pages`。新增或删除页面时自动更新路由，每个页面使用 `export default` 导出 Preact 组件，不需要手动注册。页面按需加载，首次加载及加载失败都有提示。
+
+| pages 下的文件                    | 路径                     | 说明                                    |
+| --------------------------------- | ------------------------ | --------------------------------------- |
+| `index.tsx`                       | `/`                      | 首页                                    |
+| `result/index.tsx`                | `/result`                | 普通页面                                |
+| `p1/p2026090901/index.tsx`        | `/p1/p2026090901`        | 活动页面                                |
+| `p1/p2026090901/result/index.tsx` | `/p1/p2026090901/result` | 活动结果页                              |
+| `detail/[id]/index.tsx`           | `/detail/:id`            | 动态参数                                |
+| `docs/[...path]/index.tsx`        | `/docs/:path+`           | 匹配至少一级，参数为 `a/b` 这样的字符串 |
+| `_404/index.tsx`                  | 未匹配路径               | 全局 404 页面                           |
+
+当前提供首页、结果页、动态详情页和 404 示例，活动路径按业务新增。静态路径优先于同级动态参数，最后匹配捕获剩余路径的页面及 404。`detail/[id]/index.tsx` 与 `detail/[slug]/index.tsx` 等冲突在启动和构建时会报错。
+
+**只扫描 `index.tsx` 路由入口**，其他文件不会生成路由。除根目录 `_404/index.tsx` 外，以 `_` 开头的目录不生成路由，也不会被扫描入口打包。普通路径段使用字母、数字、连字符或下划线；参数目录写为 `[id]`，剩余路径写为最后一级的 `[...path]`。目录决定 URL 层级，共享布局在组件中显式组合。
+
+```tsx
+import { useLocation, useRoute } from 'preact-iso';
+
+export default function DetailPage() {
+  const { params } = useRoute();
+  const { query, route } = useLocation();
+
+  return (
+    <main>
+      <p>
+        编号：{params.id}，来源：{query.from}
+      </p>
+      <button onClick={() => route(`${import.meta.env.BASE_URL}result`)}>
+        跳转结果页
+      </button>
+      <button onClick={() => route(import.meta.env.BASE_URL, true)}>
+        替换为首页
+      </button>
+    </main>
+  );
+}
+```
+
+站内链接也可以直接写 ``<a href={`${import.meta.env.BASE_URL}result`}>查看结果</a>``。页面路径会自动添加 `VITE_BASE_PATH` 前缀；链接和程序跳转通过 `import.meta.env.BASE_URL` 保持前缀一致。浏览器前进、后退使用原生 History 行为。
+
+跨项目跳协议页时使用 `window.location.assign(agreementURL)`；若使用 `<a>`，像首页示例一样加 `onClick={(event) => event.stopPropagation()}`，保留浏览器完整导航，避免协议 URL 被落地页路由接管。
+
+生产部署使用 History 路径：**落地页深层 URL 需要回退到落地页的 `index.html`**。协议项目和静态资源应先独立匹配，不能把协议请求回退到落地页。Vite 开发与预览服务已提供 SPA 回退，生产服务器需要单独配置。
+
+路由沿用 Chrome 49 / iOS 10 构建目标。legacy 构建按使用补齐 URL、URLSearchParams、Object.fromEntries 等 API；入口的 `polyfills.ts` 为普通 DOM 链补齐链接点击所需的 `Event.composedPath`，优先使用旧 Chrome 的 `event.path`。未来若引入 Shadow DOM，需单独验证事件路径。自动测试验证缺失这些 API 时的构建产物，不代表已完成旧内核实机验收。
+
+参考：[preact-iso](https://preactjs.com/guide/v10/preact-iso/)、[Vite Glob Import](https://vite.dev/guide/features.html#glob-import)。
+
 ## Toast / Loading
 
 应用在 dependencies 中声明 `"@packages/ui": "workspace:*"`，即可直接调用。样式随包自动引入，不需要挂载组件或 Provider，也不依赖 Preact。
@@ -121,7 +207,7 @@ const config = await api.getConfig();
 ```ts
 import { toast, loading } from '@packages/ui';
 
-toast('操作成功'); // 默认 2 秒后关闭，新提示替换旧提示
+toast('操作成功'); // 默认 2 秒后淡出，替换当前提示
 toast('请稍后重试', { duration: 3000 });
 
 const closeToast = toast('持续提示', { duration: 0 });
@@ -137,8 +223,10 @@ try {
 ```
 
 - 返回的关闭函数可以重复调用，只影响本次提示。组件卸载时也应关闭它持有的 Loading。
-- Loading 支持多个并发操作；显示最近一次仍在进行的操作文案，所有调用都关闭后才消失，不设置自动超时。
-- Toast 与 Loading 相互独立，只展示纯文本。两者都是非阻塞状态提示，不抢焦点、不锁滚动；提交防重等交互由业务自行处理。
+- 连续 Loading 调用支持多个并发操作；显示最近一次仍在进行的操作文案，所有调用都关闭后才消失，不设置自动超时。
+- Toast 与 Loading 共用一个居中的 DOM 提示框，同时最多显示一个。Toast 替换当前 Loading 组；新的 Loading 替换 Toast。被替换的提示不会恢复，旧关闭函数或计时器不会关闭新提示；替换提示不会取消业务请求。
+- Loading 延迟 120ms 显示，快速完成时不闪现；显示后至少停留 240ms，再用 140ms 淡出。连续任务复用提示框与旋转图标，宽高由内容决定；文案或提示类型变化时，按实测尺寸用 180ms 平滑过渡，结束后恢复自动尺寸。长文案按视口宽度换行。Toast 使用随文字撑开的紧凑提示条，默认展示 2000ms 后淡出，`duration: 0` 由调用方关闭。
+- 提示只展示纯文本，不抢焦点、不锁滚动；提交防重等交互由业务自行处理。尊重系统减少动态效果设置，关闭淡入淡出和旋转动画。
 - 在浏览器 `document.body` 就绪后调用。UI 使用固定 px 尺寸，通过现有 `.no-rem` 约定避免落地页自动转 rem，让协议页与落地页的提示大小一致。
 
 落地页的欢迎语提交演示 Toast，两个应用的配置请求演示 Loading；请求包本身不自动触发 UI。
@@ -167,7 +255,7 @@ Remove-Item Env:BUILD_MODE
 ## 后续开发边界
 
 - 页面组件与状态留在各应用，公共接口留在 `packages/api`，网络行为留在 `packages/request`，基础提示留在 `packages/ui`。
-- 当前落地页只有一个 CSR 入口，没有额外引入路由库；增加多路由时一起验证路由库和部署回退规则。
+- 落地页路由及页面放在应用内，`packages/api` 与 `packages/request` 不依赖路由；协议项目保持静态 HTML。
 - 协议内容只是模板占位，上线前替换为正式审定文本。动态字段通过 textContent 更新，不插入接口返回的 HTML。
 - Vitest 固定为 4.1 稳定版，TypeScript 固定在 ESLint 支持的 6.0 范围；升级工具时需运行完整检查。
 

@@ -13,6 +13,7 @@
     "@packages/api": "workspace:*",
     "@packages/request": "workspace:*",
     "@packages/ui": "workspace:*",
-    "preact": "10.29.8"
+    "preact": "10.29.8",
+    "preact-iso": "2.12.2"
   }
 }

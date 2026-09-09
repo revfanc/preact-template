@@ -1,9 +1,7 @@
-import { createNotice, removeNotice } from './dom';
+import { showToast } from './notice';
 import type { Close, ToastOptions } from './types';
 
-let closeCurrent: Close | undefined;
-
-/** Shows one plain-text toast, replacing the previous toast. */
+/** Shows one plain-text toast, replacing any current notice. */
 export function toast(message: string, options: ToastOptions = {}): Close {
   const duration = options.duration ?? 2000;
   if (!Number.isFinite(duration) || duration < 0) {
@@ -12,18 +10,5 @@ export function toast(message: string, options: ToastOptions = {}): Close {
     );
   }
 
-  const element = createNotice('pkg-ui-toast');
-  element.textContent = message;
-  closeCurrent?.();
-  document.body.appendChild(element);
-
-  let timer: ReturnType<typeof setTimeout> | undefined;
-  const close: Close = () => {
-    clearTimeout(timer);
-    removeNotice(element);
-    if (closeCurrent === close) closeCurrent = undefined;
-  };
-  closeCurrent = close;
-  if (duration > 0) timer = setTimeout(close, duration);
-  return close;
+  return showToast(message, duration);
 }

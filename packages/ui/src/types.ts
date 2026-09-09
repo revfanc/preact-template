@@ -1,7 +1,7 @@
-/** Safe to call more than once; only closes the notice created by this call. */
+/** Safe to call more than once; replaced handles do not close a newer notice. */
 export type Close = () => void;
 
 export interface ToastOptions {
-  /** Milliseconds until dismissal. Defaults to 2000; 0 keeps the toast visible. */
+  /** Milliseconds before fade-out starts. Defaults to 2000; 0 keeps the toast visible. */
   duration?: number;
 }
