@@ -1,0 +1,21 @@
+* {
+  box-sizing: border-box;
+}
+body {
+  margin: 0;
+  background: #f3f4ef;
+  color: #243c32;
+  font-family: Arial, 'Microsoft YaHei', sans-serif;
+  font-size: 16px;
+}
+main {
+  max-width: 375px;
+  margin: 0 auto;
+  padding: 24px;
+}
+h1 {
+  font-size: 32px;
+}
+a {
+  color: #166348;
+}

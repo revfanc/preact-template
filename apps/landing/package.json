@@ -1,0 +1,15 @@
+{
+  "name": "@apps/landing",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite --mode test",
+    "build:test": "vite build --mode test",
+    "build:prod": "vite build --mode prod",
+    "preview:test": "vite preview --mode test",
+    "preview:prod": "vite preview --mode prod"
+  },
+  "dependencies": {
+    "preact": "10.29.8"
+  }
+}

@@ -1,0 +1,24 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="app-env" content="%VITE_APP_ENV%" />
+    <title>示例协议</title>
+  </head>
+  <body>
+    <main>
+      <p>文档示例</p>
+      <h1>示例协议</h1>
+      <p>本文仅用于展示协议页面结构，上线前请替换为正式审定内容。</p>
+      <h2>一、文档用途</h2>
+      <p>协议正文在构建时输出为 HTML，关闭 JavaScript 也可以阅读。</p>
+      <h2>二、动态信息</h2>
+      <p>展示名称：<span id="display-name">未提供</span></p>
+      <p>服务提供方：<span id="company-name">待加载</span></p>
+      <p id="config-status" role="status"></p>
+      <noscript>JavaScript 已关闭，动态字段不会更新，正文仍可阅读。</noscript>
+    </main>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>
