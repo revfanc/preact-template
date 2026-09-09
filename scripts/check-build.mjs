@@ -23,7 +23,8 @@ const root = fileURLToPath(new URL('..', import.meta.url));
   );
   assert(
     html.includes('id="page-loading-style"') &&
-      html.includes('class="pkg-ui-page-loading"'),
+      html.includes('data-initial-loading') &&
+      html.includes('pkg-ui-dots'),
     'landing: initial HTML loading indicator missing',
   );
   const assets = await readdir(path.join(directory, 'assets'));

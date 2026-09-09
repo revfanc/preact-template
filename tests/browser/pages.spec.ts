@@ -49,13 +49,13 @@ for (const app of [
       await expect(indicator).toHaveAttribute('role', 'status');
       await page.emulateMedia({ reducedMotion: 'reduce' });
       await expect(indicator).toHaveCSS('transition-duration', '0s');
-      await expect(page.locator('.pkg-ui-spinner')).toHaveCSS(
+      await expect(page.locator('.pkg-ui-dots span').first()).toHaveCSS(
         'animation-name',
         'none',
       );
       for (const width of [320, 540]) {
         await page.setViewportSize({ width, height: 812 });
-        await expect(indicator).toHaveCSS('font-size', '14px');
+        await expect(indicator).toHaveCSS('font-size', '18px');
         const box = await indicator.boundingBox();
         expect(box!.x).toBeGreaterThanOrEqual(16);
         expect(box!.x + box!.width).toBeLessThanOrEqual(width - 16);
@@ -337,7 +337,7 @@ test('a compact toast replaces loading in the same element and survives an old r
       .toBe('');
     const after = await card.boundingBox();
     expect(after!.height).toBeLessThan(before!.height);
-    expect(after!.width).toBeLessThan(before!.width);
+    expect(after!.width).toBeLessThanOrEqual(343);
     expect(after!.x + after!.width / 2).toBeCloseTo(
       before!.x + before!.width / 2,
       1,
@@ -346,7 +346,7 @@ test('a compact toast replaces loading in the same element and survives an old r
       before!.y + before!.height / 2,
       1,
     );
-    await expect(page.locator('.pkg-ui-spinner')).toBeHidden();
+    await expect(page.locator('.pkg-ui-dots')).toBeHidden();
     release();
     await expect(page.locator('footer')).toContainText('示例服务提供方');
     await expect(page.locator('.pkg-ui-toast')).toHaveText('欢迎语已生成');

@@ -3,7 +3,6 @@ import { LocationProvider, Router, Route } from 'preact-iso';
 import { useRouteLoading } from './hooks/use-route-loading';
 import { routes } from './router/routes';
 import { PageError } from './components/page-error';
-import { PageLoading } from './components/page-loading';
 
 export function App() {
   const { isLoading, startLoading, finishLoading } = useRouteLoading();
@@ -12,7 +11,6 @@ export function App() {
 
   return (
     <LocationProvider scope={import.meta.env.BASE_URL}>
-      {isLoading && <PageLoading />}
       <div hidden={isLoading}>
         <Router onLoadStart={startLoading} onLoadEnd={finishLoading}>
           {routes.map(({ file, component, ...props }) => (

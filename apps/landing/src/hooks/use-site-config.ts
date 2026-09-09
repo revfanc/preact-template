@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'preact/hooks';
+import { useLayoutEffect, useState } from 'preact/hooks';
 import type { SiteConfig } from '@packages/api';
 import { createBrowserAbortController } from '@packages/request/browser';
 import { loading } from '@packages/ui';
@@ -9,9 +9,10 @@ export function useSiteConfig() {
   const [error, setError] = useState(false);
   const [attempt, setAttempt] = useState(0);
 
-  useEffect(() => {
+  // Register before Router's layout effect releases its handle, keeping one indicator.
+  useLayoutEffect(() => {
     const controller = createBrowserAbortController();
-    const closeLoading = loading('正在加载页面信息…');
+    const closeLoading = loading();
     let active = true;
     setError(false);
     api.getConfig(controller.signal).then(

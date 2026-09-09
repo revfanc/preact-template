@@ -25,10 +25,7 @@ export default defineConfig(({ mode }) =>
                   tag: 'style',
                   attrs: { id: 'page-loading-style' },
                   children: readFileSync(
-                    new URL(
-                      '../../packages/ui/src/page-loading/style.css',
-                      import.meta.url,
-                    ),
+                    new URL('../../packages/ui/src/style.css', import.meta.url),
                     'utf8',
                   ),
                   injectTo: 'head',

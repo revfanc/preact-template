@@ -1,6 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loading, toast, type Close } from '../packages/ui/src/index';
+import { pageLoadingHtml } from '../packages/ui/src/page-loading';
 
 const cleanups: Close[] = [];
 beforeEach(() => vi.useFakeTimers());
@@ -102,9 +103,10 @@ describe('loading', () => {
     cleanups.push(closeNew);
     vi.advanceTimersByTime(120);
     closeA();
-    expect(document.querySelector('.pkg-ui-loading')?.textContent).toBe(
-      '加载中…',
-    );
+    expect(document.querySelector('.pkg-ui-loading')?.textContent).toBe('');
+    expect(
+      document.querySelector('.pkg-ui-loading')?.getAttribute('aria-label'),
+    ).toBe('正在加载页面');
   });
 
   it('reuses one element when toast replaces loading and never revives replaced loading', () => {
@@ -140,36 +142,31 @@ describe('loading', () => {
     );
   });
 
-  it('does not flash for work completed before the display delay', () => {
+  it('shows immediately and closes without a minimum duration or fade wait', () => {
     const close = loading();
     cleanups.push(close);
-    expect(document.querySelector('.pkg-ui-loading')).toBeNull();
-    vi.advanceTimersByTime(100);
+    expect(document.querySelector('.pkg-ui-loading')).not.toBeNull();
     close();
-    vi.runAllTimers();
     expect(document.querySelector('.pkg-ui-loading')).toBeNull();
+    expect(document.querySelector('.pkg-ui-layer')).toBeNull();
   });
 
-  it('keeps the same spinner and card during consecutive work and fades out afterwards', () => {
+  it('keeps the same dots and card when one task hands over to another', () => {
     const first = loading('第一步');
     cleanups.push(first);
     vi.advanceTimersByTime(120);
     const card = document.querySelector('.pkg-ui-loading');
-    const spinner = card?.querySelector('.pkg-ui-spinner');
-    first();
-    vi.advanceTimersByTime(100);
+    const dots = card?.querySelector('.pkg-ui-dots');
     expect(card?.classList.contains('pkg-ui-visible')).toBe(true);
     const second = loading('第二步');
     cleanups.push(second);
+    first();
     expect(document.querySelector('.pkg-ui-loading')).toBe(card);
-    expect(card?.querySelector('.pkg-ui-spinner')).toBe(spinner);
+    expect(card?.querySelector('.pkg-ui-dots')).toBe(dots);
     vi.advanceTimersByTime(500);
     expect(card?.classList.contains('pkg-ui-visible')).toBe(true);
     second();
-    expect(card?.classList.contains('pkg-ui-visible')).toBe(false);
-    expect(card?.parentNode).toBe(document.body);
-    vi.advanceTimersByTime(140);
-    expect(card?.parentNode).toBeNull();
+    expect(card?.isConnected).toBe(false);
   });
   it('cancels a pending removal when a new toast arrives during fade-out', () => {
     const first = toast('旧提示', { duration: 0 });
@@ -183,5 +180,72 @@ describe('loading', () => {
     expect(document.querySelector('.pkg-ui-toast')).toBe(card);
     expect(card?.classList.contains('pkg-ui-visible')).toBe(true);
     expect(card?.textContent).toBe('新提示');
+  });
+
+  it('adopts initial HTML and keeps its existing dots throughout startup', () => {
+    document.body.innerHTML = pageLoadingHtml;
+    const original = document.querySelector('.pkg-ui-notice');
+    const dot = document.querySelector('.pkg-ui-dots span');
+    const startup = loading({ mask: true });
+    const route = loading({ mask: true });
+    const request = loading();
+    cleanups.push(startup, route, request);
+    startup();
+    route();
+    expect(document.querySelector('.pkg-ui-notice')).toBe(original);
+    expect(document.querySelector('.pkg-ui-dots span')).toBe(dot);
+    expect(document.querySelectorAll('.pkg-ui-layer')).toHaveLength(1);
+    expect(document.querySelector('[data-initial-loading]')).toBeNull();
+    request();
+    expect(original?.isConnected).toBe(false);
+  });
+
+  it('allows background clicks by default and combines masks across pending tasks', () => {
+    const button = document.createElement('button');
+    const clicked = vi.fn();
+    button.onclick = clicked;
+    document.body.appendChild(button);
+    const ordinary = loading();
+    button.click();
+    expect(clicked).toHaveBeenCalledTimes(1);
+    const blockedA = loading({ message: '<b>提交中</b>', mask: true });
+    const blockedB = loading({ mask: true });
+    const latest = loading({ message: '另一项任务', mask: false });
+    cleanups.push(ordinary, blockedA, blockedB, latest);
+    expect(document.querySelector('.pkg-ui-mask')).not.toBeNull();
+    button.click();
+    expect(clicked).toHaveBeenCalledTimes(1);
+    blockedA();
+    blockedA();
+    button.click();
+    expect(clicked).toHaveBeenCalledTimes(1);
+    blockedB();
+    expect(document.querySelector('.pkg-ui-mask')).toBeNull();
+    expect(document.querySelector('.pkg-ui-loading')).not.toBeNull();
+    button.click();
+    expect(clicked).toHaveBeenCalledTimes(2);
+  });
+
+  it('releases a mask on toast replacement and ignores stale loading handles', () => {
+    const button = document.createElement('button');
+    const clicked = vi.fn();
+    button.onclick = clicked;
+    document.body.appendChild(button);
+    const old = loading({ mask: true });
+    const card = document.querySelector('.pkg-ui-notice');
+    const closeToast = toast('完成', { duration: 0 });
+    button.click();
+    expect(clicked).toHaveBeenCalledTimes(1);
+    expect(document.querySelector('.pkg-ui-toast')).toBe(card);
+    const latest = loading({ mask: true });
+    cleanups.push(old, closeToast, latest);
+    old();
+    closeToast();
+    button.click();
+    expect(clicked).toHaveBeenCalledTimes(1);
+    latest();
+    button.click();
+    expect(clicked).toHaveBeenCalledTimes(2);
+    expect(document.querySelector('.pkg-ui-layer')).toBeNull();
   });
 });

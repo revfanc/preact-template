@@ -6,6 +6,6 @@
   "exports": {
     ".": "./src/index.ts",
     "./page-loading": "./src/page-loading/index.ts",
-    "./page-loading/style.css": "./src/page-loading/style.css"
+    "./style.css": "./src/style.css"
   }
 }

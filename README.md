@@ -163,7 +163,6 @@ apps/landing/src/
   components/
     page-error/index.tsx
     page-error/index.module.css
-    page-loading/index.tsx       # 路由加载时居中显示三个跳动圆点
   hooks/
     use-route-loading.ts        # 路由加载状态与开始/结束回调
     use-site-config.ts          # 配置加载、重试和卸载取消
@@ -182,9 +181,9 @@ apps/landing/src/
 
 落地页使用 `preact-iso`，Vite 通过 `import.meta.glob` 扫描 `apps/landing/src/pages`。新增或删除页面时自动更新路由，每个页面使用 `export default` 导出 Preact 组件，不需要手动注册。页面按需加载，首次加载及加载失败都有提示。
 
-路由等待使用 `PageLoading` 组件，三个圆点依次上下跳动，并支持减少动态效果设置。等待期间路由内容保持挂载但隐藏，完成后恢复显示，失败时进入 `PageError` 错误重试页面。路由加载不调用公共 `loading()`；业务请求继续按需使用公共提示。
+路由加载通过 `useRouteLoading` 调用公共 `loading({ mask: true })`，不再挂载加载组件。等待期间路由内容保持挂载但隐藏，完成后恢复显示，失败时进入 `PageError` 错误重试页面。配置请求在 `useLayoutEffect` 中注册自己的 loading 句柄，早于路由释放句柄，连续复用同一组圆点。
 
-三圆点的纯 HTML 从 `@packages/ui/page-loading` 导出为 `pageLoadingHtml`，配套 CSS 从 `@packages/ui/page-loading/style.css` 导出，不依赖 Preact 或路由器。landing 的 Vite HTML 钩子将它们直接注入入口 HTML 的 `#app` 与 `<head>`，因此无需等待应用 JavaScript 就能显示动画；`PageLoading` 复用同一份可信静态结构，Preact 启动后接管页面。HTML 本身仍需先到达浏览器，这项处理减少的是脚本等待期间的空白视觉，不会加快网络或模块下载。禁用 JavaScript 时隐藏动画并显示启用提示。
+首屏静态结构从 `@packages/ui/page-loading` 导出为 `pageLoadingHtml`，共用样式从 `@packages/ui/style.css` 导出，不依赖 Preact。Vite 将结构放在 `#app` 外、样式内联到 `<head>`，无需等待应用 JavaScript 即可显示圆点。入口调用 `loading()` 接管已有节点，路由与请求继续持有各自句柄，避免重复创建和动画重启。HTML 本身仍需先到达浏览器，这不会加快网络下载。禁用 JavaScript 时隐藏动画并显示启用提示。
 
 | pages 下的文件                    | 路径                     | 说明                                    |
 | --------------------------------- | ------------------------ | --------------------------------------- |
@@ -246,7 +245,7 @@ toast('请稍后重试', { duration: 3000 });
 const closeToast = toast('持续提示', { duration: 0 });
 closeToast();
 
-const closeLoading = loading('正在提交…'); // 不传文案时显示“加载中…”
+const closeLoading = loading({ message: '正在提交…', mask: true });
 try {
   await submit(); // 应用自己的异步操作
   toast('提交成功');
@@ -258,9 +257,9 @@ try {
 - 返回的关闭函数可以重复调用，只影响本次提示。组件卸载时也应关闭它持有的 Loading。
 - 连续 Loading 调用支持多个并发操作；显示最近一次仍在进行的操作文案，所有调用都关闭后才消失，不设置自动超时。
 - Toast 与 Loading 共用一个居中的 DOM 提示框，同时最多显示一个。Toast 替换当前 Loading 组；新的 Loading 替换 Toast。被替换的提示不会恢复，旧关闭函数或计时器不会关闭新提示；替换提示不会取消业务请求。
-- Loading 延迟 120ms 显示，快速完成时不闪现；显示后至少停留 240ms，再用 140ms 淡出。连续任务复用提示框与旋转图标，宽高由内容决定；文案或提示类型变化时，按实测尺寸用 180ms 平滑过渡，结束后恢复自动尺寸。长文案按视口宽度换行。Toast 使用随文字撑开的紧凑提示条，默认展示 2000ms 后淡出，`duration: 0` 由调用方关闭。
-- 提示只展示纯文本，不抢焦点、不锁滚动；提交防重等交互由业务自行处理。尊重系统减少动态效果设置，关闭淡入淡出和旋转动画。
-- 在浏览器 `document.body` 就绪后调用。UI 使用固定 px 尺寸，通过现有 `.no-rem` 约定避免落地页自动转 rem，让协议页与落地页的提示大小一致。
+- `loading()` 只显示三圆点；`loading('正在提交…')` 或 `loading({ message: '正在提交…' })` 在圆点下方显示文字。立即展示、最后一个任务关闭后立即移除，没有显示延迟或最短停留时间。文字和提示类型变化时，宽高按自然尺寸用 180ms 过渡。Toast 仍为随文字撑开的提示条，默认 2000ms 后用 140ms 淡出，`duration: 0` 由调用方关闭。
+- `mask` 默认 `false`，背景可点击；`loading({ mask: true })` 使用透明遮罩拦截背景点击及点击/提交事件。并发任务中任何未结束的任务设置 `mask: true` 都会保留遮罩；这些任务关闭后解除拦截，切换 toast 时也会解除。它不取消请求，也不替代业务提交防重。提示只展示纯文本，不抢焦点、不锁滚动；减少动态效果设置会关闭跳动和尺寸过渡。
+- 在浏览器 `document.body` 就绪后调用。Toast 和 Loading 字号统一为固定 18px，通过现有 `.no-rem` 约定避免落地页自动转 rem，让协议页与落地页的提示大小一致。
 
 落地页的欢迎语提交演示 Toast，两个应用的配置请求演示 Loading；请求包本身不自动触发 UI。
 
