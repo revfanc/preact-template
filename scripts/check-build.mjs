@@ -21,6 +21,16 @@ const root = fileURLToPath(new URL('..', import.meta.url));
     html.includes('vite-legacy-entry') && html.includes('type="module"'),
     `${app}: missing dual entries`,
   );
+  const base =
+    loadEnv(mode, path.join(root, 'apps', app), 'VITE_').VITE_BASE_PATH || '/';
+  const resourceURLs = [...html.matchAll(/\b(?:src|href|data-src)="([^"]+)"/g)]
+    .map((match) => match[1])
+    .filter((url) => url.includes('/assets/'));
+  assert(
+    resourceURLs.length > 0 &&
+      resourceURLs.every((url) => url.startsWith(base)),
+    `${app}: asset URLs must use ${base}`,
+  );
   assert(
     html.includes('id="page-loading-style"') &&
       html.includes('data-initial-loading') &&

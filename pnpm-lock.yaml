@@ -80,12 +80,12 @@ importers:
       '@packages/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@packages/feedback':
+        specifier: workspace:*
+        version: link:../../packages/feedback
       '@packages/request':
         specifier: workspace:*
         version: link:../../packages/request
-      '@packages/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       astro:
         specifier: 7.3.2
         version: 7.3.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(terser@5.51.2)(yaml@2.9.0)
@@ -105,12 +105,15 @@ importers:
       '@packages/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@packages/components':
+        specifier: workspace:*
+        version: link:../../packages/components
+      '@packages/feedback':
+        specifier: workspace:*
+        version: link:../../packages/feedback
       '@packages/request':
         specifier: workspace:*
         version: link:../../packages/request
-      '@packages/ui':
-        specifier: workspace:*
-        version: link:../../packages/ui
       preact:
         specifier: 10.29.8
         version: 10.29.8(preact-render-to-string@6.7.0)
@@ -124,6 +127,14 @@ importers:
         specifier: workspace:*
         version: link:../request
 
+  packages/components:
+    devDependencies:
+      preact:
+        specifier: 10.29.8
+        version: 10.29.8(preact-render-to-string@6.7.0)
+
+  packages/feedback: {}
+
   packages/request:
     dependencies:
       abort-controller:
@@ -132,8 +143,6 @@ importers:
       whatwg-fetch:
         specifier: 3.6.20
         version: 3.6.20
-
-  packages/ui: {}
 
 packages:
 

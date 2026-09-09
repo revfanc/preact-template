@@ -3,7 +3,7 @@ import 'core-js/modules/es.promise.js';
 import 'core-js/modules/web.url-search-params.js';
 import { createApi } from '@packages/api';
 import { createBrowserRequestClient } from '@packages/request/browser';
-import { loading } from '@packages/ui';
+import { loading } from '@packages/feedback';
 
 const api = createApi(
   createBrowserRequestClient({

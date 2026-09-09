@@ -1,7 +1,7 @@
 import { useLayoutEffect, useState } from 'preact/hooks';
 import type { SiteConfig } from '@packages/api';
 import { createBrowserAbortController } from '@packages/request/browser';
-import { loading } from '@packages/ui';
+import { loading } from '@packages/feedback';
 import { api } from '../api';
 
 export function useSiteConfig() {

@@ -1,6 +1,6 @@
 import './polyfills';
 import { render } from 'preact';
-import { loading } from '@packages/ui';
+import { loading } from '@packages/feedback';
 import { App } from './app';
 import './style.css';
 

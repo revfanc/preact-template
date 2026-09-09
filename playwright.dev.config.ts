@@ -6,7 +6,7 @@ export default defineConfig({
   workers: 1,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:5173',
+    baseURL: 'http://127.0.0.1:5173/landing/',
     channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
     viewport: { width: 375, height: 812 },
   },
@@ -21,7 +21,7 @@ export default defineConfig({
     {
       command: 'pnpm dev',
       cwd: fileURLToPath(new URL('./apps/landing', import.meta.url)),
-      url: 'http://127.0.0.1:5173/',
+      url: 'http://127.0.0.1:5173/landing/',
       reuseExistingServer: !process.env.CI,
     },
   ],

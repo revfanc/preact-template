@@ -11,13 +11,14 @@ apps/
 packages/
   api/           # @packages/api：公共业务接口、类型、配置数据校验
   request/       # @packages/request：请求、错误、超时、取消与浏览器适配
-  ui/            # @packages/ui：函数式 Toast / Loading，原生 DOM 实现
+  feedback/      # @packages/feedback：函数式 Toast / Loading，原生 DOM 实现
+  components/    # @packages/components：跨应用复用的 Preact 展示组件
 tooling/         # 共享 Vite/PostCSS 配置、兼容目标
 tests/          # 请求与样式单元测试、浏览器测试
 scripts/        # 构建结果检查
 ```
 
-两个应用分别构建、分别部署。公共包直接导出 TypeScript 源码，由使用它的应用编译；不发布到 npm，不依赖 Preact。
+两个应用分别构建、分别部署。公共包直接导出 TypeScript 源码，由使用它的应用编译；不发布到 npm。`components` 通过 peer dependency 使用应用的 Preact；`api`、`request` 和 `feedback` 不依赖 Preact。
 
 ## 启动
 
@@ -29,7 +30,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-- 落地页：http://127.0.0.1:5173/
+- 落地页：http://127.0.0.1:5173/landing/
 - 协议页：http://127.0.0.1:5174/agreement/
 - `pnpm dev:landing` / `pnpm dev:agreement` 可以单独启动。
 
@@ -46,24 +47,24 @@ pnpm preview:test
 
 | 应用      | test 输出                | prod 输出                | 默认部署路径 |
 | --------- | ------------------------ | ------------------------ | ------------ |
-| landing   | apps/landing/dist/test   | apps/landing/dist/prod   | /            |
+| landing   | apps/landing/dist/test   | apps/landing/dist/prod   | /landing/    |
 | agreement | apps/agreement/dist/test | apps/agreement/dist/prod | /agreement/  |
 
-预览端口为 4173 和 4174。`test` 与 `prod` 都使用生产优化：落地页执行 `vite build`，协议执行 `astro build`。mode 选择配置环境，不能设置 `NODE_ENV=test`。协议脚本通过 cross-env 同步设置 `AGREEMENT_MODE`，供 Astro 配置读取；日常使用上面的 pnpm 命令即可。
+预览地址为 http://127.0.0.1:4173/landing/ 和 http://127.0.0.1:4174/agreement/。`test` 与 `prod` 都使用生产优化：落地页执行 `vite build`，协议执行 `astro build`。mode 选择配置环境，不能设置 `NODE_ENV=test`。协议脚本通过 cross-env 同步设置 `AGREEMENT_MODE`，供 Astro 配置读取；日常使用上面的 pnpm 命令即可。
 
 每个应用分别提供 `.env.test` / `.env.prod`，本地覆盖使用 `.env.test.local` / `.env.prod.local`。带 `VITE_` 的变量会进入浏览器产物，只能存放公开配置。
 
-| 变量               | 作用                                        |
-| ------------------ | ------------------------------------------- |
-| VITE_APP_ENV       | 必须与 mode 一致：test / prod               |
-| VITE_BASE_PATH     | 应用静态资源路径，默认 `/` 或 `/agreement/` |
-| VITE_API_BASE_URL  | 接口前缀；空值使用应用的 BASE_URL           |
-| VITE_CONFIG_PATH   | 相对于接口前缀的配置接口路径                |
-| VITE_AGREEMENT_URL | 落地页中的协议链接，可改为独立协议域名      |
+| 变量               | 作用                                                     |
+| ------------------ | -------------------------------------------------------- |
+| VITE_APP_ENV       | 必须与 mode 一致：test / prod                            |
+| VITE_BASE_PATH     | 应用静态资源路径，落地页 `/landing/`，协议 `/agreement/` |
+| VITE_API_BASE_URL  | 接口前缀；空值使用应用的 BASE_URL                        |
+| VITE_CONFIG_PATH   | 相对于接口前缀的配置接口路径                             |
+| VITE_AGREEMENT_URL | 落地页中的协议链接，可改为独立协议域名                   |
 
 **目前两个环境都请求各应用 public/site-config.json 的演示数据，未连接实际后端。** 对接时修改 API 前缀与接口路径，并在 `packages/api/src/index.ts` 中按真实后端契约调整类型、字段校验和业务状态码处理。示例不会自行假定后端使用 `{code,data,message}` 响应格式。
 
-生产部署时分别将两个输出目录映射到对应路径；本地 Vite 代理不会成为生产服务器。也可以将协议应用部署到独立域名，将其 BASE_PATH 改为 `/`，并修改落地页的 AGREEMENT_URL。服务器应启用文本资源压缩，并让 HTML 及时更新、带内容哈希的资源长期缓存。
+生产部署时，将 `apps/landing/dist/<mode>/` 内的文件部署到站点 `/landing/` 目录，将 `apps/agreement/dist/<mode>/` 内的文件部署到 `/agreement/` 目录；本地 Vite 代理不会成为生产服务器。也可以将协议应用部署到独立域名，将其 BASE_PATH 改为 `/`，并修改落地页的 AGREEMENT_URL。服务器应启用文本资源压缩，并让 HTML 及时更新、带内容哈希的资源长期缓存。
 
 ## 兼容性
 
@@ -102,7 +103,7 @@ apps/agreement/
 
 正文与样式随 HTML 首屏提供，关闭 JavaScript 或动态脚本加载失败时仍可阅读；动态字段通过 `textContent` 更新。`.astro` 文件前置代码只在构建/服务端运行，可以使用 Node 支持的语法；旧设备兼容约束针对浏览器收到的脚本与 CSS。
 
-运行时代码直接复用 `packages/api`、`packages/request` 和 `packages/ui`。Astro 配置通过少量构建钩子调用标准 Vite 配置。布局通过 `is:inline` 引用已经打包的普通脚本，避免 Astro 将其变成 module 入口。不要在页面添加默认处理的客户端 `<script>`、`client:*` 或 `ClientRouter` 而不重新检查兼容性。
+运行时代码直接复用 `packages/api`、`packages/request` 和 `packages/feedback`。Astro 配置通过少量构建钩子调用标准 Vite 配置。布局通过 `is:inline` 引用已经打包的普通脚本，避免 Astro 将其变成 module 入口。不要在页面添加默认处理的客户端 `<script>`、`client:*` 或 `ClientRouter` 而不重新检查兼容性。
 
 开发时，Astro 负责页面/样式更新；Vite watch 负责动态入口及公共包源码更新并刷新页面。开发产物放在忽略提交的 `public/runtime/`，正式构建则直接写入各环境的 `dist/<mode>/runtime/`，不会覆盖正在开发的脚本。所有协议共用 `runtime/agreement.js` 与 `runtime/agreement.css`；这两个文件使用固定名称，部署时应与 HTML 一起使用缓存重新验证（如 `Cache-Control: no-cache`），不要设置长期 immutable 缓存。
 
@@ -159,10 +160,8 @@ apps/landing/src/
     detail/[id]/index.tsx
     detail/[id]/index.module.css
     _404/index.tsx
-    _404/index.module.css
   components/
     page-error/index.tsx
-    page-error/index.module.css
   hooks/
     use-route-loading.ts        # 路由加载状态与开始/结束回调
     use-site-config.ts          # 配置加载、重试和卸载取消
@@ -183,17 +182,17 @@ apps/landing/src/
 
 路由加载通过 `useRouteLoading` 调用公共 `loading({ mask: true })`，不再挂载加载组件。等待期间路由内容保持挂载但隐藏，完成后恢复显示，失败时进入 `PageError` 错误重试页面。配置请求在 `useLayoutEffect` 中注册自己的 loading 句柄，早于路由释放句柄，连续复用同一组圆点。
 
-首屏静态结构统一维护在 `packages/ui/src/markup.ts`，由运行时和 Vite 构建配置复用，不再提供独立的 page-loading 入口。共用样式从 `@packages/ui/style.css` 导出，不依赖 Preact。Vite 将结构放在 `#app` 外、样式内联到 `<head>`，无需等待应用 JavaScript 即可显示圆点。入口调用 `loading()` 接管已有节点，路由与请求继续持有各自句柄，避免重复创建和动画重启。HTML 本身仍需先到达浏览器，这不会加快网络下载。禁用 JavaScript 时隐藏动画并显示启用提示。
+首屏静态结构统一维护在 `packages/feedback/src/markup.ts`，由运行时和 Vite 构建配置复用，不再提供独立的 page-loading 入口。共用样式从 `@packages/feedback/style.css` 导出，不依赖 Preact。Vite 将结构放在 `#app` 外、样式内联到 `<head>`，无需等待应用 JavaScript 即可显示圆点。入口调用 `loading()` 接管已有节点，路由与请求继续持有各自句柄，避免重复创建和动画重启。HTML 本身仍需先到达浏览器，这不会加快网络下载。禁用 JavaScript 时隐藏动画并显示启用提示。
 
-| pages 下的文件                    | 路径                     | 说明                                    |
-| --------------------------------- | ------------------------ | --------------------------------------- |
-| `index.tsx`                       | `/`                      | 首页                                    |
-| `result/index.tsx`                | `/result`                | 普通页面                                |
-| `p1/p2026090901/index.tsx`        | `/p1/p2026090901`        | 活动页面                                |
-| `p1/p2026090901/result/index.tsx` | `/p1/p2026090901/result` | 活动结果页                              |
-| `detail/[id]/index.tsx`           | `/detail/:id`            | 动态参数                                |
-| `docs/[...path]/index.tsx`        | `/docs/:path+`           | 匹配至少一级，参数为 `a/b` 这样的字符串 |
-| `_404/index.tsx`                  | 未匹配路径               | 全局 404 页面                           |
+| pages 下的文件                    | 路径                             | 说明                                    |
+| --------------------------------- | -------------------------------- | --------------------------------------- |
+| `index.tsx`                       | `/landing/`                      | 首页                                    |
+| `result/index.tsx`                | `/landing/result`                | 普通页面                                |
+| `p1/p2026090901/index.tsx`        | `/landing/p1/p2026090901`        | 活动页面                                |
+| `p1/p2026090901/result/index.tsx` | `/landing/p1/p2026090901/result` | 活动结果页                              |
+| `detail/[id]/index.tsx`           | `/landing/detail/:id`            | 动态参数                                |
+| `docs/[...path]/index.tsx`        | `/landing/docs/:path+`           | 匹配至少一级，参数为 `a/b` 这样的字符串 |
+| `_404/index.tsx`                  | 未匹配路径                       | 全局 404 页面                           |
 
 当前提供首页、结果页、动态详情页和 404 示例，活动路径按业务新增。静态路径优先于同级动态参数，最后匹配捕获剩余路径的页面及 404。`detail/[id]/index.tsx` 与 `detail/[slug]/index.tsx` 等冲突在启动和构建时会报错。
 
@@ -226,18 +225,36 @@ export default function DetailPage() {
 
 跨项目跳协议页时使用 `window.location.assign(agreementURL)`；若使用 `<a>`，像首页示例一样加 `onClick={(event) => event.stopPropagation()}`，保留浏览器完整导航，避免协议 URL 被落地页路由接管。
 
-生产部署使用 History 路径：**落地页深层 URL 需要回退到落地页的 `index.html`**。协议项目和静态资源应先独立匹配，不能把协议请求回退到落地页。Vite 开发与预览服务已提供 SPA 回退，生产服务器需要单独配置。
+生产部署使用 History 路径：**落地页深层 URL（如 `/landing/p1/p2026090901`）需要回退到 `/landing/index.html`**。协议项目和静态资源应先独立匹配，不能把协议请求回退到落地页。Vite 开发与预览服务已提供 SPA 回退，生产服务器需要单独配置。
 
 路由沿用 Chrome 49 / iOS 10 构建目标。legacy 构建按使用补齐 URL、URLSearchParams、Object.fromEntries 等 API；入口的 `polyfills.ts` 为普通 DOM 链补齐链接点击所需的 `Event.composedPath`，优先使用旧 Chrome 的 `event.path`。未来若引入 Shadow DOM，需单独验证事件路径。自动测试验证缺失这些 API 时的构建产物，不代表已完成旧内核实机验收。
 
 参考：[preact-iso](https://preactjs.com/guide/v10/preact-iso/)、[Vite Glob Import](https://vite.dev/guide/features.html#glob-import)。
 
+## 公共展示组件
+
+新 Preact 应用在 dependencies 中声明 `"@packages/components": "workspace:*"`，并安装与 peer dependency 匹配的 Preact，即可复用组件。包直接导出 TSX 和 CSS Modules，由应用的 Vite/PostCSS 编译。
+
+```tsx
+import { PageState } from '@packages/components';
+
+<PageState
+  code="404"
+  title="页面不存在"
+  description="链接可能已失效，请返回首页继续浏览。"
+  actionText="返回首页"
+  onAction={goHome}
+/>;
+```
+
+组件按 `src/<组件名>/index.tsx` 与 `index.module.css` 组织，也可以从 `@packages/components/page-state` 单独导入。`PageState` 只负责展示，文案及操作回调由应用传入；404 路由匹配、返回首页和错误重试仍在 landing 中。协议项目继续只使用 `feedback`，无需引入 Preact。
+
 ## Toast / Loading
 
-应用在 dependencies 中声明 `"@packages/ui": "workspace:*"`，即可直接调用。样式随包自动引入，不需要挂载组件或 Provider，也不依赖 Preact。
+应用在 dependencies 中声明 `"@packages/feedback": "workspace:*"`，即可直接调用。样式随包自动引入，不需要挂载组件或 Provider，也不依赖 Preact。
 
 ```ts
-import { toast, loading } from '@packages/ui';
+import { toast, loading } from '@packages/feedback';
 
 toast('操作成功'); // 默认 2 秒后淡出，替换当前提示
 toast('请稍后重试', { duration: 3000 });
@@ -289,7 +306,7 @@ Remove-Item Env:BUILD_MODE
 
 ## 后续开发边界
 
-- 页面组件与状态留在各应用，公共接口留在 `packages/api`，网络行为留在 `packages/request`，基础提示留在 `packages/ui`。
+- 页面组件与状态留在各应用，公共接口留在 `packages/api`，网络行为留在 `packages/request`，基础提示留在 `packages/feedback`，跨应用复用的 Preact 展示组件留在 `packages/components`。
 - 落地页路由及页面放在应用内，`packages/api` 与 `packages/request` 不依赖路由；协议项目保持静态 HTML。
 - 协议内容只是模板占位，上线前替换为正式审定文本。动态字段通过 textContent 更新，不插入接口返回的 HTML。
 - Vitest 固定为 4.1 稳定版，TypeScript 固定在 ESLint 支持的 6.0 范围；升级工具时需运行完整检查。

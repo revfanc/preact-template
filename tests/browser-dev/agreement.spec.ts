@@ -38,7 +38,7 @@ test('opening and refreshing an agreement from landing keeps document styles sta
     await page.reload();
     await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
     await expect(page.locator('body')).toHaveCSS('font-size', '16px');
-    await page.goto('/');
+    await page.goto('/landing/');
     await page.getByRole('link', { name: '阅读示例协议' }).click();
     await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
     await expect(page.locator('body')).toHaveCSS('font-size', '16px');

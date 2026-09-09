@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
-import { loading, toast, type Close } from '../packages/ui/src/index';
-import { loadingHtml } from '../packages/ui/src/markup';
+import { loading, toast, type Close } from '../packages/feedback/src/index';
+import { loadingHtml } from '../packages/feedback/src/markup';
 
 const cleanups: Close[] = [];
 beforeEach(() => vi.useFakeTimers());

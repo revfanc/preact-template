@@ -137,7 +137,7 @@ function dismiss(kind: Notice['kind']) {
 function assertBody() {
   if (typeof document === 'undefined' || !document.body) {
     throw new Error(
-      '@packages/ui must be called after document.body is ready.',
+      '@packages/feedback must be called after document.body is ready.',
     );
   }
 }

@@ -1,0 +1,16 @@
+{
+  "name": "@packages/components",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts",
+    "./page-state": "./src/page-state/index.tsx"
+  },
+  "peerDependencies": {
+    "preact": "^10.29.8"
+  },
+  "devDependencies": {
+    "preact": "10.29.8"
+  }
+}

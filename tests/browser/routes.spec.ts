@@ -11,7 +11,7 @@ test('file routes lazy-load and navigate using browser history without reloading
     if (request.resourceType() === 'document') documents.push(request.url());
     if (request.resourceType() === 'script') scripts.push(request.url());
   });
-  await page.goto('/');
+  await page.goto('/landing/');
   await expect(page.locator('footer')).toContainText('示例服务提供方');
   expect(scripts.some((url) => /\/result-[^/]+\.js$/.test(url))).toBe(false);
   await page.getByLabel('你的称呼').fill('小明');
@@ -38,15 +38,15 @@ test('file routes lazy-load and navigate using browser history without reloading
 test('deep links, query values, dynamic parameters and 404 survive a refresh', async ({
   page,
 }) => {
-  await page.goto('/result?name=%E5%B0%8F%E6%98%8E');
+  await page.goto('/landing/result?name=%E5%B0%8F%E6%98%8E');
   await expect(page.getByText('你好，小明')).toBeVisible();
   await page.reload();
   await expect(page.getByRole('heading', { name: '欢迎语结果' })).toBeVisible();
-  await page.goto('/detail/%E4%B8%AD%E6%96%87');
+  await page.goto('/landing/detail/%E4%B8%AD%E6%96%87');
   await expect(page.getByText('内容编号：中文')).toBeVisible();
   await page.reload();
   await expect(page.getByText('内容编号：中文')).toBeVisible();
-  await page.goto('/does-not-exist');
+  await page.goto('/landing/does-not-exist');
   await expect(page.getByRole('heading', { name: '页面不存在' })).toBeVisible();
   await page.getByRole('button', { name: '返回首页' }).click();
   await expect(page.getByLabel('你的称呼')).toBeVisible();
@@ -55,7 +55,7 @@ test('deep links, query values, dynamic parameters and 404 survive a refresh', a
 test('failed page chunks show a retry and release the loading indicator', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/landing/');
   await expect(page.getByRole('link', { name: '查看结果页' })).toBeVisible();
   await page.route('**/assets/result-*.js', (route) => route.abort());
   await page.getByRole('link', { name: '查看结果页' }).click();
@@ -108,7 +108,7 @@ test('initial HTML shows animated dots before application scripts load and hands
     await route.continue();
   });
   try {
-    await page.goto('/', { waitUntil: 'commit' });
+    await page.goto('/landing/', { waitUntil: 'commit' });
     const indicator = page.getByRole('status', { name: '正在加载页面' });
     await expect(indicator).toBeVisible();
     await expect(indicator.locator('.pkg-ui-dots span')).toHaveCount(3);
@@ -154,7 +154,7 @@ test('disabled JavaScript shows guidance instead of an endless startup animation
   const context = await browser.newContext({ javaScriptEnabled: false });
   try {
     const page = await context.newPage();
-    await page.goto('http://127.0.0.1:4173/');
+    await page.goto('http://127.0.0.1:4173/landing/');
     expect(await page.locator('noscript').textContent()).toContain(
       '请启用 JavaScript',
     );
@@ -167,7 +167,7 @@ test('disabled JavaScript shows guidance instead of an endless startup animation
 test('route loading shows three bouncing dots until the page chunk arrives', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/landing/');
   await expect(page.locator('footer')).toContainText('示例服务提供方');
   await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
   let release!: () => void;

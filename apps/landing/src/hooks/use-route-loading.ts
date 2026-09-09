@@ -1,5 +1,5 @@
 import { useCallback, useLayoutEffect, useRef, useState } from 'preact/hooks';
-import { loading, type Close } from '@packages/ui';
+import { loading, type Close } from '@packages/feedback';
 
 export function useRouteLoading() {
   const [isLoading, setIsLoading] = useState(false);

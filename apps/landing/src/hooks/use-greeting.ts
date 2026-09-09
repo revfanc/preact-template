@@ -1,5 +1,5 @@
 import { useState } from 'preact/hooks';
-import { toast } from '@packages/ui';
+import { toast } from '@packages/feedback';
 
 export function useGreeting() {
   const [name, setName] = useState('');

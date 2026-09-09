@@ -11,7 +11,7 @@ export default defineConfig({
   workers: 2,
   reporter: 'list',
   use: {
-    baseURL: 'http://127.0.0.1:4173',
+    baseURL: 'http://127.0.0.1:4173/landing/',
     channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
     viewport: { width: 375, height: 812 },
     screenshot: 'only-on-failure',
@@ -28,7 +28,7 @@ export default defineConfig({
     {
       command: `node ../../node_modules/vite/bin/vite.js preview --mode ${mode}`,
       cwd: fileURLToPath(new URL('./apps/landing', import.meta.url)),
-      url: 'http://127.0.0.1:4173',
+      url: 'http://127.0.0.1:4173/landing/',
       reuseExistingServer: false,
     },
   ],

@@ -5,7 +5,7 @@ test('landing configuration, keyboard form and agreement navigation', async ({
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/');
+  await page.goto('/landing/');
   await expect(page.locator('footer')).toContainText('示例服务提供方');
   await expect(page.locator('meta[name="app-env"]')).toHaveAttribute(
     'content',
@@ -28,7 +28,7 @@ test('landing configuration, keyboard form and agreement navigation', async ({
 });
 
 for (const app of [
-  { name: 'landing', path: '/', loaded: 'footer' },
+  { name: 'landing', path: '/landing/', loaded: 'footer' },
   { name: 'agreement', path: '/agreement/', loaded: '#company-name' },
 ]) {
   test(`${app.name} shows loading during a request and clears it afterwards`, async ({
@@ -84,7 +84,7 @@ test('loading fades out with stationary dots and stable dimensions', async ({
     await route.continue();
   });
   try {
-    await page.goto('/');
+    await page.goto('/landing/');
     const indicator = page.locator('.pkg-ui-loading');
     await expect(page.getByLabel('你的称呼')).toBeVisible();
     await expect(indicator).toHaveCSS('opacity', '1');
@@ -153,7 +153,7 @@ test('loading fades out with stationary dots and stable dimensions', async ({
 test('rem scales from 320px and caps at a 540px content width', async ({
   page,
 }) => {
-  await page.goto('/');
+  await page.goto('/landing/');
   await expect(page.locator('footer')).toContainText('示例服务提供方');
   for (const width of [320, 375, 540, 768, 1024, 1440]) {
     await page.setViewportSize({ width, height: 900 });
@@ -175,7 +175,7 @@ test('configuration failure offers a working retry', async ({ page }) => {
       ? route.fulfill({ status: 503, body: 'Unavailable' })
       : route.continue(),
   );
-  await page.goto('/');
+  await page.goto('/landing/');
   await expect(page.getByRole('alert')).toContainText('加载失败');
   await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
   await page.getByRole('button', { name: '重新加载', exact: true }).click();
@@ -333,7 +333,7 @@ for (const legacyCase of [
         .replace(/\snomodule\b/g, '');
       await route.fulfill({ response, body });
     });
-    await page.goto('/');
+    await page.goto('/landing/');
     const landingEntry = await page
       .locator('#vite-legacy-entry')
       .getAttribute('data-src');
@@ -375,7 +375,7 @@ for (const legacyCase of [
       .getAttribute('src');
     expect(loaded).toEqual(
       expect.arrayContaining([
-        new URL(landingEntry!, 'http://127.0.0.1:4173/').href,
+        new URL(landingEntry!, 'http://127.0.0.1:4173/landing/').href,
         new URL(agreementEntry!, 'http://127.0.0.1:4173/agreement/').href,
       ]),
     );
@@ -395,7 +395,7 @@ test('a compact toast replaces loading in the same element and survives an old r
     await route.continue();
   });
   try {
-    await page.goto('/');
+    await page.goto('/landing/');
     const card = page.locator('.pkg-ui-notice');
     await expect(page.locator('.pkg-ui-loading')).toHaveCSS('opacity', '1');
     const before = await card.boundingBox();
