@@ -183,7 +183,7 @@ apps/landing/src/
 
 路由加载通过 `useRouteLoading` 调用公共 `loading({ mask: true })`，不再挂载加载组件。等待期间路由内容保持挂载但隐藏，完成后恢复显示，失败时进入 `PageError` 错误重试页面。配置请求在 `useLayoutEffect` 中注册自己的 loading 句柄，早于路由释放句柄，连续复用同一组圆点。
 
-首屏静态结构从 `@packages/ui/page-loading` 导出为 `pageLoadingHtml`，共用样式从 `@packages/ui/style.css` 导出，不依赖 Preact。Vite 将结构放在 `#app` 外、样式内联到 `<head>`，无需等待应用 JavaScript 即可显示圆点。入口调用 `loading()` 接管已有节点，路由与请求继续持有各自句柄，避免重复创建和动画重启。HTML 本身仍需先到达浏览器，这不会加快网络下载。禁用 JavaScript 时隐藏动画并显示启用提示。
+首屏静态结构统一维护在 `packages/ui/src/markup.ts`，由运行时和 Vite 构建配置复用，不再提供独立的 page-loading 入口。共用样式从 `@packages/ui/style.css` 导出，不依赖 Preact。Vite 将结构放在 `#app` 外、样式内联到 `<head>`，无需等待应用 JavaScript 即可显示圆点。入口调用 `loading()` 接管已有节点，路由与请求继续持有各自句柄，避免重复创建和动画重启。HTML 本身仍需先到达浏览器，这不会加快网络下载。禁用 JavaScript 时隐藏动画并显示启用提示。
 
 | pages 下的文件                    | 路径                     | 说明                                    |
 | --------------------------------- | ------------------------ | --------------------------------------- |

@@ -1,7 +1,7 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loading, toast, type Close } from '../packages/ui/src/index';
-import { pageLoadingHtml } from '../packages/ui/src/page-loading';
+import { loadingHtml } from '../packages/ui/src/markup';
 
 const cleanups: Close[] = [];
 beforeEach(() => vi.useFakeTimers());
@@ -183,7 +183,7 @@ describe('loading', () => {
   });
 
   it('adopts initial HTML and keeps its existing dots throughout startup', () => {
-    document.body.innerHTML = pageLoadingHtml;
+    document.body.innerHTML = loadingHtml;
     const original = document.querySelector('.pkg-ui-notice');
     const dot = document.querySelector('.pkg-ui-dots span');
     const startup = loading({ mask: true });

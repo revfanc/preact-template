@@ -1,4 +1,4 @@
-import { pageLoadingHtml } from './page-loading';
+import { loadingHtml } from './markup';
 import type { Close, LoadingOptions } from './types';
 
 type Notice = { kind: 'loading' | 'toast'; message: string; mask?: boolean };
@@ -46,7 +46,7 @@ function ensureElement() {
     undefined;
   if (!layer) {
     const container = document.createElement('div');
-    container.innerHTML = pageLoadingHtml;
+    container.innerHTML = loadingHtml;
     layer = container.firstElementChild as HTMLDivElement;
     document.body.appendChild(layer);
   }

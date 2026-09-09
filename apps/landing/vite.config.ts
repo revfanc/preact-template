@@ -3,7 +3,7 @@ import { defineConfig, mergeConfig, type ViteDevServer } from 'vite';
 import { createWebConfig } from '../../tooling/vite.ts';
 import { readFileSync, readdirSync } from 'node:fs';
 import { createFileRoutes } from './src/router/file-routes.ts';
-import { pageLoadingHtml } from '../../packages/ui/src/page-loading/index.ts';
+import { loadingHtml } from '../../packages/ui/src/markup.ts';
 
 export default defineConfig(({ mode }) =>
   mergeConfig(createWebConfig(mode, 5173, true), {
@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) =>
           order: 'pre',
           handler(html: string) {
             return {
-              html: html.replace('<!-- page-loading -->', pageLoadingHtml),
+              html: html.replace('<!-- page-loading -->', loadingHtml),
               tags: [
                 {
                   tag: 'style',
