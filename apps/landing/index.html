@@ -9,6 +9,12 @@
     <style>
       html {
         font-size: 10vw;
+        background: #f3f4ef;
+      }
+      body {
+        margin: 0;
+        font-family: Arial, 'Microsoft YaHei', sans-serif;
+        font-size: 16px;
       }
       @media (min-width: 540px) {
         html {
@@ -18,8 +24,15 @@
     </style>
   </head>
   <body>
-    <div id="app"></div>
-    <noscript>请启用 JavaScript 后访问此页面。</noscript>
+    <div id="app"><!-- page-loading --></div>
+    <noscript>
+      <style>
+        .pkg-ui-page-loading {
+          display: none;
+        }
+      </style>
+      请启用 JavaScript 后访问此页面。
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
   </body>
 </html>

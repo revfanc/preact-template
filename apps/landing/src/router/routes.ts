@@ -1,7 +1,7 @@
 import type { ComponentType } from 'preact';
 import { lazy } from 'preact-iso';
 import { createFileRoutes, type FileRoute } from './file-routes';
-import { PageLoadError } from '../components/page-load-error';
+import { PageError } from '../components/page-error';
 
 type PageModule = { default: ComponentType };
 const pages = {
@@ -28,7 +28,7 @@ export const routes = createFileRoutes(
             throw new Error(`Page needs a default component: ${route.file}`);
           return module.default;
         })
-        .catch(() => PageLoadError),
+        .catch(() => PageError),
     ),
   };
 });

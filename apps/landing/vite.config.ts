@@ -1,8 +1,9 @@
 import preact from '@preact/preset-vite';
 import { defineConfig, mergeConfig, type ViteDevServer } from 'vite';
 import { createWebConfig } from '../../tooling/vite.ts';
-import { readdirSync } from 'node:fs';
+import { readFileSync, readdirSync } from 'node:fs';
 import { createFileRoutes } from './src/router/file-routes.ts';
+import { pageLoadingHtml } from '../../packages/ui/src/page-loading/index.ts';
 
 export default defineConfig(({ mode }) =>
   mergeConfig(createWebConfig(mode, 5173, true), {
@@ -12,6 +13,31 @@ export default defineConfig(({ mode }) =>
       rolldownOptions: { transform: { jsx: { importSource: 'preact' } } },
     },
     plugins: [
+      {
+        name: 'initial-page-loading',
+        transformIndexHtml: {
+          order: 'pre',
+          handler(html: string) {
+            return {
+              html: html.replace('<!-- page-loading -->', pageLoadingHtml),
+              tags: [
+                {
+                  tag: 'style',
+                  attrs: { id: 'page-loading-style' },
+                  children: readFileSync(
+                    new URL(
+                      '../../packages/ui/src/page-loading/style.css',
+                      import.meta.url,
+                    ),
+                    'utf8',
+                  ),
+                  injectTo: 'head',
+                },
+              ],
+            };
+          },
+        },
+      },
       preact({ reactAliasesEnabled: false }),
       {
         name: 'agreement-dev-navigation',

@@ -21,6 +21,11 @@ const root = fileURLToPath(new URL('..', import.meta.url));
     html.includes('vite-legacy-entry') && html.includes('type="module"'),
     `${app}: missing dual entries`,
   );
+  assert(
+    html.includes('id="page-loading-style"') &&
+      html.includes('class="pkg-ui-page-loading"'),
+    'landing: initial HTML loading indicator missing',
+  );
   const assets = await readdir(path.join(directory, 'assets'));
   const legacy = assets.filter(
     (name) => name.includes('-legacy-') && name.endsWith('.js'),
@@ -30,13 +35,20 @@ const root = fileURLToPath(new URL('..', import.meta.url));
     const source = await readFile(path.join(directory, 'assets', file), 'utf8');
     parse(source, { ecmaVersion: 2015, sourceType: 'script' });
   }
-  const css = (
-    await Promise.all(
-      assets
-        .filter((file) => file.endsWith('.css'))
-        .map((file) => readFile(path.join(directory, 'assets', file), 'utf8')),
-    )
-  ).join('\n');
+  const inlineCss = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)]
+    .map((match) => match[1])
+    .join('\n');
+  const css =
+    inlineCss +
+    (
+      await Promise.all(
+        assets
+          .filter((file) => file.endsWith('.css'))
+          .map((file) =>
+            readFile(path.join(directory, 'assets', file), 'utf8'),
+          ),
+      )
+    ).join('\n');
   assert(
     !/:where\(|:is\(|@layer\b|oklch\(|color-mix\(/.test(css),
     `${app}: CSS exceeds the template compatibility rules`,

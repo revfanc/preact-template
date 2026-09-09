@@ -161,10 +161,11 @@ apps/landing/src/
     _404/index.tsx
     _404/index.module.css
   components/
-    page-load-error/index.tsx
-    page-load-error/index.module.css
+    page-error/index.tsx
+    page-error/index.module.css
+    page-loading/index.tsx       # 路由加载时居中显示三个跳动圆点
   hooks/
-    use-route-loading.ts        # 路由加载状态及卸载清理
+    use-route-loading.ts        # 路由加载状态与开始/结束回调
     use-site-config.ts          # 配置加载、重试和卸载取消
     use-greeting.ts             # 欢迎语状态与提交逻辑
   api/index.ts                  # 当前应用的请求配置和公共 API 接入
@@ -180,6 +181,10 @@ apps/landing/src/
 ## 约定式路由
 
 落地页使用 `preact-iso`，Vite 通过 `import.meta.glob` 扫描 `apps/landing/src/pages`。新增或删除页面时自动更新路由，每个页面使用 `export default` 导出 Preact 组件，不需要手动注册。页面按需加载，首次加载及加载失败都有提示。
+
+路由等待使用 `PageLoading` 组件，三个圆点依次上下跳动，并支持减少动态效果设置。等待期间路由内容保持挂载但隐藏，完成后恢复显示，失败时进入 `PageError` 错误重试页面。路由加载不调用公共 `loading()`；业务请求继续按需使用公共提示。
+
+三圆点的纯 HTML 从 `@packages/ui/page-loading` 导出为 `pageLoadingHtml`，配套 CSS 从 `@packages/ui/page-loading/style.css` 导出，不依赖 Preact 或路由器。landing 的 Vite HTML 钩子将它们直接注入入口 HTML 的 `#app` 与 `<head>`，因此无需等待应用 JavaScript 就能显示动画；`PageLoading` 复用同一份可信静态结构，Preact 启动后接管页面。HTML 本身仍需先到达浏览器，这项处理减少的是脚本等待期间的空白视觉，不会加快网络或模块下载。禁用 JavaScript 时隐藏动画并显示启用提示。
 
 | pages 下的文件                    | 路径                     | 说明                                    |
 | --------------------------------- | ------------------------ | --------------------------------------- |
