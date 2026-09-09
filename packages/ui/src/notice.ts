@@ -122,12 +122,16 @@ function dismiss(kind: Notice['kind']) {
   setMask(false);
   if (!element) return;
   if (kind === 'loading') {
-    // A completed task never waits for a minimum duration or an animation.
-    remove();
-  } else {
-    element.classList.remove('pkg-ui-visible');
-    removeTimer = setTimeout(remove, FADE_TIME);
+    // Hold the current geometry if a message/size transition is still in flight.
+    const size = element.getBoundingClientRect();
+    clearTimeout(resizeTimer);
+    element.style.transitionProperty = 'opacity';
+    element.style.width = `${size.width}px`;
+    element.style.height = `${size.height}px`;
   }
+  // Release interaction immediately; only the visual layer finishes fading out.
+  element.classList.remove('pkg-ui-visible');
+  removeTimer = setTimeout(remove, FADE_TIME);
 }
 
 function assertBody() {

@@ -103,6 +103,10 @@
   animation-delay: 300ms;
 }
 
+.pkg-ui-notice.no-rem:not(.pkg-ui-visible) .pkg-ui-dots span {
+  animation-play-state: paused;
+}
+
 @keyframes pkg-ui-page-bounce {
   0%,
   60%,

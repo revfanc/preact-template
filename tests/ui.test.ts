@@ -142,11 +142,18 @@ describe('loading', () => {
     );
   });
 
-  it('shows immediately and closes without a minimum duration or fade wait', () => {
-    const close = loading();
+  it('starts fading immediately on close and releases the mask before removal', () => {
+    const close = loading({ mask: true });
     cleanups.push(close);
-    expect(document.querySelector('.pkg-ui-loading')).not.toBeNull();
+    const card = document.querySelector('.pkg-ui-loading');
+    expect(card?.classList.contains('pkg-ui-visible')).toBe(true);
     close();
+    expect(card?.isConnected).toBe(true);
+    expect(card?.classList.contains('pkg-ui-visible')).toBe(false);
+    expect(document.querySelector('.pkg-ui-mask')).toBeNull();
+    vi.advanceTimersByTime(139);
+    expect(card?.isConnected).toBe(true);
+    vi.advanceTimersByTime(1);
     expect(document.querySelector('.pkg-ui-loading')).toBeNull();
     expect(document.querySelector('.pkg-ui-layer')).toBeNull();
   });
@@ -166,6 +173,8 @@ describe('loading', () => {
     vi.advanceTimersByTime(500);
     expect(card?.classList.contains('pkg-ui-visible')).toBe(true);
     second();
+    expect(card?.classList.contains('pkg-ui-visible')).toBe(false);
+    vi.advanceTimersByTime(140);
     expect(card?.isConnected).toBe(false);
   });
   it('cancels a pending removal when a new toast arrives during fade-out', () => {
@@ -197,6 +206,7 @@ describe('loading', () => {
     expect(document.querySelectorAll('.pkg-ui-layer')).toHaveLength(1);
     expect(document.querySelector('[data-initial-loading]')).toBeNull();
     request();
+    vi.advanceTimersByTime(140);
     expect(original?.isConnected).toBe(false);
   });
 
@@ -246,6 +256,28 @@ describe('loading', () => {
     latest();
     button.click();
     expect(clicked).toHaveBeenCalledTimes(2);
+    expect(document.querySelector('.pkg-ui-mask')).toBeNull();
+    vi.advanceTimersByTime(140);
     expect(document.querySelector('.pkg-ui-layer')).toBeNull();
+  });
+
+  it('reuses fading dots and cancels stale removal when a new task begins', () => {
+    const first = loading({ mask: true });
+    const card = document.querySelector('.pkg-ui-loading');
+    const dot = card?.querySelector('.pkg-ui-dots span');
+    first();
+    vi.advanceTimersByTime(70);
+    const second = loading({ mask: true });
+    cleanups.push(first, second);
+    expect(document.querySelector('.pkg-ui-loading')).toBe(card);
+    expect(card?.querySelector('.pkg-ui-dots span')).toBe(dot);
+    expect(card?.classList.contains('pkg-ui-visible')).toBe(true);
+    first();
+    vi.advanceTimersByTime(500);
+    expect(card?.isConnected).toBe(true);
+    expect(document.querySelector('.pkg-ui-mask')).not.toBeNull();
+    second();
+    vi.advanceTimersByTime(140);
+    expect(card?.isConnected).toBe(false);
   });
 });

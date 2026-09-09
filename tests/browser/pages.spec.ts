@@ -72,6 +72,84 @@ for (const app of [
   });
 }
 
+test('loading fades out with stationary dots and stable dimensions', async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/site-config.json', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  try {
+    await page.goto('/');
+    const indicator = page.locator('.pkg-ui-loading');
+    await expect(page.getByLabel('你的称呼')).toBeVisible();
+    await expect(indicator).toHaveCSS('opacity', '1');
+    const samplesPromise = indicator.evaluate(
+      (element) =>
+        new Promise<
+          Array<{
+            opacity: number;
+            width: number;
+            height: number;
+            transforms: string[];
+            states: string[];
+          }>
+        >((resolve) => {
+          const samples: Array<{
+            opacity: number;
+            width: number;
+            height: number;
+            transforms: string[];
+            states: string[];
+          }> = [];
+          const sample = () => {
+            if (!element.isConnected) {
+              resolve(samples);
+              return;
+            }
+            if (!element.classList.contains('pkg-ui-visible')) {
+              const box = element.getBoundingClientRect();
+              const dots = Array.from(
+                element.querySelectorAll('.pkg-ui-dots span'),
+              ).map((dot) => getComputedStyle(dot));
+              samples.push({
+                opacity: Number(getComputedStyle(element).opacity),
+                width: box.width,
+                height: box.height,
+                transforms: dots.map((style) => style.transform),
+                states: dots.map((style) => style.animationPlayState),
+              });
+            }
+            requestAnimationFrame(sample);
+          };
+          element.setAttribute('data-exit-observer', 'ready');
+          requestAnimationFrame(sample);
+        }),
+    );
+    await expect(indicator).toHaveAttribute('data-exit-observer', 'ready');
+    release();
+    const samples = await samplesPromise;
+    expect(samples.length).toBeGreaterThanOrEqual(2);
+    expect(
+      samples.some((sample) => sample.opacity > 0 && sample.opacity < 1),
+    ).toBe(true);
+    for (const sample of samples) {
+      expect(sample.width).toBeCloseTo(samples[0]!.width, 1);
+      expect(sample.height).toBeCloseTo(samples[0]!.height, 1);
+      expect(sample.transforms).toEqual(samples[0]!.transforms);
+      expect(sample.states).toEqual(['paused', 'paused', 'paused']);
+    }
+    await expect(indicator).toHaveCount(0);
+    await expect(page.locator('.pkg-ui-layer')).toHaveCount(0);
+  } finally {
+    release();
+  }
+});
+
 test('rem scales from 320px and caps at a 540px content width', async ({
   page,
 }) => {
