@@ -47,6 +47,9 @@ describe('request client', () => {
     expect(
       new Headers(fetcher.mock.calls[0]?.[1]?.headers).get('authorization'),
     ).toBe('override');
+    expect(fetcher.mock.calls[0]?.[1]?.headers).toEqual({
+      authorization: 'override',
+    });
   });
 
   it('returns undefined for 204 and reports HTTP errors before parsing JSON', async () => {
@@ -114,5 +117,28 @@ describe('request client', () => {
       client.request('/already-cancelled', { signal: controller.signal }),
     ).rejects.toBeInstanceOf(RequestError);
     expect(fetcher).toHaveBeenCalledTimes(1);
+  });
+
+  it('keeps the timeout active while reading the response body', async () => {
+    vi.useFakeTimers();
+    const fetcher: typeof fetch = async (_url, init) => {
+      const response = new Response('body');
+      vi.spyOn(response, 'text').mockImplementation(
+        () =>
+          new Promise((_resolve, reject) => {
+            init?.signal?.addEventListener('abort', () =>
+              reject(new Error('body aborted')),
+            );
+          }),
+      );
+      return response;
+    };
+    const client = createRequestClient({ fetch: fetcher, timeoutMs: 100 });
+    const assertion = expect(
+      client.request('/slow-body'),
+    ).rejects.toMatchObject({ kind: 'timeout' });
+    await vi.advanceTimersByTimeAsync(100);
+    await assertion;
+    expect(vi.getTimerCount()).toBe(0);
   });
 });

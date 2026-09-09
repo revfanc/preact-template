@@ -12,6 +12,8 @@ export function createWebConfig(
     throw new Error('请使用 --mode test 或 --mode prod');
   }
   const env = loadEnv(mode, process.cwd(), 'VITE_');
+  if (env.VITE_APP_ENV !== mode)
+    throw new Error('VITE_APP_ENV 必须与构建 mode 一致');
   return {
     base: env.VITE_BASE_PATH || '/',
     plugins: [legacy({ targets: legacyTargets })],

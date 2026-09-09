@@ -10,6 +10,8 @@
     "preview:prod": "vite preview --mode prod"
   },
   "dependencies": {
+    "@packages/api": "workspace:*",
+    "@packages/request": "workspace:*",
     "preact": "10.29.8"
   }
 }

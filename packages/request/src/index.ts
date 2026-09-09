@@ -59,11 +59,13 @@ export function createRequestClient(options: RequestClientOptions = {}) {
             controller.abort();
           }, timeoutMs);
         }
-        const headers = new Headers(options.headers);
-        for (const key of Object.keys(init.headers ?? {}))
-          headers.set(key, init.headers![key]!);
-        if (init.json !== undefined && !headers.has('Content-Type')) {
-          headers.set('Content-Type', 'application/json');
+        const headers: Record<string, string> = {};
+        for (const source of [options.headers, init.headers]) {
+          for (const key of Object.keys(source ?? {}))
+            headers[key.toLowerCase()] = source![key]!;
+        }
+        if (init.json !== undefined && !('content-type' in headers)) {
+          headers['content-type'] = 'application/json';
         }
         const response = await fetcher(
           buildURL(options.baseURL ?? '', path, init.query),

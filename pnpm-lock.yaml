@@ -69,10 +69,23 @@ importers:
         specifier: 4.1.11
         version: 4.1.11(@types/node@24.13.3)(vite@8.2.2(@types/node@24.13.3)(terser@5.51.2))
 
-  apps/agreement: {}
+  apps/agreement:
+    dependencies:
+      '@packages/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@packages/request':
+        specifier: workspace:*
+        version: link:../../packages/request
 
   apps/landing:
     dependencies:
+      '@packages/api':
+        specifier: workspace:*
+        version: link:../../packages/api
+      '@packages/request':
+        specifier: workspace:*
+        version: link:../../packages/request
       preact:
         specifier: 10.29.8
         version: 10.29.8

@@ -8,5 +8,9 @@
     "build:prod": "vite build --mode prod",
     "preview:test": "vite preview --mode test",
     "preview:prod": "vite preview --mode prod"
+  },
+  "dependencies": {
+    "@packages/api": "workspace:*",
+    "@packages/request": "workspace:*"
   }
 }

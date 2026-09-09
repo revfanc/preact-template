@@ -1,0 +1,155 @@
+import { expect, test } from '@playwright/test';
+
+test('landing configuration, keyboard form and agreement navigation', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/');
+  await expect(page.locator('footer')).toContainText('示例服务提供方');
+  await expect(page.locator('meta[name="app-env"]')).toHaveAttribute(
+    'content',
+    process.env.BUILD_MODE ?? 'test',
+  );
+  await page.getByLabel('你的称呼').fill('小明');
+  await page.getByLabel('你的称呼').press('Enter');
+  await expect(page.getByRole('status')).toHaveText(
+    '你好，小明。欢迎开启新的体验。',
+  );
+  await page.screenshot({ path: 'test-results/landing.png', fullPage: true });
+  await page.getByRole('link', { name: '阅读示例协议' }).click();
+  await expect(page.locator('#display-name')).toHaveText('小明');
+  await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
+  expect(errors).toEqual([]);
+});
+
+test('rem scales from 320px and caps at a 540px content width', async ({
+  page,
+}) => {
+  await page.goto('/');
+  await expect(page.locator('footer')).toContainText('示例服务提供方');
+  for (const width of [320, 375, 540, 768, 1024, 1440]) {
+    await page.setViewportSize({ width, height: 900 });
+    const size = await page.evaluate(() => ({
+      root: parseFloat(getComputedStyle(document.documentElement).fontSize),
+      content: document.querySelector('main')!.getBoundingClientRect().width,
+      overflow: document.documentElement.scrollWidth > window.innerWidth,
+    }));
+    expect(size.root).toBeCloseTo(Math.min(width, 540) / 10, 1);
+    expect(size.content).toBeCloseTo(Math.min(width, 540), 0);
+    expect(size.overflow).toBe(false);
+  }
+});
+
+test('configuration failure offers a working retry', async ({ page }) => {
+  let attempts = 0;
+  await page.route('**/site-config.json', (route) =>
+    ++attempts === 1
+      ? route.fulfill({ status: 503, body: 'Unavailable' })
+      : route.continue(),
+  );
+  await page.goto('/');
+  await expect(page.getByRole('alert')).toContainText('加载失败');
+  await page.getByRole('button', { name: '重新加载', exact: true }).click();
+  await expect(page.locator('footer')).toContainText('示例服务提供方');
+});
+
+test('agreement body is readable with JavaScript disabled', async ({
+  browser,
+}) => {
+  const context = await browser.newContext({ javaScriptEnabled: false });
+  const page = await context.newPage();
+  await page.goto('http://127.0.0.1:4173/agreement/');
+  await expect(
+    page.getByRole('heading', { name: '示例协议', exact: true }),
+  ).toBeVisible();
+  await expect(
+    page.getByRole('heading', { name: '一、文档用途' }),
+  ).toBeVisible();
+  await expect(page.locator('noscript')).toBeVisible();
+  await context.close();
+});
+
+test('dynamic fields use text and tolerate malformed query encoding', async ({
+  page,
+}) => {
+  await page.goto(
+    `/agreement/?name=${encodeURIComponent('<img src=x onerror=alert(1)>')}`,
+  );
+  await expect(page.locator('#display-name')).toHaveText(
+    '<img src=x onerror=alert(1)>',
+  );
+  await expect(page.locator('#display-name img')).toHaveCount(0);
+  await page.goto('/agreement/?name=%E0%A4%A');
+  await expect(page.locator('#display-name')).toHaveText('未提供');
+});
+
+for (const legacyCase of [
+  {
+    name: 'fetch, Promise and AbortController missing',
+    apis: [
+      'fetch',
+      'Request',
+      'Response',
+      'Headers',
+      'AbortController',
+      'AbortSignal',
+      'Promise',
+    ],
+  },
+  {
+    name: 'native fetch present but AbortController missing',
+    apis: ['AbortController', 'AbortSignal'],
+  },
+]) {
+  test(`legacy bundles boot both apps with ${legacyCase.name}`, async ({
+    page,
+  }) => {
+    const errors: string[] = [];
+    const loaded: string[] = [];
+    page.on('pageerror', (error) => errors.push(error.message));
+    page.on('request', (request) => {
+      if (request.resourceType() === 'script') loaded.push(request.url());
+    });
+    await page.addInitScript((apis) => {
+      for (const key of apis) {
+        Object.defineProperty(window, key, {
+          value: undefined,
+          writable: true,
+          configurable: true,
+        });
+      }
+    }, legacyCase.apis);
+    await page.route('**/*', async (route) => {
+      if (route.request().resourceType() !== 'document')
+        return route.continue();
+      const response = await route.fetch();
+      const body = (await response.text())
+        .replace(/<script\b[^>]*\btype="module"[^>]*>[\s\S]*?<\/script>/g, '')
+        .replace(/\snomodule\b/g, '');
+      await route.fulfill({ response, body });
+    });
+    await page.goto('/');
+    await page.evaluate(async () => {
+      const system = (
+        window as unknown as {
+          System: { import(url: string): Promise<unknown> };
+        }
+      ).System;
+      await system.import(
+        document.getElementById('vite-legacy-entry')!.getAttribute('data-src')!,
+      );
+    });
+    await expect(page.locator('footer')).toContainText('示例服务提供方');
+    await page.getByLabel('你的称呼').fill('旧版浏览器');
+    await page.getByRole('button', { name: '预览欢迎语' }).click();
+    await expect(page.getByRole('status')).toContainText('你好，旧版浏览器');
+    await page.getByRole('link', { name: '阅读示例协议' }).click();
+    await expect(page.locator('#display-name')).toHaveText('旧版浏览器');
+    await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
+    expect(loaded.filter((url) => url.includes('index-legacy-'))).toHaveLength(
+      2,
+    );
+    expect(errors).toEqual([]);
+  });
+}

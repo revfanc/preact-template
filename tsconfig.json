@@ -16,5 +16,12 @@
     "types": ["vite/client", "node"],
     "noEmit": true
   },
-  "include": ["apps", "packages", "tooling", "tests", "vitest.config.ts"]
+  "include": [
+    "apps",
+    "packages",
+    "tooling",
+    "tests",
+    "vitest.config.ts",
+    "playwright.config.ts"
+  ]
 }

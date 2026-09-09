@@ -21,3 +21,23 @@ h2 {
   margin-top: 32px;
   font-size: 20px;
 }
+[hidden] {
+  display: none;
+}
+button {
+  min-height: 44px;
+  padding: 8px 16px;
+  border: 1px solid #166348;
+  background: #fff;
+  color: #166348;
+  border-radius: 4px;
+  font: inherit;
+  cursor: pointer;
+}
+button:focus {
+  outline: 2px solid #166348;
+  outline-offset: 3px;
+}
+p {
+  overflow-wrap: break-word;
+}

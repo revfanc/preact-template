@@ -1,4 +1,5 @@
-import AbortControllerPolyfill from 'abort-controller';
+// 包的默认 browser 入口只转发原生对象；这里必须导入真正的兼容实现。
+import AbortControllerPolyfill from 'abort-controller/dist/abort-controller.js';
 import { fetch as fetchPolyfill } from 'whatwg-fetch';
 import { createRequestClient, type RequestClientOptions } from './index';
 
