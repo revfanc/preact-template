@@ -6,6 +6,8 @@ export default tseslint.config(
   {
     ignores: [
       '**/dist/**',
+      '**/.astro/**',
+      'apps/agreement/public/runtime/**',
       '**/node_modules/**',
       'test-results/**',
       'playwright-report/**',

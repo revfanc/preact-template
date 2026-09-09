@@ -1,0 +1,17 @@
+---
+import AgreementLayout from '../../layouts/agreement/index.astro';
+import DynamicFields from '../../components/dynamic-fields/index.astro';
+---
+
+<AgreementLayout title="隐私协议示例">
+  <p>文档示例</p>
+  <h1>隐私协议示例</h1>
+  <p>本页仅展示多个协议复用版式与动态字段的方式，不构成正式隐私政策。</p>
+  <h2>一、文档用途</h2>
+  <p>
+    上线前请替换为正式审定内容。当前示例正文在构建时生成，无需脚本即可阅读。
+  </p>
+  <h2>二、动态信息</h2>
+  <DynamicFields />
+  <p><a href={import.meta.env.BASE_URL}>返回示例协议</a></p>
+</AgreementLayout>

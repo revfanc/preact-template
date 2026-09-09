@@ -15,12 +15,13 @@
     "build:prod": "pnpm --fail-if-no-match --filter @apps/* build:prod",
     "preview:test": "pnpm --parallel --fail-if-no-match --filter @apps/* preview:test",
     "preview:prod": "pnpm --parallel --fail-if-no-match --filter @apps/* preview:prod",
-    "typecheck": "tsc --noEmit",
+    "typecheck": "tsc --noEmit && pnpm --filter @apps/agreement check",
     "lint": "eslint .",
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
     "test:browser": "playwright test",
+    "test:browser:dev": "playwright test --config playwright.dev.config.ts",
     "check:build": "node scripts/check-build.mjs"
   },
   "devDependencies": {
@@ -40,6 +41,7 @@
     "postcss": "^8.5.28",
     "postcss-pxtorem": "6.1.0",
     "prettier": "^3.9.6",
+    "prettier-plugin-astro": "0.14.1",
     "terser": "^5.51.2",
     "typescript": "~6.0.0",
     "typescript-eslint": "^8.70.0",

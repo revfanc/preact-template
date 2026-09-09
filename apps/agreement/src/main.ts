@@ -1,7 +1,9 @@
+import 'core-js/modules/es.promise.js';
+// whatwg-fetch inspects this API while reading request and response bodies.
+import 'core-js/modules/web.url-search-params.js';
 import { createApi } from '@packages/api';
 import { createBrowserRequestClient } from '@packages/request/browser';
 import { loading } from '@packages/ui';
-import './style.css';
 
 const api = createApi(
   createBrowserRequestClient({
@@ -28,7 +30,7 @@ if (nameMatch?.[1]) {
 
 async function loadConfig() {
   const closeLoading = loading('正在加载服务提供方…');
-  status.textContent = '正在加载服务提供方…';
+  status.textContent = '';
   retry.hidden = true;
   try {
     const config = await api.getConfig();

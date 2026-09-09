@@ -3,15 +3,22 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --mode test",
-    "build:test": "vite build --mode test",
-    "build:prod": "vite build --mode prod",
-    "preview:test": "vite preview --mode test",
-    "preview:prod": "vite preview --mode prod"
+    "dev": "cross-env AGREEMENT_MODE=test astro dev --mode test",
+    "build:test": "cross-env AGREEMENT_MODE=test astro build --mode test",
+    "build:prod": "cross-env AGREEMENT_MODE=prod astro build --mode prod",
+    "preview:test": "cross-env AGREEMENT_MODE=test astro preview --mode test",
+    "preview:prod": "cross-env AGREEMENT_MODE=prod astro preview --mode prod",
+    "check": "cross-env AGREEMENT_MODE=test astro check"
   },
   "dependencies": {
     "@packages/api": "workspace:*",
     "@packages/request": "workspace:*",
-    "@packages/ui": "workspace:*"
+    "@packages/ui": "workspace:*",
+    "astro": "7.3.2",
+    "core-js": "3.50.0"
+  },
+  "devDependencies": {
+    "@astrojs/check": "0.9.10",
+    "cross-env": "10.1.0"
   }
 }

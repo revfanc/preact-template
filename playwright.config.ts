@@ -18,7 +18,9 @@ export default defineConfig({
   },
   webServer: [
     {
-      command: `node ../../node_modules/vite/bin/vite.js preview --mode ${mode}`,
+      command: `pnpm preview:${mode}`,
+      // Astro 7 otherwise detaches when launched by an AI agent; Playwright owns this process.
+      env: { ASTRO_PREVIEW_BACKGROUND: '1' },
       cwd: fileURLToPath(new URL('./apps/agreement', import.meta.url)),
       url: 'http://127.0.0.1:4174/agreement/',
       reuseExistingServer: false,

@@ -104,20 +104,84 @@ test('configuration failure offers a working retry', async ({ page }) => {
   await expect(page.locator('footer')).toContainText('示例服务提供方');
 });
 
-test('agreement body is readable with JavaScript disabled', async ({
+test('agreement body is readable and styled with JavaScript disabled', async ({
   browser,
 }) => {
   const context = await browser.newContext({ javaScriptEnabled: false });
   const page = await context.newPage();
-  await page.goto('http://127.0.0.1:4173/agreement/');
+  for (const route of ['', 'privacy/']) {
+    await page.goto(`http://127.0.0.1:4173/agreement/${route}`);
+    await expect(page.locator('body')).toHaveCSS('margin', '0px');
+    await expect(page.locator('main')).toHaveCSS('padding', '32px 24px');
+    await expect(page.locator('h1')).toHaveCSS('font-size', '28px');
+    await expect(
+      page.getByRole('heading', {
+        name: route ? '隐私协议示例' : '示例协议',
+        exact: true,
+      }),
+    ).toBeVisible();
+    await expect(
+      page.getByRole('heading', { name: '一、文档用途' }),
+    ).toBeVisible();
+    await expect(page.locator('noscript')).toBeVisible();
+  }
+  await context.close();
+});
+
+test('agreement deep links and refresh share the static layout and runtime', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  await page.goto('/agreement/privacy/?name=小明');
+  await expect(
+    page.getByRole('heading', { name: '隐私协议示例', exact: true }),
+  ).toBeVisible();
+  await expect(page.locator('#display-name')).toHaveText('小明');
+  await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
+  const runtime = await page.locator('#agreement-runtime').getAttribute('src');
+  await page.reload();
+  await expect(page.locator('#display-name')).toHaveText('小明');
+  await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
+  await page.getByRole('link', { name: '返回示例协议' }).click();
   await expect(
     page.getByRole('heading', { name: '示例协议', exact: true }),
   ).toBeVisible();
+  await expect(page.locator('#agreement-runtime')).toHaveAttribute(
+    'src',
+    runtime!,
+  );
+  await page.getByRole('link', { name: '查看隐私协议示例' }).click();
   await expect(
-    page.getByRole('heading', { name: '一、文档用途' }),
+    page.getByRole('heading', { name: '隐私协议示例', exact: true }),
   ).toBeVisible();
-  await expect(page.locator('noscript')).toBeVisible();
-  await context.close();
+  expect(errors).toEqual([]);
+});
+
+test('agreement layout is styled before its dynamic script arrives', async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/runtime/agreement.js', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  try {
+    await page.goto('/agreement/', { waitUntil: 'commit' });
+    await expect(page.locator('h1')).toHaveCSS('font-size', '28px');
+    await expect(page.locator('body')).toHaveCSS('margin', '0px');
+    await expect(page.locator('main')).toHaveCSS('padding', '32px 24px');
+    await expect(page.locator('#company-name')).toHaveText('待加载');
+    const heading = await page.locator('h1').boundingBox();
+    release();
+    await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
+    expect(await page.locator('h1').boundingBox()).toEqual(heading);
+  } finally {
+    release();
+  }
 });
 
 test('dynamic fields use text and tolerate malformed query encoding', async ({
@@ -229,8 +293,8 @@ for (const legacyCase of [
     await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
     await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
     const agreementEntry = await page
-      .locator('#vite-legacy-entry')
-      .getAttribute('data-src');
+      .locator('#agreement-runtime')
+      .getAttribute('src');
     expect(loaded).toEqual(
       expect.arrayContaining([
         new URL(landingEntry!, 'http://127.0.0.1:4173/').href,

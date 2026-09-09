@@ -1,5 +1,5 @@
 import preact from '@preact/preset-vite';
-import { defineConfig, mergeConfig } from 'vite';
+import { defineConfig, mergeConfig, type ViteDevServer } from 'vite';
 import { createWebConfig } from '../../tooling/vite.ts';
 import { readdirSync } from 'node:fs';
 import { createFileRoutes } from './src/router/file-routes.ts';
@@ -14,6 +14,26 @@ export default defineConfig(({ mode }) =>
     plugins: [
       preact({ reactAliasesEnabled: false }),
       {
+        name: 'agreement-dev-navigation',
+        configureServer(server: ViteDevServer) {
+          // Astro's dev modules use root URLs; give it its own origin to avoid CSS/HMR collisions.
+          server.middlewares.use((request, response, next) => {
+            const url = new URL(
+              request.url || '/',
+              `http://${request.headers.host}`,
+            );
+            if (
+              url.pathname !== '/agreement' &&
+              !url.pathname.startsWith('/agreement/')
+            )
+              return next();
+            url.port = '5174';
+            response.writeHead(302, { Location: url.href });
+            response.end();
+          });
+        },
+      },
+      {
         name: 'validate-file-routes',
         buildStart() {
           createFileRoutes(
@@ -25,7 +45,6 @@ export default defineConfig(({ mode }) =>
         },
       },
     ],
-    server: { proxy: { '/agreement/': 'http://127.0.0.1:5174' } },
     preview: { proxy: { '/agreement/': 'http://127.0.0.1:4174' } },
   }),
 );

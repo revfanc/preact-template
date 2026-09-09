@@ -1,13 +1,13 @@
-# Preact Web 模板
+# Preact / Astro Web 模板
 
-用于移动端落地页和协议页面的 pnpm 单仓库。目录及根包名称保留 `svelte-template`，页面技术栈为 Preact 10 + Vite 8，项目不依赖 Svelte/SvelteKit。
+用于移动端落地页和协议页面的 pnpm 单仓库。目录及根包名称保留 `svelte-template`；落地页使用 Preact 10 + Vite 8，协议使用 Astro 7 静态生成，项目不依赖 Svelte/SvelteKit。
 
 ## 项目结构
 
 ```text
 apps/
   landing/       # Preact CSR + preact-iso 文件路由；原生 CSS，px 自动转 rem
-  agreement/     # 静态 HTML 正文；TypeScript 更新局部字段
+  agreement/     # Astro 静态多页面；普通脚本更新局部字段
 packages/
   api/           # @packages/api：公共业务接口、类型、配置数据校验
   request/       # @packages/request：请求、错误、超时、取消与浏览器适配
@@ -33,7 +33,7 @@ pnpm dev
 - 协议页：http://127.0.0.1:5174/agreement/
 - `pnpm dev:landing` / `pnpm dev:agreement` 可以单独启动。
 
-本地落地页将 `/agreement/` 代理到协议应用。点击协议链接时需要两个应用同时运行。
+开发时，从落地页访问 `/agreement/` 会跳转到同主机的协议端口 5174，让 Astro 的开发脚本和样式始终来自协议服务，避免与落地页的 `/src/style.css`、`/@vite/client` 冲突。预览服务仍将 `/agreement/` 代理到协议应用，模拟正式部署路径。点击协议链接时需要两个应用同时运行。
 
 ## test / prod 环境
 
@@ -49,7 +49,7 @@ pnpm preview:test
 | landing   | apps/landing/dist/test   | apps/landing/dist/prod   | /            |
 | agreement | apps/agreement/dist/test | apps/agreement/dist/prod | /agreement/  |
 
-预览端口为 4173 和 4174。`test` 与 `prod` 都通过 `vite build` 使用生产优化；mode 选择配置环境，不能设置 `NODE_ENV=test`。
+预览端口为 4173 和 4174。`test` 与 `prod` 都使用生产优化：落地页执行 `vite build`，协议执行 `astro build`。mode 选择配置环境，不能设置 `NODE_ENV=test`。协议脚本通过 cross-env 同步设置 `AGREEMENT_MODE`，供 Astro 配置读取；日常使用上面的 pnpm 命令即可。
 
 每个应用分别提供 `.env.test` / `.env.prod`，本地覆盖使用 `.env.test.local` / `.env.prod.local`。带 `VITE_` 的变量会进入浏览器产物，只能存放公开配置。
 
@@ -69,7 +69,8 @@ pnpm preview:test
 
 构建目标集中在 `tooling/compatibility.ts`：Chrome 49+、iOS 10+、Safari 10+。需要降低目标时，同步调整 JavaScript 与 CSS 目标，重新审查依赖并验证目标内核。
 
-- `@vitejs/plugin-legacy` 输出现代包和 SystemJS legacy 包，自动补齐旧包所用的 ES API。现代包使用插件默认支持范围；具备 ESM 但不满足现代检测的浏览器会回落到 legacy 包。
+- 落地页通过 `@vitejs/plugin-legacy` 输出现代包和 SystemJS legacy 包，自动补齐旧包所用的 ES API。现代包使用插件默认支持范围；具备 ESM 但不满足现代检测的浏览器会回落到 legacy 包。
+- 协议通过 Astro 生成完整 HTML，动态入口由 Vite 的 library 模式输出一个 IIFE 普通脚本，使用 `defer` 加载，不依赖 ESM、SystemJS 或前端框架 hydration。Vite 按 `scriptTargets` 转换语法；入口显式补齐 Promise 和请求依赖使用的 URLSearchParams，公共请求层负责 fetch 与 AbortController 兼容，不为协议引入 Babel 插件或自动补丁扫描。
 - 浏览器请求优先使用支持取消的原生 fetch；旧浏览器使用 whatwg-fetch 的 XHR 实现和 AbortController 兼容实现。
 - AbortController 必须从 `abort-controller/dist/abort-controller.js` 导入。该包默认的 `browser` 入口只转发已有原生对象，不能补齐旧浏览器。
 - HTTP 请求头使用普通对象，避免原生 Headers 与 polyfill Headers 的互操作问题。
@@ -78,7 +79,34 @@ pnpm preview:test
 
 **构建目标不等于真实设备验收。** 自动测试在当前 Chrome 中验证现代入口、强制 legacy 入口以及缺失 fetch/Promise/AbortController 的情况；不模拟 Chrome 49 的 JS 引擎或 iOS 10 的 WebKit。2016 年出厂的设备也可能使用不同或升级后的内核，最终应按实际浏览器/WebView 版本确认。
 
-框架本身的体积不等于整个应用体积：请求兼容层、业务代码和 legacy polyfills 都会增加下载量。构建日志分别给出各包的原始和 gzip 大小。
+框架本身的体积不等于整个应用体积：请求兼容层、业务代码和 polyfills 都会增加下载量。构建工具不会整体发给浏览器，生成的辅助代码与 API 补丁会。仅控制旧语法不能补齐 fetch 等浏览器 API；如果未来动态部分只使用目标浏览器已有的 API，可以减少对应补丁。协议不自动补齐新增 API，引入新能力或降低目标版本时须检查浏览器支持并补充必要处理。
+
+## agreement 目录约定
+
+```text
+apps/agreement/
+  astro.config.ts                    # 静态输出、部署前缀、环境、样式
+  vite.config.ts                     # 动态入口的普通脚本构建，含兼容目标
+  src/
+    pages/
+      index.astro                    # /agreement/
+      privacy/index.astro            # /agreement/privacy/
+    layouts/agreement/index.astro    # 公共文档布局、首屏样式和脚本引用
+    components/dynamic-fields/index.astro
+    main.ts                          # 动态字段、公共 API 请求、Loading 和重试
+    style.css                        # 文档基础样式，正常 px 字号
+  public/site-config.json            # 演示配置
+```
+
+新增协议时添加 `src/pages/<协议名称>/index.astro`，复用布局与所需组件，构建时自动生成独立的 `<协议名称>/index.html`。页面跳转使用普通链接，服务器按实际目录提供 HTML，不需要 SPA 回退或 Node 服务。当前两个协议都是占位示例。
+
+正文与样式随 HTML 首屏提供，关闭 JavaScript 或动态脚本加载失败时仍可阅读；动态字段通过 `textContent` 更新。`.astro` 文件前置代码只在构建/服务端运行，可以使用 Node 支持的语法；旧设备兼容约束针对浏览器收到的脚本与 CSS。
+
+运行时代码直接复用 `packages/api`、`packages/request` 和 `packages/ui`。Astro 配置通过少量构建钩子调用标准 Vite 配置。布局通过 `is:inline` 引用已经打包的普通脚本，避免 Astro 将其变成 module 入口。不要在页面添加默认处理的客户端 `<script>`、`client:*` 或 `ClientRouter` 而不重新检查兼容性。
+
+开发时，Astro 负责页面/样式更新；Vite watch 负责动态入口及公共包源码更新并刷新页面。开发产物放在忽略提交的 `public/runtime/`，正式构建则直接写入各环境的 `dist/<mode>/runtime/`，不会覆盖正在开发的脚本。所有协议共用 `runtime/agreement.js` 与 `runtime/agreement.css`；这两个文件使用固定名称，部署时应与 HTML 一起使用缓存重新验证（如 `Cache-Control: no-cache`），不要设置长期 immutable 缓存。
+
+参考：[Astro 路由](https://docs.astro.build/en/guides/routing/)、[Astro 脚本处理](https://docs.astro.build/en/guides/client-side-scripts/)、[Vite library 模式](https://vite.dev/guide/build.html#library-mode)。
 
 ## px 自动转 rem
 
@@ -241,6 +269,7 @@ pnpm test
 pnpm build:test
 pnpm check:build test
 pnpm test:browser
+pnpm test:browser:dev
 pnpm build:prod
 pnpm check:build prod
 $env:BUILD_MODE = 'prod'
@@ -250,7 +279,9 @@ Remove-Item Env:BUILD_MODE
 
 浏览器测试默认使用本机 Chrome；若使用 Edge，设置 `$env:PLAYWRIGHT_CHANNEL = 'msedge'`。测试会自动启动并关闭 4173/4174 预览服务，运行时请保持端口空闲。
 
-`check:build` 检查环境标记、双入口、legacy 脚本的 ES2015 语法解析、基本 CSS 约束和协议静态正文；它不能替代全部 Web API、CSS 或真实设备测试。
+`test:browser:dev` 单独验证开发环境的协议导航、刷新及样式稳定性，使用 5173/5174；本地可以复用已启动的开发服务，CI 会自行启动。
+
+`typecheck` 包含 TypeScript 与 `astro check`。`check:build` 检查环境标记、落地页双入口、兼容脚本的 ES2015 语法解析、基本 CSS 约束，以及所有协议页的静态正文、首屏样式与普通脚本资源引用；它不能替代全部 Web API、CSS 或真实设备测试。浏览器测试覆盖协议深层链接与刷新、禁用 JavaScript、延迟加载脚本，以及缺失 fetch/Promise/AbortController 时的请求行为。
 
 ## 后续开发边界
 
