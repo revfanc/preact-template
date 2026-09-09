@@ -5,6 +5,18 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./style.css": "./src/style.css"
+    "./style.css": "./src/style.css",
+    "./modal": "./src/modal/index.tsx"
+  },
+  "peerDependencies": {
+    "preact": "^10.29.8"
+  },
+  "peerDependenciesMeta": {
+    "preact": {
+      "optional": true
+    }
+  },
+  "devDependencies": {
+    "preact": "10.29.8"
   }
 }

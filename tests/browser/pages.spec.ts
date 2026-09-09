@@ -355,6 +355,19 @@ for (const legacyCase of [
     );
     await expect(page.locator('.pkg-ui-toast')).toHaveText('欢迎语已生成');
     await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
+    await page.getByRole('button', { name: '在弹窗中填写' }).click();
+    await expect(page.getByRole('dialog', { name: '填写称呼' })).toBeVisible();
+    await page
+      .getByRole('dialog')
+      .getByRole('button', { name: '确认称呼' })
+      .click();
+    await expect(page.locator('[data-modal-root]')).toHaveCount(0);
+    await page.getByRole('button', { name: '在弹窗中填写' }).click();
+    await page.keyboard.press('Escape');
+    await expect(page.locator('[data-modal-root]')).toHaveCount(0);
+    await expect(page.locator('.pkg-ui-toast')).not.toHaveText(
+      '弹窗暂时无法打开',
+    );
     await page
       .getByRole('link', { name: '查看结果页' })
       .locator('span')

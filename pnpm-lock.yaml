@@ -146,7 +146,11 @@ importers:
         specifier: 10.29.8
         version: 10.29.8(preact-render-to-string@6.7.0)
 
-  packages/feedback: {}
+  packages/feedback:
+    devDependencies:
+      preact:
+        specifier: 10.29.8
+        version: 10.29.8(preact-render-to-string@6.7.0)
 
   packages/request:
     dependencies:

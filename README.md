@@ -11,7 +11,7 @@ apps/
 packages/
   api/           # @packages/api：公共业务接口、类型、配置数据校验
   request/       # @packages/request：请求、错误、超时、取消与浏览器适配
-  feedback/      # @packages/feedback：函数式 Toast / Loading，原生 DOM 实现
+  feedback/      # @packages/feedback：函数式 Toast / Loading；独立入口提供 Preact Modal
   components/    # @packages/components：跨应用复用的 Preact 展示组件
   theme/         # @packages/theme：标准 CSS 主题默认值，构建时使用
 tooling/         # 共享 Vite/PostCSS 配置、兼容目标
@@ -19,7 +19,7 @@ tests/          # 请求与样式单元测试、浏览器测试
 scripts/        # 构建结果检查
 ```
 
-两个应用分别构建、分别部署。公共包直接导出 TypeScript 源码，由使用它的应用编译；不发布到 npm。`components` 通过 peer dependency 使用应用的 Preact；`api`、`request` 和 `feedback` 不依赖 Preact。
+两个应用分别构建、分别部署。公共包直接导出 TypeScript 源码，由使用它的应用编译；不发布到 npm。`components` 通过 peer dependency 使用应用的 Preact；`api`、`request` 与 `feedback` 的 Toast/Loading 入口不依赖 Preact；只有 `@packages/feedback/modal` 需要 Preact。
 
 ## 启动
 
@@ -142,6 +142,7 @@ apps/agreement/
 | soft       | 装饰背景                 |
 | decoration | 装饰图形线条             |
 | overlay    | Toast 背景               |
+| backdrop   | Modal 遮罩               |
 
 ```css
 /* apps/<应用>/src/theme.css：只写需要覆盖的值 */
@@ -322,6 +323,52 @@ try {
 - 在浏览器 `document.body` 就绪后调用。Toast 和 Loading 字号统一为固定 18px，通过现有 `.no-rem` 约定避免落地页自动转 rem，让协议页与落地页的提示大小一致。
 
 落地页的欢迎语提交演示 Toast，两个应用的配置请求演示 Loading；请求包本身不自动触发 UI。
+
+## 函数式 Modal
+
+从独立入口 `@packages/feedback/modal` 导入。使用方需要 Preact 10；只使用 Toast/Loading 的应用无需加载 Modal 渲染代码。
+
+```tsx
+import { modal, ModalCancelledError } from '@packages/feedback/modal';
+
+const task = modal<string>({
+  position: 'center',
+  closeOnClickOverlay: false,
+  overlayStyle: { backgroundColor: 'rgba(0, 0, 0, 0.4)' },
+  render: ({ resolve, reject, closing }) => (
+    <NameForm
+      initial="小明"
+      closing={closing}
+      onConfirm={resolve}
+      onCancel={() => reject()}
+    />
+  ),
+});
+
+try {
+  const name = await task;
+  // 使用组件返回的 name
+} catch (error) {
+  if (!(error instanceof ModalCancelledError)) throw error;
+}
+
+// 页面卸载或其他主动关闭场景：task.close()
+```
+
+- 基础层仅提供遮罩、无样式的内容挂载容器和栈管理，没有标题、关闭按钮、白色面板、圆角、内边距或内容动画。尺寸、外观、标题、按钮和内容动画都由 `render` 中的业务组件实现。
+- `position` 支持 `center`（默认）、`top`、`bottom`、`left`、`right`，只控制挂载容器相对视口的对齐；内容组件自己控制尺寸。`closeOnClickOverlay` 默认为 false，`overlayStyle` 只覆盖当前遮罩。
+- 每次调用创建独立栈项及遮罩，多层遮罩自然叠加。只有栈顶可交互，Escape 和遮罩点击只关闭栈顶；下层保持挂载与状态。`task.close()` 可关闭任意对应层，包括中间层，不影响其余 Promise。
+- `resolve(value)` 关闭并兑现 Promise；`reject(reason)` 原样拒绝。无参数 `reject()`、`task.close()`、Escape、遮罩关闭统一拒绝为 `ModalCancelledError`，`reason` 分别为 `cancel`、`close`、`escape`、`overlay`。每层只接受首次结算；捕获取消以避免未处理的 Promise 拒绝。
+- 遮罩使用 160ms 淡入淡出，关闭后卸载组件再结算 Promise；减少动态效果时跳过动画等待。组件渲染错误会清理该层并拒绝 Promise。事件回调或请求中的异常由业务组件自行捕获并决定是否调用 `reject`。
+- `render` 还会收到 `closing` 状态：任何关闭方式都会将其置为 true，组件可据此执行自己的 160ms 退场过渡。首页示例使用透明度和位移过渡，中途关闭会从当前视觉状态继续退场；开启减少动态效果时禁用过渡。
+- 遮罩拦截点击、滚轮及触摸手势，阻止事件冒泡到页面和触摸后的合成点击；退场期间继续阻止背景交互。点击遮罩默认不关闭，需显式设置 `closeOnClickOverlay: true`。
+- 弹窗栈容器固定为 z-index 1500，内部排序不会越过 Toast/Loading 的 2000。Loading 的 mask 为 true 时也会拦截弹窗点击。
+- 基础层限制焦点在栈顶内并锁定页面滚动，关闭栈顶时恢复上一层焦点，最后一层关闭后恢复页面。内容组件自行提供 `role="dialog"`、`aria-modal="true"` 和可访问名称，并处理内部滚动。
+- Modal 使用独立 Preact 渲染根，不自动继承调用位置的 Context；通过 props 传入数据，需要 Provider 时在 render 内显式包裹。页面持有任务时应在卸载时调用各自的 close。
+
+首页“在弹窗中填写”提供示例，白色卡片来自应用的 `components/name-modal`；其中“再打开一层”演示独立遮罩、保留父层状态和 Promise 回传。`hooks/use-name-modal.tsx` 管理调用与卸载清理。
+
+参考：[Preact render](https://preactjs.com/guide/v10/api-reference/#render)、[WAI-ARIA Dialog](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)。
 
 ## 验证
 

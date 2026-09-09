@@ -1,3 +1,4 @@
+import { useNameModal } from '../hooks/use-name-modal';
 import styles from './index.module.css';
 import { useSiteConfig } from '../hooks/use-site-config';
 import { useGreeting } from '../hooks/use-greeting';
@@ -5,6 +6,7 @@ import { useGreeting } from '../hooks/use-greeting';
 export default function HomePage() {
   const { config, error, reload } = useSiteConfig();
   const { name, greeting, updateName, preview } = useGreeting();
+  const openNameModal = useNameModal(updateName);
 
   const agreementBase = import.meta.env.VITE_AGREEMENT_URL;
   const agreementURL = `${agreementBase}${agreementBase.includes('?') ? '&' : '?'}name=${encodeURIComponent(name.trim())}`;
@@ -58,6 +60,17 @@ export default function HomePage() {
           <button class={styles.primary} type="submit">
             预览欢迎语 <span aria-hidden="true">→</span>
           </button>
+          <p class={styles['route-link']}>
+            <button
+              class={styles.secondary}
+              type="button"
+              onClick={() => {
+                void openNameModal(name);
+              }}
+            >
+              在弹窗中填写
+            </button>
+          </p>
           <p class={styles.greeting} role="status">
             {greeting}
           </p>
