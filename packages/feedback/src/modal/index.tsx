@@ -1,9 +1,21 @@
-import { render, type ComponentChildren, type JSX } from 'preact';
+import { render } from 'preact';
 import { ModalView } from './view';
 import { pushModal, removeModal, isTopModal } from './stack';
+import type {
+  ModalCancelReason,
+  ModalControls,
+  ModalOptions,
+  ModalPromise,
+} from './types';
 import styles from './index.module.css';
 
-export type ModalCancelReason = 'cancel' | 'close' | 'escape' | 'overlay';
+export type {
+  ModalCancelReason,
+  ModalControls,
+  ModalOptions,
+  ModalPromise,
+} from './types';
+
 export class ModalCancelledError extends Error {
   readonly reason: ModalCancelReason;
   constructor(reason: ModalCancelReason = 'cancel') {
@@ -12,22 +24,6 @@ export class ModalCancelledError extends Error {
     this.reason = reason;
   }
 }
-export interface ModalControls<T> {
-  /** Lets the render component coordinate its own exit animation with the overlay. */
-  closing: boolean;
-  resolve: (value: T) => void;
-  reject: (reason?: unknown) => void;
-}
-export interface ModalOptions<T> {
-  render: (controls: ModalControls<T>) => ComponentChildren;
-  position?: 'center' | 'top' | 'bottom' | 'left' | 'right';
-  /** Defaults to false to avoid losing form input. */
-  closeOnClickOverlay?: boolean;
-  /** Applied only to this modal's overlay. */
-  overlayStyle?: JSX.CSSProperties;
-}
-export type ModalPromise<T> = Promise<T> & { close: () => void };
-
 /** Each call owns one stack entry and settles after its content unmounts. */
 export function modal<T = void>(options: ModalOptions<T>): ModalPromise<T> {
   if (typeof document === 'undefined' || !document.body) {

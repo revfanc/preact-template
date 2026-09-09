@@ -5,7 +5,7 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./style.css": "./src/style.css",
+    "./style.css": "./src/notice/style.css",
     "./modal": "./src/modal/index.tsx"
   },
   "peerDependencies": {

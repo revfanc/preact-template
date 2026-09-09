@@ -226,7 +226,7 @@ apps/landing/src/
 
 路由加载通过 `useRouteLoading` 调用公共 `loading({ mask: true })`，不再挂载加载组件。等待期间路由内容保持挂载但隐藏，完成后恢复显示，失败时进入 `PageError` 错误重试页面。配置请求在 `useLayoutEffect` 中注册自己的 loading 句柄，早于路由释放句柄，连续复用同一组圆点。
 
-首屏静态结构统一维护在 `packages/feedback/src/markup.ts`，由运行时和 Vite 构建配置复用，不再提供独立的 page-loading 入口。共用样式从 `@packages/feedback/style.css` 导出，不依赖 Preact。Vite 将结构放在 `#app` 外、样式内联到 `<head>`，无需等待应用 JavaScript 即可显示圆点。入口调用 `loading()` 接管已有节点，路由与请求继续持有各自句柄，避免重复创建和动画重启。HTML 本身仍需先到达浏览器，这不会加快网络下载。禁用 JavaScript 时隐藏动画并显示启用提示。
+首屏静态结构统一维护在 `packages/feedback/src/notice/markup.ts`，由运行时和 Vite 构建配置复用，不再提供独立的 page-loading 入口。共用样式从 `@packages/feedback/style.css` 导出，不依赖 Preact。Vite 将结构放在 `#app` 外、样式内联到 `<head>`，无需等待应用 JavaScript 即可显示圆点。入口调用 `loading()` 接管已有节点，路由与请求继续持有各自句柄，避免重复创建和动画重启。HTML 本身仍需先到达浏览器，这不会加快网络下载。禁用 JavaScript 时隐藏动画并显示启用提示。
 
 | pages 下的文件                    | 路径                             | 说明                                    |
 | --------------------------------- | -------------------------------- | --------------------------------------- |
@@ -292,6 +292,31 @@ import { PageState } from '@packages/components';
 ```
 
 组件按 `src/<组件名>/index.tsx` 与 `index.module.css` 组织，也可以从 `@packages/components/page-state` 单独导入。`PageState` 只负责展示，文案及操作回调由应用传入；404 路由匹配、返回首页和错误重试仍在 landing 中。协议项目继续只使用 `feedback`，无需引入 Preact。
+
+## Feedback 目录
+
+按实例归属组织：Toast/Loading 共用一个提示实例，放在 `notice`；Modal 使用独立弹窗栈，放在 `modal`。各模块的实现、类型、样式和测试就近存放。
+
+```text
+packages/feedback/src/
+  index.ts               # Toast/Loading 对外入口，不引入 Preact
+  notice/
+    index.ts             # toast()、loading() 参数处理
+    runtime.ts           # 共用 DOM 实例、并发句柄、过渡与遮罩
+    markup.ts            # 首屏和运行时复用的 HTML
+    style.css
+    types.ts
+    index.test.ts
+  modal/
+    index.tsx            # modal()、Promise 结算与关闭生命周期
+    stack.ts             # 栈顺序、焦点和页面锁定
+    view.tsx             # 遮罩与内容挂载
+    types.ts
+    index.module.css
+    index.test.tsx
+```
+
+公开入口保持为 `@packages/feedback`、`@packages/feedback/style.css` 和 `@packages/feedback/modal`。跨应用浏览器测试仍放在根目录的 `tests/browser`。
 
 ## Toast / Loading
 

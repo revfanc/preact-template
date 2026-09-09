@@ -4,7 +4,7 @@ import { defineConfig, mergeConfig, type ViteDevServer } from 'vite';
 import { createWebConfig } from '../../tooling/vite.ts';
 import { readFileSync, readdirSync } from 'node:fs';
 import { createFileRoutes } from './src/router/file-routes.ts';
-import { loadingHtml } from '../../packages/feedback/src/markup.ts';
+import { loadingHtml } from '../../packages/feedback/src/notice/markup.ts';
 import postcss from 'postcss';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
 
@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) =>
                     'html { background: var(--background); }\n' +
                       readFileSync(
                         new URL(
-                          '../../packages/feedback/src/style.css',
+                          '../../packages/feedback/src/notice/style.css',
                           import.meta.url,
                         ),
                         'utf8',

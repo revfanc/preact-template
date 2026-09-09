@@ -29,7 +29,7 @@ it('applies an application theme to feedback and shared components without runti
     new URL('./fixtures/theme.css', import.meta.url),
   );
   for (const file of [
-    '../packages/feedback/src/style.css',
+    '../packages/feedback/src/notice/style.css',
     '../packages/components/src/page-state/index.module.css',
   ]) {
     const source = await readFile(new URL(file, import.meta.url), 'utf8');

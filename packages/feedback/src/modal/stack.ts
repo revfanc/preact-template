@@ -1,4 +1,4 @@
-import type { ModalCancelReason } from './index';
+import type { ModalCancelReason } from './types';
 import styles from './index.module.css';
 
 export interface ModalEntry {

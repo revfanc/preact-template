@@ -4,7 +4,7 @@ import {
   useRef,
   useState,
 } from 'preact/hooks';
-import type { ModalControls, ModalOptions } from './index';
+import type { ModalControls, ModalOptions } from './types';
 import { activateModal, type ModalEntry } from './stack';
 import styles from './index.module.css';
 
