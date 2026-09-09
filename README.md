@@ -1,6 +1,6 @@
-# Preact / Astro Web 模板
+# preact-template
 
-用于移动端落地页和协议页面的 pnpm 单仓库。目录及根包名称保留 `svelte-template`；落地页使用 Preact 10 + Vite 8，协议使用 Astro 7 静态生成，项目不依赖 Svelte/SvelteKit。
+用于移动端落地页和协议页面的 pnpm 单仓库。落地页使用 Preact 10 + Vite 8，协议使用 Astro 7 静态生成。
 
 ## 项目结构
 
@@ -24,7 +24,7 @@ scripts/        # 构建结果检查
 使用 Node.js 24、pnpm 10。
 
 ```powershell
-Set-Location C:\Users\revfanc\Documents\JSpace\svelte-template
+Set-Location C:\Users\revfanc\Documents\JSpace\preact-template
 pnpm install --frozen-lockfile
 pnpm dev
 ```
