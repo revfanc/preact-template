@@ -1,5 +1,6 @@
 import { createApi } from '@packages/api';
 import { createBrowserRequestClient } from '@packages/request/browser';
+import { loading } from '@packages/ui';
 import './style.css';
 
 const api = createApi(
@@ -26,6 +27,7 @@ if (nameMatch?.[1]) {
 }
 
 async function loadConfig() {
+  const closeLoading = loading('正在加载服务提供方…');
   status.textContent = '正在加载服务提供方…';
   retry.hidden = true;
   try {
@@ -35,6 +37,8 @@ async function loadConfig() {
   } catch {
     status.textContent = '服务提供方加载失败，正文仍可阅读。';
     retry.hidden = false;
+  } finally {
+    closeLoading();
   }
 }
 

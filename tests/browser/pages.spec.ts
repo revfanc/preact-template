@@ -13,15 +13,62 @@ test('landing configuration, keyboard form and agreement navigation', async ({
   );
   await page.getByLabel('你的称呼').fill('小明');
   await page.getByLabel('你的称呼').press('Enter');
-  await expect(page.getByRole('status')).toHaveText(
+  await expect(page.locator('.greeting')).toHaveText(
     '你好，小明。欢迎开启新的体验。',
   );
+  await expect(page.locator('.pkg-ui-toast')).toHaveText('欢迎语已生成');
+  await expect(page.getByLabel('你的称呼')).toBeFocused();
   await page.screenshot({ path: 'test-results/landing.png', fullPage: true });
+  await expect(page.locator('.pkg-ui-toast')).toHaveCount(0);
   await page.getByRole('link', { name: '阅读示例协议' }).click();
   await expect(page.locator('#display-name')).toHaveText('小明');
   await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
   expect(errors).toEqual([]);
 });
+
+for (const app of [
+  { name: 'landing', path: '/', loaded: 'footer' },
+  { name: 'agreement', path: '/agreement/', loaded: '#company-name' },
+]) {
+  test(`${app.name} shows loading during a request and clears it afterwards`, async ({
+    page,
+  }) => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    await page.route('**/site-config.json', async (route) => {
+      await gate;
+      await route.continue();
+    });
+    try {
+      await page.goto(app.path);
+      const indicator = page.locator('.pkg-ui-loading');
+      await expect(indicator).toBeVisible();
+      await expect(indicator).toHaveAttribute('role', 'status');
+      await page.emulateMedia({ reducedMotion: 'reduce' });
+      await expect(page.locator('.pkg-ui-spinner')).toHaveCSS(
+        'animation-name',
+        'none',
+      );
+      for (const width of [320, 540]) {
+        await page.setViewportSize({ width, height: 812 });
+        await expect(indicator).toHaveCSS('font-size', '14px');
+        const box = await indicator.boundingBox();
+        expect(box!.x).toBeGreaterThanOrEqual(16);
+        expect(box!.x + box!.width).toBeLessThanOrEqual(width - 16);
+      }
+      await page.screenshot({
+        path: `test-results/${app.name}-loading.png`,
+        fullPage: true,
+      });
+    } finally {
+      release();
+    }
+    await expect(page.locator(app.loaded)).toContainText('示例服务提供方');
+    await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
+  });
+}
 
 test('rem scales from 320px and caps at a 540px content width', async ({
   page,
@@ -50,6 +97,7 @@ test('configuration failure offers a working retry', async ({ page }) => {
   );
   await page.goto('/');
   await expect(page.getByRole('alert')).toContainText('加载失败');
+  await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
   await page.getByRole('button', { name: '重新加载', exact: true }).click();
   await expect(page.locator('footer')).toContainText('示例服务提供方');
 });
@@ -143,10 +191,13 @@ for (const legacyCase of [
     await expect(page.locator('footer')).toContainText('示例服务提供方');
     await page.getByLabel('你的称呼').fill('旧版浏览器');
     await page.getByRole('button', { name: '预览欢迎语' }).click();
-    await expect(page.getByRole('status')).toContainText('你好，旧版浏览器');
+    await expect(page.locator('.greeting')).toContainText('你好，旧版浏览器');
+    await expect(page.locator('.pkg-ui-toast')).toHaveText('欢迎语已生成');
+    await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
     await page.getByRole('link', { name: '阅读示例协议' }).click();
     await expect(page.locator('#display-name')).toHaveText('旧版浏览器');
     await expect(page.locator('#company-name')).toHaveText('示例服务提供方');
+    await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
     expect(loaded.filter((url) => url.includes('index-legacy-'))).toHaveLength(
       2,
     );

@@ -1,0 +1,59 @@
+/* The shared no-rem convention keeps these sizes independent of page scaling. */
+.pkg-ui-toast.no-rem,
+.pkg-ui-loading.no-rem {
+  position: fixed;
+  left: 50%;
+  box-sizing: border-box;
+  width: max-content;
+  max-width: calc(100% - 32px);
+  padding: 12px 18px;
+  border-radius: 8px;
+  background: rgba(24, 28, 36, 0.92);
+  color: #fff;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+  font-size: 14px;
+  font-weight: 400;
+  line-height: 1.5;
+  text-align: center;
+  white-space: pre-wrap;
+  word-wrap: break-word;
+  pointer-events: none;
+}
+
+.pkg-ui-toast.no-rem {
+  bottom: 64px;
+  z-index: 2001;
+  transform: translateX(-50%);
+}
+
+.pkg-ui-loading.no-rem {
+  top: 50%;
+  z-index: 2000;
+  min-width: 96px;
+  padding: 20px;
+  transform: translate(-50%, -50%);
+}
+
+.pkg-ui-loading.no-rem .pkg-ui-spinner {
+  display: block;
+  box-sizing: border-box;
+  width: 24px;
+  height: 24px;
+  margin: 0 auto 10px;
+  border: 2px solid rgba(255, 255, 255, 0.35);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: pkg-ui-spin 0.8s linear infinite;
+}
+
+@keyframes pkg-ui-spin {
+  to {
+    transform: rotate(360deg);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .pkg-ui-loading.no-rem .pkg-ui-spinner {
+    animation: none;
+  }
+}

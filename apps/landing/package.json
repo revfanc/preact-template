@@ -12,6 +12,7 @@
   "dependencies": {
     "@packages/api": "workspace:*",
     "@packages/request": "workspace:*",
+    "@packages/ui": "workspace:*",
     "preact": "10.29.8"
   }
 }

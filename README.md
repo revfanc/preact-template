@@ -11,6 +11,7 @@ apps/
 packages/
   api/           # @packages/api：公共业务接口、类型、配置数据校验
   request/       # @packages/request：请求、错误、超时、取消与浏览器适配
+  ui/            # @packages/ui：函数式 Toast / Loading，原生 DOM 实现
 tooling/         # 共享 Vite/PostCSS 配置、兼容目标
 tests/          # 请求与样式单元测试、浏览器测试
 scripts/        # 构建结果检查
@@ -113,6 +114,35 @@ const config = await api.getConfig();
 
 兼容请求层只承诺常规 JSON/文本请求，不提供 Streams、keepalive 等 fetch 高级特性；不自动重试写请求。框架之外的环境可使用 `@packages/request` 的核心入口，并按运行环境注入 fetch 与 AbortController。
 
+## Toast / Loading
+
+应用在 dependencies 中声明 `"@packages/ui": "workspace:*"`，即可直接调用。样式随包自动引入，不需要挂载组件或 Provider，也不依赖 Preact。
+
+```ts
+import { toast, loading } from '@packages/ui';
+
+toast('操作成功'); // 默认 2 秒后关闭，新提示替换旧提示
+toast('请稍后重试', { duration: 3000 });
+
+const closeToast = toast('持续提示', { duration: 0 });
+closeToast();
+
+const closeLoading = loading('正在提交…'); // 不传文案时显示“加载中…”
+try {
+  await submit(); // 应用自己的异步操作
+  toast('提交成功');
+} finally {
+  closeLoading();
+}
+```
+
+- 返回的关闭函数可以重复调用，只影响本次提示。组件卸载时也应关闭它持有的 Loading。
+- Loading 支持多个并发操作；显示最近一次仍在进行的操作文案，所有调用都关闭后才消失，不设置自动超时。
+- Toast 与 Loading 相互独立，只展示纯文本。两者都是非阻塞状态提示，不抢焦点、不锁滚动；提交防重等交互由业务自行处理。
+- 在浏览器 `document.body` 就绪后调用。UI 使用固定 px 尺寸，通过现有 `.no-rem` 约定避免落地页自动转 rem，让协议页与落地页的提示大小一致。
+
+落地页的欢迎语提交演示 Toast，两个应用的配置请求演示 Loading；请求包本身不自动触发 UI。
+
 ## 验证
 
 ```powershell
@@ -136,7 +166,7 @@ Remove-Item Env:BUILD_MODE
 
 ## 后续开发边界
 
-- 页面组件与状态留在各应用，公共接口留在 `packages/api`，网络行为留在 `packages/request`。
+- 页面组件与状态留在各应用，公共接口留在 `packages/api`，网络行为留在 `packages/request`，基础提示留在 `packages/ui`。
 - 当前落地页只有一个 CSR 入口，没有额外引入路由库；增加多路由时一起验证路由库和部署回退规则。
 - 协议内容只是模板占位，上线前替换为正式审定文本。动态字段通过 textContent 更新，不插入接口返回的 HTML。
 - Vitest 固定为 4.1 稳定版，TypeScript 固定在 ESLint 支持的 6.0 范围；升级工具时需运行完整检查。

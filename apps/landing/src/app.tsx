@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'preact/hooks';
 import type { SiteConfig } from '@packages/api';
 import { createBrowserAbortController } from '@packages/request/browser';
+import { loading, toast } from '@packages/ui';
 import { api } from './api';
 
 export function App() {
@@ -12,19 +13,23 @@ export function App() {
 
   useEffect(() => {
     const controller = createBrowserAbortController();
+    const closeLoading = loading('正在加载页面信息…');
     let active = true;
     setError(false);
     api.getConfig(controller.signal).then(
       (value) => {
+        closeLoading();
         if (active) setConfig(value);
       },
       () => {
+        closeLoading();
         if (active) setError(true);
       },
     );
     return () => {
       active = false;
       controller.abort();
+      closeLoading();
     };
   }, [attempt]);
 
@@ -70,6 +75,7 @@ export function App() {
                 ? `你好，${name.trim()}。欢迎开启新的体验。`
                 : '请输入称呼。',
             );
+            toast(name.trim() ? '欢迎语已生成' : '请输入称呼。');
           }}
         >
           <label for="name">你的称呼</label>

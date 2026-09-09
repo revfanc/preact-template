@@ -11,6 +11,7 @@
   },
   "dependencies": {
     "@packages/api": "workspace:*",
-    "@packages/request": "workspace:*"
+    "@packages/request": "workspace:*",
+    "@packages/ui": "workspace:*"
   }
 }
