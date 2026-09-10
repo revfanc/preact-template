@@ -1,6 +1,6 @@
 import { expect, it, vi } from 'vitest';
-import { createApi } from '../packages/api/src/index';
-import { createRequestClient } from '../packages/request/src/index';
+import { createApi } from './fixture/src/api/fixture-api';
+import { createRequestClient } from '@packages/request';
 
 it('uses the configured endpoint and rejects malformed configuration', async () => {
   const config = {

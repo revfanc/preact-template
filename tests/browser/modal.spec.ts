@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.use({ baseURL: 'http://127.0.0.1:4176/landing/' });
+
 test('modal stack retains state, traps focus and restores the previous layer and page', async ({
   page,
 }) => {

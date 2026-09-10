@@ -13,7 +13,7 @@ test('dev startup paints before scripts and clears loading after routing', async
     await route.continue();
   });
   try {
-    await page.goto('/landing/browser', { waitUntil: 'commit' });
+    await page.goto('/landing/', { waitUntil: 'commit' });
     await expect
       .poll(() =>
         page.evaluate(() => performance.getEntriesByName('first-paint').length),
@@ -29,8 +29,6 @@ test('dev startup paints before scripts and clears loading after routing', async
   } finally {
     release();
   }
-  await expect(
-    page.getByRole('heading', { name: '返回拦截体验' }),
-  ).toBeVisible();
+  await expect(page.getByRole('main', { name: '落地页' })).toBeVisible();
   await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
 });

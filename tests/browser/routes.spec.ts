@@ -1,5 +1,7 @@
 import { expect, test } from '@playwright/test';
 
+test.use({ baseURL: 'http://127.0.0.1:4176/landing/' });
+
 test('file routes lazy-load and navigate using browser history without reloading the document', async ({
   page,
 }) => {
@@ -201,7 +203,7 @@ test('disabled JavaScript shows guidance instead of an endless startup animation
   const context = await browser.newContext({ javaScriptEnabled: false });
   try {
     const page = await context.newPage();
-    await page.goto('http://127.0.0.1:4173/landing/');
+    await page.goto('http://127.0.0.1:4176/landing/');
     expect(await page.locator('noscript').textContent()).toContain(
       '请启用 JavaScript',
     );

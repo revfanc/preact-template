@@ -94,6 +94,6 @@ window.addEventListener('pageshow', (event) => {
 
 沿用仓库 Chrome 49、iOS 10 / Safari 10 编译目标；包不自行安装 Promise 等 polyfill，由应用的 legacy 构建提供。现代 Chromium 的脚本 History 测试、强制 legacy 入口和 ES2015 语法检查不能替代目标旧设备或真实工具栏返回测试。
 
-独立验收页面放在本包 `test/fixture`，只用于测试，不进入 Landing 或 Agreement 的产物。`pnpm test:browser` 自动构建它并在 4175 端口运行。设置 `BUILD_MODE=prod` 可切换生产模式的验收构建。
+独立验收页面放在本包 `test/fixture`，只用于测试，不进入 Landing 或 Agreement 的产物。在仓库根目录执行 `pnpm test:browser` 会自动构建它并在 4175 端口运行，同时运行正式应用及 Landing 交互夹具的验收。正式应用需提前构建，端口及 `BUILD_MODE=prod` 的使用方法见[根 README](../../README.md)。Landing 正式页面没有自动接入返回拦截，业务按需注册；多层交互演示仅保留在[测试夹具](../../apps/landing/test/README.md)。
 
 参考：[History go](https://developer.mozilla.org/en-US/docs/Web/API/History/go)、[popstate](https://developer.mozilla.org/en-US/docs/Web/API/Window/popstate_event)、[Chromium 历史干预](https://chromium.googlesource.com/chromium/src/+/main/docs/history_manipulation_intervention.md)。

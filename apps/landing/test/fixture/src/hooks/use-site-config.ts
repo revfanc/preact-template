@@ -1,5 +1,5 @@
 import { useLayoutEffect, useState } from 'preact/hooks';
-import type { SiteConfig } from '@packages/api';
+import type { SiteConfig } from '../api/fixture-api';
 import { createBrowserAbortController } from '@packages/request/browser';
 import { loading } from '@packages/feedback';
 import { api } from '../api';

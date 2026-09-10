@@ -3,6 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
+    "test:build": "vite build --config test/vite.config.ts --mode test",
     "dev": "vite --mode test",
     "build:test": "vite build --mode test",
     "build:prod": "vite build --mode prod",
@@ -11,7 +12,6 @@
   },
   "dependencies": {
     "@packages/browser": "workspace:*",
-    "@packages/api": "workspace:*",
     "@packages/components": "workspace:*",
     "@packages/request": "workspace:*",
     "@packages/feedback": "workspace:*",

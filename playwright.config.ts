@@ -18,6 +18,12 @@ export default defineConfig({
   },
   webServer: [
     {
+      command:
+        'node node_modules/vite/bin/vite.js preview --config apps/landing/test/vite.config.ts --mode test',
+      url: 'http://127.0.0.1:4176/landing/',
+      reuseExistingServer: false,
+    },
+    {
       command: `node node_modules/vite/bin/vite.js preview --config packages/browser/test/vite.config.ts --mode ${mode}`,
       url: 'http://127.0.0.1:4175/',
       reuseExistingServer: false,

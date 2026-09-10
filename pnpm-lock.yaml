@@ -74,21 +74,9 @@ importers:
 
   apps/agreement:
     dependencies:
-      '@packages/api':
-        specifier: workspace:*
-        version: link:../../packages/api
-      '@packages/feedback':
-        specifier: workspace:*
-        version: link:../../packages/feedback
-      '@packages/request':
-        specifier: workspace:*
-        version: link:../../packages/request
       astro:
         specifier: 7.3.2
         version: 7.3.2(@emnapi/core@1.11.1)(@emnapi/runtime@1.11.3)(@types/node@24.13.3)(terser@5.51.2)(yaml@2.9.0)
-      core-js:
-        specifier: 3.50.0
-        version: 3.50.0
     devDependencies:
       '@astrojs/check':
         specifier: 0.9.10
@@ -102,9 +90,6 @@ importers:
 
   apps/landing:
     dependencies:
-      '@packages/api':
-        specifier: workspace:*
-        version: link:../../packages/api
       '@packages/browser':
         specifier: workspace:*
         version: link:../../packages/browser

@@ -21,7 +21,7 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:browser": "pnpm --filter @packages/browser test:build && playwright test",
+    "test:browser": "pnpm --filter @packages/browser test:build && pnpm --filter @apps/landing test:build && playwright test",
     "test:browser:dev": "playwright test --config playwright.dev.config.ts",
     "check:build": "node scripts/check-build.mjs"
   },

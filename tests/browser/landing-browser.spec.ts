@@ -1,5 +1,7 @@
 import { chromium, expect, test } from '@playwright/test';
 
+test.use({ baseURL: 'http://127.0.0.1:4176/landing/' });
+
 test('landing demonstrates stacked Back handlers and done stops on the demo page', async ({
   page,
 }) => {
@@ -71,6 +73,7 @@ test('landing Back demo runs through the legacy entry without native Promise', a
     const system = (
       window as unknown as { System: { import(url: string): Promise<unknown> } }
     ).System;
+
     await system.import(
       document.getElementById('vite-legacy-entry')!.getAttribute('data-src')!,
     );
@@ -89,7 +92,7 @@ test('BFCache restores demo registrations and closes its old confirmation', asyn
   });
   try {
     const page = await browser.newPage();
-    await page.goto('http://127.0.0.1:4173/landing/browser');
+    await page.goto('http://127.0.0.1:4176/landing/browser');
     await page.evaluate(() => {
       window.addEventListener('pageshow', (event) => {
         document.body.dataset.cached = String(event.persisted);

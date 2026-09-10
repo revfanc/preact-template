@@ -11,11 +11,7 @@
     "check": "cross-env AGREEMENT_MODE=test astro check"
   },
   "dependencies": {
-    "@packages/api": "workspace:*",
-    "@packages/request": "workspace:*",
-    "@packages/feedback": "workspace:*",
-    "astro": "7.3.2",
-    "core-js": "3.50.0"
+    "astro": "7.3.2"
   },
   "devDependencies": {
     "@astrojs/check": "0.9.10",
