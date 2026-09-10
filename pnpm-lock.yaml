@@ -114,6 +114,9 @@ importers:
       '@packages/api':
         specifier: workspace:*
         version: link:../../packages/api
+      '@packages/browser':
+        specifier: workspace:*
+        version: link:../../packages/browser
       '@packages/components':
         specifier: workspace:*
         version: link:../../packages/components

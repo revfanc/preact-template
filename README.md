@@ -22,7 +22,7 @@ scripts/        # 构建结果检查
 
 两个应用分别构建、分别部署。公共包直接导出 TypeScript 源码，由使用它的应用编译；不发布到 npm。`components` 通过 peer dependency 使用应用的 Preact；`api`、`request` 与 `feedback` 的 Toast/Loading 入口不依赖 Preact；只有 `@packages/feedback/modal` 需要 Preact。
 
-`@packages/browser` 提供原生 History 返回拦截：同页注册共用一条保护记录，按栈顶分发，`done()` 异步放行并停在当前页的基础记录。刷新复用保护记录，允许截断前进链。当前应用尚未自动接入，详见 [Browser 接入与边界](packages/browser/README.md)。浏览器测试会额外在 4175 端口启动独立验收页面。
+`@packages/browser` 提供原生 History 返回拦截：同页注册共用一条保护记录，按栈顶分发，`done()` 异步放行并停在当前页的基础记录。刷新复用保护记录，允许截断前进链。Landing 首页的“体验返回拦截”进入 `/landing/browser`，演示添加/移除注册、栈顶弹窗、放行和异步注销后导航；普通首页及其他页面不自动注册。详见 [Browser 接入与边界](packages/browser/README.md)。浏览器测试会额外在 4175 端口启动独立验收页面。
 
 ## 启动
 

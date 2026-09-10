@@ -84,6 +84,9 @@ export default function HomePage() {
         </form>
       </section>
       <footer>
+        <p>
+          <a href={`${import.meta.env.BASE_URL}browser`}>体验返回拦截</a>
+        </p>
         <a href={agreementURL} onClick={(event) => event.stopPropagation()}>
           阅读示例协议 <span aria-hidden="true">↗</span>
         </a>

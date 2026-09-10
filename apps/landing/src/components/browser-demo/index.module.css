@@ -1,0 +1,96 @@
+.page {
+  max-width: 375px;
+  margin: 0 auto;
+  padding: 24px;
+}
+.page header {
+  padding: 16px 0 24px;
+}
+.page h1 {
+  margin: 0 0 16px;
+  font-size: 28px;
+  line-height: 1.4;
+}
+.page h2 {
+  margin: 0 0 8px;
+  font-size: 20px;
+}
+.page p {
+  margin: 0;
+  line-height: 1.8;
+  color: var(--muted);
+}
+.page .eyebrow {
+  margin-bottom: 12px;
+  font-size: 14px;
+  color: var(--primary);
+}
+.panel {
+  padding: 20px;
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+.hint {
+  font-size: 13px;
+}
+.layers {
+  margin: 20px 0;
+  padding: 0;
+  list-style: none;
+}
+.layers li {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 12px 0;
+  border-bottom: 1px solid var(--border);
+}
+.layers li span {
+  font-size: 14px;
+}
+.layers small {
+  margin-left: 4px;
+  color: var(--primary);
+  font-size: 12px;
+}
+.page button {
+  padding: 8px 12px;
+  min-height: 44px;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  background: var(--surface);
+  color: var(--primary);
+  font-size: 14px;
+  cursor: pointer;
+}
+.page button:disabled {
+  opacity: 0.5;
+  cursor: default;
+}
+.page button:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}
+.actions {
+  display: flex;
+  flex-direction: column;
+  margin-top: 20px;
+}
+.actions button + button {
+  margin-top: 12px;
+}
+.actions .primary {
+  background: var(--primary);
+  color: var(--inverse);
+}
+.panel .status {
+  margin-top: 20px;
+  padding-top: 16px;
+  border-top: 1px solid var(--border);
+  font-size: 13px;
+}
+.page .note {
+  margin: 20px 0;
+  font-size: 13px;
+}
