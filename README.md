@@ -404,7 +404,7 @@ try {
 
 `pnpm lint` 使用 Oxlint，`pnpm lint:fix` 执行自动修复。使用内置默认插件和 `correctness: error` 规则类别，仅补充五项项目规则：禁止 `debugger`、禁止 `var`、优先 `const`、限制 TypeScript 抑制注释、禁止显式 `any`。保留环境声明与产物忽略目录；规则集以 Oxlint 内置类别为基础，不再逐条复刻 ESLint 推荐配置，也不启用整个实验性或风格类别。TypeScript 类型检查仍由 `tsc` 负责；Astro 模板由 `astro check` 检查，Oxlint 只检查其支持的脚本部分。
 
-格式化统一使用 Prettier，包含 `prettier-plugin-astro`。编辑器如需实时 lint 提示，应启用 Oxc 扩展，并停用本工作区的 ESLint 扩展；保存时格式化继续使用 Prettier。
+格式化统一使用 Prettier，包含 `prettier-plugin-astro`。使用 VS Code 打开仓库根目录，安装 `.vscode/extensions.json` 推荐的 Oxc、Prettier 和 Astro 扩展。项目设置已启用 Oxc 实时检查、手动保存时安全修复和 Prettier 保存时格式化（含 `.astro`），关闭本工作区的 ESLint 检查及 Oxfmt。首次提示时选择工作区 TypeScript 版本；命令行与编辑器共用仓库中的检查和格式化配置。
 
 ```powershell
 pnpm typecheck
