@@ -47,11 +47,20 @@ export function useBrowserDemo() {
         try {
           const allow = await task;
           if (!mounted.current || epoch.current !== current) return;
-          if (allow) await done();
+          if (allow) {
+            await done();
+            if (!mounted.current || epoch.current !== current) return;
+            entries.current = entries.current.filter(
+              (entry) => entry.id !== id,
+            );
+            publish();
+          }
           if (mounted.current && epoch.current === current) {
             setStatus(
               allow
-                ? '已放行本次返回，仍停留本页；再次返回将离开。'
+                ? entries.current.length
+                  ? `第 ${id} 层已完成；下次返回执行下一层。`
+                  : '全部拦截已完成；再次返回将离开。'
                 : `第 ${id} 层保留了本次返回。`,
             );
           }

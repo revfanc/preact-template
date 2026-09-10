@@ -26,7 +26,9 @@ export function BackConfirm({ layer, closing, resolve }: Props) {
     >
       <p class={styles.eyebrow}>检测到返回操作</p>
       <h2>第 {layer} 层拦截</h2>
-      <p>当前只执行最上层的回调。放行后仍停留在本页，再次返回才会离开。</p>
+      <p>
+        完成后移除当前层，下次返回处理下一层。全部完成后，再次返回才会离开。
+      </p>
       <div class={styles.actions}>
         <button type="button" onClick={() => resolve(false)}>
           留在页面
@@ -36,7 +38,7 @@ export function BackConfirm({ layer, closing, resolve }: Props) {
           class={styles.primary}
           onClick={() => resolve(true)}
         >
-          放行本次返回
+          完成当前层
         </button>
       </div>
     </section>

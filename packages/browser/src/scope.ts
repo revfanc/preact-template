@@ -51,7 +51,7 @@ export class Scope {
         'Wait for the last unregister() before registering again.',
       );
     this.invalidateAttempt();
-    // A new registration after a completed done() starts a new protection cycle.
+    // Re-establish protection if the current owned entry is at base.
     if (!this.movement && readMarker()?.kind === 'base') {
       this.marker = protect();
       this.position = 'guard';
@@ -134,10 +134,13 @@ export class Scope {
       void this.moveTo('guard')
         .then(() => {
           check();
-          return this.moveTo('base');
+          // Commit completion only after restoration: consume this registration,
+          // and let final cleanup release the pair when no lower layer remains.
+          this.attempt = undefined;
+          attempt.owner.cleanup = completion.promise;
+          return this.remove(attempt.owner);
         })
         .then(() => {
-          check();
           completion.resolve();
           this.finishAttempt();
         })

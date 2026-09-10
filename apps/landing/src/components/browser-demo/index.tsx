@@ -72,7 +72,7 @@ export function BrowserDemo() {
         </p>
       </section>
       <p class={styles.note}>
-        选择放行后仍停留本页，再次返回才离开。刷新页面会重新注册一层。
+        每次完成一层，全部完成后再次返回才离开。刷新页面会重新注册一层。
       </p>
       <button
         type="button"

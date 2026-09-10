@@ -87,12 +87,12 @@ it('shares one guard across registrations and removes exact stack entries', asyn
   expect(errors).not.toHaveBeenCalled();
 });
 
-it('waits for restoration then release, and does not call a lower handler', async () => {
+it('done consumes the top after restoration and leaves the lower handler for the next Back', async () => {
   const lower = vi.fn();
   register(lower, options);
   let done!: Done;
   let result!: Promise<void>;
-  register((value) => {
+  const off = register((value) => {
     done = value;
     result = done();
     expect(done()).toBe(result);
@@ -104,14 +104,77 @@ it('waits for restoration then release, and does not call a lower handler', asyn
   expect(queue).toEqual([1]);
   expect(resolved).not.toHaveBeenCalled();
   await complete();
-  expect(queue).toEqual([0]);
-  expect(resolved).not.toHaveBeenCalled();
-  await complete();
   await result;
   expect(resolved).toHaveBeenCalledOnce();
-  expect(position).toBe(0);
+  expect(position).toBe(1);
   expect(lower).not.toHaveBeenCalled();
   expect(queue).toEqual([]);
+  expect(off()).toBe(result);
+  land(0);
+  expect(lower).toHaveBeenCalledOnce();
+  await complete();
+});
+
+it('completes three layers in LIFO order and releases only the last layer', async () => {
+  const calls: number[] = [];
+  const handles = [1, 2, 3].map((id) =>
+    register((done) => {
+      calls.push(id);
+      return done();
+    }, options),
+  );
+  for (const id of [3, 2, 1]) {
+    land(0);
+    await complete();
+    if (id === 1) {
+      expect(queue).toEqual([0]);
+      await complete();
+    }
+    expect(queue).toEqual([]);
+    expect(position).toBe(id === 1 ? 0 : 1);
+    await handles[id - 1]!();
+  }
+  expect(calls).toEqual([3, 2, 1]);
+  expect(history.go).toHaveBeenCalledTimes(4);
+  expect(errors).not.toHaveBeenCalled();
+});
+
+it('a new registration revokes pending done before restoration without consuming the old layer', async () => {
+  let decision!: Promise<unknown>;
+  const original = vi.fn((done: Done) => {
+    decision = done().catch((error: unknown) => error);
+    return decision.then(() => {});
+  });
+  register(original, options);
+  land(0);
+  const off = register(() => {}, options);
+  await complete();
+  expect(await decision).toMatchObject({ name: 'AbortError' });
+  expect(position).toBe(1);
+  await off();
+  land(0);
+  await drain();
+  expect(original).toHaveBeenCalledTimes(2);
+  expect(position).toBe(0);
+});
+
+it('last done and unregister share release timeout and block registration until cleanup ends', async () => {
+  let decision!: Promise<void>;
+  const off = register((done) => {
+    decision = done();
+    return decision;
+  }, options);
+  land(0);
+  await complete();
+  expect(off()).toBe(decision);
+  expect(() => register(() => {}, options)).toThrow(
+    'Wait for the last unregister',
+  );
+  const outcome = decision.catch((error: unknown) => error);
+  await vi.advanceTimersByTimeAsync(2000);
+  expect(await outcome).toMatchObject({ name: 'TimeoutError' });
+  expect(errors).toHaveBeenCalledOnce();
+  expect(queue).toEqual([0]);
 });
 
 it('rejects a done captured by a finished callback', async () => {
@@ -251,14 +314,15 @@ it('last unregister during release shares the outstanding go(-1)', async () => {
   expect(queue).toEqual([0]);
   const outcome = decision.catch((error: unknown) => error);
   const cleanup = off();
+  expect(cleanup).toBe(decision);
   expect(queue).toEqual([0]);
   await complete();
   await cleanup;
-  expect(await outcome).toMatchObject({ name: 'AbortError' });
+  expect(await outcome).toBeUndefined();
   expect(queue).toEqual([]);
 });
 
-it('done leaves registrations dormant at base until forward or a new registration', async () => {
+it('done removes the final registration so Forward and Back cannot revive it', async () => {
   const handler = vi.fn((done: Done) => done());
   const off = register(handler, options);
   land(0);
@@ -268,7 +332,7 @@ it('done leaves registrations dormant at base until forward or a new registratio
   expect(handler).toHaveBeenCalledOnce();
   land(0);
   await drain();
-  expect(handler).toHaveBeenCalledTimes(2);
+  expect(handler).toHaveBeenCalledOnce();
   await off();
   expect(queue).toEqual([]);
 });

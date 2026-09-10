@@ -13,7 +13,7 @@ async function forward(page: Page) {
   await page.evaluate(() => history.forward());
 }
 
-test('native Back uses the registration stack and done stops at base', async ({
+test('native Back consumes the top and keeps the lower layer protected', async ({
   page,
 }) => {
   await page.goto(origin);
@@ -37,10 +37,8 @@ test('native Back uses the registration stack and done stops at base', async ({
     await page.evaluate(() => window.browserFixture.status().calls),
   ).toEqual(['upper']);
   await page.evaluate(() => window.browserFixture.allow());
-  expect(await kind(page)).toBe('base');
+  expect(await kind(page)).toBe('guard');
   await page.evaluate(() => window.browserFixture.remove('upper'));
-  await forward(page);
-  await expect.poll(() => kind(page)).toBe('guard');
   await back(page);
   await expect
     .poll(() => page.evaluate(() => window.browserFixture.status().calls))

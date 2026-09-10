@@ -28,12 +28,17 @@ test('landing demonstrates stacked Back handlers and done stops on the demo page
   await confirm.getByRole('button', { name: '留在页面' }).click();
   await expect(confirm).toHaveCount(0);
   await expect(page.getByRole('status')).toContainText('第 2 层保留了本次返回');
-  await page.getByRole('button', { name: '移除第 2 层' }).click();
+  await page.getByRole('button', { name: '模拟返回' }).click();
+  await confirm.getByRole('button', { name: '完成当前层' }).click();
+  await expect(page.getByRole('status')).toContainText('第 2 层已完成');
+  await expect(page.getByText('已注册 1 层')).toBeVisible();
+  await expect(page.getByRole('dialog')).toHaveCount(0);
   await page.evaluate(() => history.back());
   const lower = page.getByRole('dialog', { name: '第 1 层拦截' });
   await expect(lower).toBeVisible();
-  await lower.getByRole('button', { name: '放行本次返回' }).click();
-  await expect(page.getByRole('status')).toContainText('已放行本次返回');
+  await lower.getByRole('button', { name: '完成当前层' }).click();
+  await expect(page.getByRole('status')).toContainText('全部拦截已完成');
+  await expect(page.getByText('已注册 0 层')).toBeVisible();
   await expect(page).toHaveURL(/\/landing\/browser$/);
   await page.evaluate(() => history.back());
   await expect(page.getByLabel('你的称呼')).toBeVisible();
@@ -72,8 +77,8 @@ test('landing Back demo runs through the legacy entry without native Promise', a
   });
   await expect(page.getByText('已注册 1 层')).toBeVisible();
   await page.getByRole('button', { name: '模拟返回' }).click();
-  await page.getByRole('button', { name: '放行本次返回' }).click();
-  await expect(page.getByRole('status')).toContainText('已放行本次返回');
+  await page.getByRole('button', { name: '完成当前层' }).click();
+  await expect(page.getByRole('status')).toContainText('全部拦截已完成');
   expect(errors).toEqual([]);
 });
 
@@ -104,8 +109,15 @@ test('BFCache restores demo registrations and closes its old confirmation', asyn
     await expect(
       page.getByRole('dialog', { name: '第 2 层拦截' }),
     ).toBeVisible();
-    await page.getByRole('button', { name: '放行本次返回' }).click();
-    await expect(page.getByRole('status')).toContainText('已放行本次返回');
+    await page.getByRole('button', { name: '完成当前层' }).click();
+    await expect(page.getByRole('status')).toContainText('第 2 层已完成');
+    await expect(page.getByText('已注册 1 层')).toBeVisible();
+    await page.getByRole('button', { name: '模拟返回' }).click();
+    await expect(
+      page.getByRole('dialog', { name: '第 1 层拦截' }),
+    ).toBeVisible();
+    await page.getByRole('button', { name: '完成当前层' }).click();
+    await expect(page.getByRole('status')).toContainText('全部拦截已完成');
   } finally {
     await browser.close();
   }
