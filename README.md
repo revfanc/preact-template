@@ -402,6 +402,10 @@ try {
 
 ## 验证
 
+`pnpm lint` 使用 Oxlint，`pnpm lint:fix` 执行自动修复。使用内置默认插件和 `correctness: error` 规则类别，仅补充五项项目规则：禁止 `debugger`、禁止 `var`、优先 `const`、限制 TypeScript 抑制注释、禁止显式 `any`。保留环境声明与产物忽略目录；规则集以 Oxlint 内置类别为基础，不再逐条复刻 ESLint 推荐配置，也不启用整个实验性或风格类别。TypeScript 类型检查仍由 `tsc` 负责；Astro 模板由 `astro check` 检查，Oxlint 只检查其支持的脚本部分。
+
+格式化统一使用 Prettier，包含 `prettier-plugin-astro`。编辑器如需实时 lint 提示，应启用 Oxc 扩展，并停用本工作区的 ESLint 扩展；保存时格式化继续使用 Prettier。
+
 ```powershell
 pnpm typecheck
 pnpm lint
@@ -429,6 +433,6 @@ Remove-Item Env:BUILD_MODE
 - 页面组件与状态留在各应用，公共接口留在 `packages/api`，网络行为留在 `packages/request`，基础提示留在 `packages/feedback`，跨应用复用的 Preact 展示组件留在 `packages/components`。
 - 落地页路由及页面放在应用内，`packages/api` 与 `packages/request` 不依赖路由；协议项目保持静态 HTML。
 - 协议内容只是模板占位，上线前替换为正式审定文本。动态字段通过 textContent 更新，不插入接口返回的 HTML。
-- Vitest 固定为 4.1 稳定版，TypeScript 固定在 ESLint 支持的 6.0 范围；升级工具时需运行完整检查。
+- Vitest 固定为 4.1 稳定版，TypeScript 固定在 6.0 范围；升级工具时需运行完整检查。
 
 参考：[Preact 浏览器支持](https://preactjs.com/about/browser-support/)、[Vite legacy 插件](https://github.com/vitejs/vite/tree/main/packages/plugin-legacy)、[fetch polyfill](https://github.com/JakeChampion/fetch)、[px 转 rem](https://github.com/cuth/postcss-pxtorem)。

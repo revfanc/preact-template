@@ -1,0 +1,33 @@
+{
+  "$schema": "./node_modules/oxlint/configuration_schema.json",
+  "categories": {
+    "correctness": "error"
+  },
+  "env": {
+    "browser": true,
+    "node": true
+  },
+  "ignorePatterns": [
+    "**/dist/**",
+    "**/.astro/**",
+    "apps/agreement/public/runtime/**",
+    "**/node_modules/**",
+    "test-results/**",
+    "playwright-report/**"
+  ],
+  "rules": {
+    "no-debugger": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "typescript/ban-ts-comment": "error",
+    "typescript/no-explicit-any": "error"
+  },
+  "overrides": [
+    {
+      "globals": {
+        "Astro": "readonly"
+      },
+      "files": ["**/*.astro"]
+    }
+  ]
+}
