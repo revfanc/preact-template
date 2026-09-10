@@ -153,6 +153,48 @@ test('initial HTML shows animated dots before application scripts load and hands
   );
 });
 
+test('initial loading paints while external CSS and scripts are still pending', async ({
+  page,
+}) => {
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  let completed = 0;
+  page.on('requestfinished', (request) => {
+    if (['script', 'stylesheet'].includes(request.resourceType())) completed++;
+  });
+  await page.route('**/*', async (route) => {
+    if (['script', 'stylesheet'].includes(route.request().resourceType()))
+      await gate;
+    await route.continue();
+  });
+  try {
+    await page.goto('/landing/browser', { waitUntil: 'commit' });
+    // DOM visibility alone does not prove that the browser has painted pixels.
+    await expect
+      .poll(
+        () =>
+          page.evaluate(
+            () => performance.getEntriesByName('first-paint').length,
+          ),
+        { timeout: 3000 },
+      )
+      .toBe(1);
+    expect(completed).toBe(0);
+    await expect(
+      page.getByRole('status', { name: '正在加载页面' }),
+    ).toBeVisible();
+    await page.screenshot({ path: 'test-results/initial-loading-paint.png' });
+  } finally {
+    release();
+  }
+  await expect(
+    page.getByRole('heading', { name: '返回拦截体验' }),
+  ).toBeVisible();
+  await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
+});
+
 test('disabled JavaScript shows guidance instead of an endless startup animation', async ({
   browser,
 }) => {

@@ -192,6 +192,8 @@ const config = await api.getConfig();
 
 ## landing 目录约定
 
+`vite.config.ts` 管理 Landing 的环境、端口、兼容目标和路由校验；`build/html.ts` 统一处理启动 HTML。正式构建直接复用并内联 Vite 已编译的入口 CSS，不再单独编译、重复插入 loading 样式；开发环境在脚本执行前单独编译启动样式。主题、rem 和浏览器目标继续复用 `tooling/postcss.ts` 与 `tooling/compatibility.ts`。
+
 ```text
 apps/landing/src/
   main.tsx                      # HTML 脚本入口，先加载兼容处理
@@ -229,7 +231,7 @@ apps/landing/src/
 
 路由加载通过 `useRouteLoading` 调用公共 `loading({ mask: true })`，不再挂载加载组件。等待期间路由内容保持挂载但隐藏，完成后恢复显示，失败时进入 `PageError` 错误重试页面。配置请求在 `useLayoutEffect` 中注册自己的 loading 句柄，早于路由释放句柄，连续复用同一组圆点。
 
-首屏静态结构统一维护在 `packages/feedback/src/notice/markup.ts`，由运行时和 Vite 构建配置复用，不再提供独立的 page-loading 入口。共用样式从 `@packages/feedback/style.css` 导出，不依赖 Preact。Vite 将结构放在 `#app` 外、样式内联到 `<head>`，无需等待应用 JavaScript 即可显示圆点。入口调用 `loading()` 接管已有节点，路由与请求继续持有各自句柄，避免重复创建和动画重启。HTML 本身仍需先到达浏览器，这不会加快网络下载。禁用 JavaScript 时隐藏动画并显示启用提示。
+首屏静态结构统一维护在 `packages/feedback/src/notice/markup.ts`，由运行时和 Vite 构建配置复用，不再提供独立的 page-loading 入口。共用样式从 `@packages/feedback/style.css` 导出，不依赖 Preact。Vite 将结构放在 `#app` 外、样式内联到 `<head>`，无需等待应用 JavaScript 即可显示圆点。正式构建也将入口 CSS 内联，避免页头外部样式阻塞圆点首次绘制；路由组件 CSS 继续按需加载。入口调用 `loading()` 接管已有节点，路由与请求继续持有各自句柄，避免重复创建和动画重启。HTML 本身仍需先到达浏览器，这不会加快网络下载。禁用 JavaScript 时隐藏动画并显示启用提示。
 
 | pages 下的文件                    | 路径                             | 说明                                    |
 | --------------------------------- | -------------------------------- | --------------------------------------- |

@@ -48,6 +48,11 @@ function checkTheme(css, app) {
     'landing: initial HTML loading indicator missing',
   );
   const assets = await readdir(path.join(directory, 'assets'));
+  assert(
+    html.includes('data-entry-css') &&
+      !/<link\b[^>]*\brel="stylesheet"/.test(html),
+    'landing: entry CSS must not block initial loading paint',
+  );
   const legacy = assets.filter(
     (name) => name.includes('-legacy-') && name.endsWith('.js'),
   );
@@ -59,6 +64,15 @@ function checkTheme(css, app) {
   const inlineCss = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)]
     .map((match) => match[1])
     .join('\n');
+  let loadingAnimations = 0;
+  postcss.parse(inlineCss).walkAtRules('keyframes', (rule) => {
+    if (rule.params === 'pkg-ui-page-bounce') loadingAnimations++;
+  });
+  assert.equal(
+    loadingAnimations,
+    1,
+    'landing: startup CSS must not be duplicated',
+  );
   const css =
     inlineCss +
     (
