@@ -11,6 +11,7 @@ apps/
 packages/
   api/           # @packages/api：公共业务接口、类型、配置数据校验
   request/       # @packages/request：请求、错误、超时、取消与浏览器适配
+  browser/       # @packages/browser：当前页面的 History 返回拦截与回调栈
   feedback/      # @packages/feedback：函数式 Toast / Loading；独立入口提供 Preact Modal
   components/    # @packages/components：跨应用复用的 Preact 展示组件
   theme/         # @packages/theme：标准 CSS 主题默认值，构建时使用
@@ -20,6 +21,8 @@ scripts/        # 构建结果检查
 ```
 
 两个应用分别构建、分别部署。公共包直接导出 TypeScript 源码，由使用它的应用编译；不发布到 npm。`components` 通过 peer dependency 使用应用的 Preact；`api`、`request` 与 `feedback` 的 Toast/Loading 入口不依赖 Preact；只有 `@packages/feedback/modal` 需要 Preact。
+
+`@packages/browser` 提供原生 History 返回拦截：同页注册共用一条保护记录，按栈顶分发，`done()` 异步放行并停在当前页的基础记录。刷新复用保护记录，允许截断前进链。当前应用尚未自动接入，详见 [Browser 接入与边界](packages/browser/README.md)。浏览器测试会额外在 4175 端口启动独立验收页面。
 
 ## 启动
 

@@ -1,0 +1,12 @@
+{
+  "name": "@packages/browser",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    ".": "./src/index.ts"
+  },
+  "scripts": {
+    "test:build": "vite build --config test/vite.config.ts && node test/check-build.mjs"
+  }
+}
