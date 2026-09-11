@@ -2,9 +2,9 @@ import { useLayoutEffect, useRef } from 'preact/hooks';
 import {
   modal,
   ModalCancelledError,
+  toast,
   type ModalPromise,
-} from '@packages/feedback/modal';
-import { toast } from '@packages/feedback';
+} from '@packages/feedback';
 import { NameModal } from '../components/name-modal';
 
 export function useNameModal(onConfirm: (value: string) => void) {

@@ -5,7 +5,7 @@ import {
   modal,
   ModalCancelledError,
   type ModalPromise,
-} from '@packages/feedback/modal';
+} from '@packages/feedback';
 import { BackConfirm } from '../components/back-confirm';
 
 type Layer = { id: number; unregister: Unregister };

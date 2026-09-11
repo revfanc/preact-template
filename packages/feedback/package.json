@@ -5,16 +5,10 @@
   "type": "module",
   "exports": {
     ".": "./src/index.ts",
-    "./style.css": "./src/notice/style.css",
-    "./modal": "./src/modal/index.tsx"
+    "./style.css": "./src/notice/style.css"
   },
   "peerDependencies": {
     "preact": "^10.29.8"
-  },
-  "peerDependenciesMeta": {
-    "preact": {
-      "optional": true
-    }
   },
   "devDependencies": {
     "preact": "10.29.8"

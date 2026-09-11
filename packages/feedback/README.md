@@ -1,8 +1,10 @@
 # @packages/feedback
 
+Toast、Loading、Modal 及其公开类型统一从 `@packages/feedback` 导入，不再提供 `/modal` 子入口。应用需安装满足 peerDependencies 的 Preact 10；提示的 DOM 实现本身不使用 Preact，但统一入口包含 Modal 的 Preact 模块依赖。
+
 ## Toast / Loading
 
-应用在 dependencies 中声明 `"@packages/feedback": "workspace:*"`，即可直接调用。样式随包自动引入，不需要挂载组件或 Provider，也不依赖 Preact。
+应用在 dependencies 中声明 `"@packages/feedback": "workspace:*"` 并满足上述 Preact 依赖，即可直接调用。样式随包自动引入，不需要手动挂载组件或 Provider。
 
 ```ts
 import { toast, loading } from '@packages/feedback';
@@ -31,10 +33,10 @@ try {
 
 ## 函数式 Modal
 
-从独立入口 `@packages/feedback/modal` 导入。使用方需要 Preact 10；只使用 Toast/Loading 的应用无需加载 Modal 渲染代码。下方的 `NameForm` 由调用方实现，不是包内组件。
+从主入口 `@packages/feedback` 导入 `modal`、`ModalCancelledError`，以及 `ModalCancelReason`、`ModalControls`、`ModalOptions`、`ModalPromise` 类型。下方的 `NameForm` 由调用方实现，不是包内组件。
 
 ```tsx
-import { modal, ModalCancelledError } from '@packages/feedback/modal';
+import { modal, ModalCancelledError } from '@packages/feedback';
 
 const task = modal<string>({
   position: 'center',

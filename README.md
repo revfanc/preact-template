@@ -109,7 +109,7 @@ tooling/compatibility.ts 集中管理 Chrome 49、iOS 10 / Safari 10 构建目�
 - request：createRequestClient；浏览器使用 @packages/request/browser 的兼容客户端。支持 JSON、文本、超时、取消及明确错误类型，不自动弹 Toast。
 - api：按真实业务逐项增加接口，客户端由应用注入，不依赖页面或全局 store。
 - browser：register(handler) 返回精确注销函数，done 消费当前层；主动修改 History 前等待注销。详情见 [Browser 文档](packages/browser/README.md)。
-- feedback：Toast 与 Loading 共用实例；Modal 使用独立入口 @packages/feedback/modal，内容由 render 提供。详情见 [Feedback 文档](packages/feedback/README.md)。
+- feedback：Toast、Loading、Modal 及类型统一从 @packages/feedback 导入，使用方需安装 Preact 10。Toast 与 Loading 共用实例；Modal 内容由 render 提供。详情见 [Feedback 文档](packages/feedback/README.md)。
 - components：PageState 等通用展示组件；具体活动 UI 留在应用内。
 - 公共包直接导出源码，由消费应用构建；不发布到 npm。
 

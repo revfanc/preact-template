@@ -2,7 +2,7 @@
 import { afterEach, beforeEach, expect, it, vi } from 'vitest';
 import { useLayoutEffect, useState } from 'preact/hooks';
 import { act } from 'preact/test-utils';
-import { modal, ModalCancelledError, type ModalControls } from './index';
+import { modal, ModalCancelledError, type ModalControls } from '../index';
 
 const tasks: Array<{ close: () => void }> = [];
 function flush() {
