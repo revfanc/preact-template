@@ -1,6 +1,6 @@
 import { useLayoutEffect, useMemo } from 'preact/hooks';
 import { loading, type Close } from '@packages/feedback';
-import { useLocalRouteStore } from '../stores';
+import { useLocalRouteStore } from '@/stores';
 
 export function useRouteLoading() {
   const { state, store } = useLocalRouteStore();

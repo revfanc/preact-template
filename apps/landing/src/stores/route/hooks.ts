@@ -1,4 +1,4 @@
-import { useStore, useStoreInstance } from '../core/hooks';
+import { useStore, useStoreInstance } from '@/stores/core/hooks';
 import { createRouteStore } from './index';
 
 /** Each owner gets a separate route store; consumers subscribe to the passed instance. */

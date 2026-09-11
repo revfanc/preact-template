@@ -1,7 +1,7 @@
 import type { ComponentType } from 'preact';
 import { lazy } from 'preact-iso';
 import { createFileRoutes, type FileRoute } from './file-routes';
-import { PageError } from '../components/page-error';
+import { PageError } from '@/components/page-error';
 
 type PageModule = { default: ComponentType };
 const pages = {

@@ -38,16 +38,18 @@ stores/
 
 文件按需创建，职责固定。顶层 `stores/index.ts` 是对外聚合入口，允许导出 hooks 和 Provider；模块内的 `index.ts` 则必须保持纯数据。
 
+跨模块使用 `@/`，模块内部使用 `./`；例如路由数据工厂导入 `@/stores/core`，路由绑定 hook 导入 `./index`。别名不会绕过依赖边界检查。
+
 内部模块直接引用具体模块，不能反向引用顶层 `stores/index.ts`，避免循环依赖。`core/` 不导入 app 或业务模块；各模块的 `index.ts` 保持纯 TypeScript，Preact 接入单独放在 hooks/context 文件。
 
 业务数据模块不获取整个 app 集合；多个 store 协作时，由所有者将所需实例传给业务工厂或场景 hook。共享业务的读取 hook 可以通过 `app/hooks.ts` 获取集合，再订阅对应成员。
 
 业务状态统一由 store 管理。每个业务工厂新建自己的初始数据，只暴露 getSnapshot、subscribe、业务 action 和 dispose。不要暴露内部 update 给 UI。
 
-业务 store 从 `../core` 导入状态容器，避免加载 Preact 接入层。组件使用方式：
+业务 store 从 `@/stores/core` 导入状态容器，避免加载 Preact 接入层。组件使用方式：
 
 ```ts
-import { useLocalRouteStore } from '../stores';
+import { useLocalRouteStore } from '@/stores';
 
 const { state, store } = useLocalRouteStore();
 // state.isLoading 读取渲染状态，store.start() / store.finish() 修改数据。
@@ -72,7 +74,7 @@ const { state, store } = useLocalRouteStore();
 `app.tsx` 通过 `useStoreInstance(createAppStores)` 创建一次共享集合，在 Router 外提供 `AppStoresProvider`。路由切换不重建它，应用卸载调用集合的 dispose。Provider 只传递实例，本身不创建、不销毁，因此可以用于独立 Modal 渲染根的 Context 桥接。
 
 ```ts
-import { useAppStores } from '../stores';
+import { useAppStores } from '@/stores';
 
 const stores = useAppStores(); // 当前只有生命周期入口，尚无业务模块。
 ```

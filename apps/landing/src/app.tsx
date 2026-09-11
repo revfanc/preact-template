@@ -1,9 +1,9 @@
 import { useErrorBoundary } from 'preact/hooks';
 import { LocationProvider, Router, Route } from 'preact-iso';
-import { useRouteLoading } from './hooks/use-route-loading';
-import { routes } from './router/routes';
-import { PageError } from './components/page-error';
-import { AppStoresProvider, createAppStores, useStoreInstance } from './stores';
+import { useRouteLoading } from '@/hooks/use-route-loading';
+import { routes } from '@/router/routes';
+import { PageError } from '@/components/page-error';
+import { AppStoresProvider, createAppStores, useStoreInstance } from '@/stores';
 
 export function App() {
   const stores = useStoreInstance(createAppStores);

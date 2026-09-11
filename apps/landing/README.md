@@ -34,6 +34,8 @@ pnpm --filter @apps/landing preview:test
 
 业务、表单、请求结果及 pending/error 统一由所属作用域的 store 管理。store 使用工厂创建，不默认全局共享；所有者通过 `useLocalRouteStore()` 等绑定 hook 创建、订阅并清理实例，消费者通过 `useStore(store)` 订阅传入的同一个实例。分别调用绑定 hook 会创建不同实例。局部动画和布局测量可保留在 UI 内。
 
+应用内跨模块引用使用 `@/`，例如 `import { useLocalRouteStore } from '@/stores'`；同模块文件和样式保留 `./`，公共包使用 `@packages/*`。别名映射统一定义在根 tsconfig，Vite 和 Vitest 读取同一份配置。
+
 useLocalRouteStore、useStore、useStoreInstance 由 stores/index.ts 导出，纯数据容器位于 stores/core/index.ts。store 不直接展示提示、弹窗或导航；这些交给场景 hook / 页面。store action 调用 API 并管理请求状态，场景 hook 组织用户操作流程。纯校验和计算使用普通函数，不为简单请求增加转发层。完整规则见[架构说明](ARCHITECTURE.md)。
 
 `app.tsx` 在 Router 外持有 `createAppStores()` 的共享集合，通过 `AppStoresProvider` 提供。`useAppStores()` 获取已有集合，不创建实例；当前仅预留生命周期入口，没有渠道或用户数据。全局按业务拆分成员，流程、页面和弹窗状态按各自生命周期持有；Provider 只传递实例，销毁由创建者负责。模块内固定由 `index.ts` 管数据、`hooks.ts` 放接入函数、`context.tsx` 定义 Context 和 Provider；按需建文件，职责不混用。依赖边界由 `pnpm test` 检查。命名、Modal 桥接及新增全局状态的边界见 [Stores 说明](src/stores/README.md)。

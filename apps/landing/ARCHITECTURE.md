@@ -34,6 +34,14 @@ src/
 
 不提前创建虚构的渠道、登录、订单字段或无实际职责的转发层。新业务出现时，在 stores 下按业务名称增加目录，测试就近放置。目录按业务职责组织，全局或局部作用域由实例所有者决定，不另建 global/local 目录。示例页面已从生产入口移除；测试交互仅位于 `test/fixture`。
 
+## 导入约定
+
+- Landing 跨模块使用 `@/`，映射到 `apps/landing/src/`；模块内部文件和样式使用 `./`。
+- 公共包通过 `@packages/*` 的公开入口引用，不通过应用别名或相对路径穿透包源码。
+- 别名仅缩短路径，不改变依赖边界：业务 store 使用 `@/stores/core`，不能通过 `@/stores` 反向引用聚合入口。
+- 根 `tsconfig.json` 是当前 Landing 路径映射的唯一来源；正式应用、测试夹具及 Vitest 启用 `resolve.tsconfigPaths`。测试夹具的 `@/` 同样指向正式 Landing 源码；夹具内部继续使用相对路径。
+- 路由发现的 `import.meta.glob` 保持现有相对路径及键值解析约定，不混入普通模块导入的路径替换。
+
 ## 文件与依赖规则
 
 模块中的 `index.ts` 固定放纯数据工厂、类型和 action，`hooks.ts` 固定放 store 的 `useXxx` 接入函数，`context.tsx` 只定义 Context 和传递已有实例的 Provider。按需创建文件，不要求每个模块都有 Context；有 hook 就必须放在 hooks.ts。顶层 `stores/index.ts` 是面向调用方的聚合入口，不适用模块数据入口规则。
@@ -90,7 +98,7 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 默认调用路径：UI → 场景 hook → store action → API。提交时，store 维护请求状态和结果，hook 根据结果展示提示或导航。简单 UI 也可直接触发传入的 action，不强制增加专用 hook。API 不反向导入应用状态，store 不反向导入场景 hook。
 
-组件从 `stores/index.ts` 使用通用能力或业务绑定 hook；业务 store 直接从 `../core` 导入状态容器，不通过包含 Preact hooks 的聚合入口。具体业务工厂从 `stores/<name>` 导入，不全部汇总到基础入口。纯数据代码不依赖场景 hooks 或反馈组件。
+组件从 `stores/index.ts` 使用通用能力或业务绑定 hook；业务 store 直接从 `@/stores/core` 导入状态容器，不通过包含 Preact hooks 的聚合入口。具体业务工厂从 `stores/<name>` 导入，不全部汇总到基础入口。纯数据代码不依赖场景 hooks 或反馈组件。
 
 纯校验、转换和计算使用普通函数，按业务需要就近提取；不为了分层给每个接口创建 hook 或转发函数。多个能力 hook 协作时接收同一个 store 实例，避免各自重新创建状态。
 

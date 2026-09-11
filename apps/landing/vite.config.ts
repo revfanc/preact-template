@@ -20,7 +20,7 @@ export default defineConfig(({ mode }) => {
   return {
     root,
     base: env.VITE_BASE_PATH || '/',
-    resolve: { dedupe: ['preact'] },
+    resolve: { tsconfigPaths: true, dedupe: ['preact'] },
     // The preset sets the JSX runtime but omits its source in the Vite 8 scanner.
     optimizeDeps: {
       rolldownOptions: { transform: { jsx: { importSource: 'preact' } } },

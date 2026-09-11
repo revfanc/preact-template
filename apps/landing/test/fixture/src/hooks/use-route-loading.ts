@@ -1,1 +1,1 @@
-export { useRouteLoading } from '../../../../src/hooks/use-route-loading';
+export { useRouteLoading } from '@/hooks/use-route-loading';

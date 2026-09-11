@@ -16,7 +16,7 @@ export default defineConfig(({ mode }) => ({
     'import.meta.env.VITE_CONFIG_PATH': JSON.stringify('site-config.json'),
     'import.meta.env.VITE_AGREEMENT_URL': JSON.stringify('/agreement/'),
   },
-  resolve: { dedupe: ['preact'] },
+  resolve: { tsconfigPaths: true, dedupe: ['preact'] },
   css: { postcss: { plugins: createPostcssPlugins(true, theme) } },
   plugins: [
     legacy({ targets: legacyTargets }),

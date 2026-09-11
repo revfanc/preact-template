@@ -9,7 +9,7 @@ import {
   useAppStores,
   useStoreInstance,
   type AppStores,
-} from '../index';
+} from '@/stores';
 
 it('shares within an owner, survives page replacement and isolates separate application owners', () => {
   const host = document.createElement('div');
