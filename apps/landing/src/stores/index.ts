@@ -1,2 +1,2 @@
 export { createStore, type ReadableStore } from './core';
-export { useStore, useStoreInstance } from './hooks';
+export { useStore, useStoreInstance, useRouteStore } from './hooks';

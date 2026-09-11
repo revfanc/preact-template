@@ -35,7 +35,7 @@ scripts/                  构建产物检查
 
 store action 处理数据变化，复杂流程调用 service；store 不直接展示 Toast、Loading、Modal 或导航，这些由场景 hook / 页面处理。API 不控制 UI，service 不使用 hooks。不存在真实业务时不创建空转 service、虚构订单字段或模拟接口。
 
-store 的通用能力集中在 `stores/core.ts`、`stores/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useStore`、`useStoreInstance`。顶层 hooks 只保留具体场景的接入逻辑。
+store 的通用能力集中在 `stores/core.ts`、`stores/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useRouteStore()` 等绑定 hook，一次获取 state 和 store；共享消费者使用 `useStore(store)` 订阅同一实例。顶层 hooks 只保留具体场景的接入逻辑。
 
 ## 文档导航
 

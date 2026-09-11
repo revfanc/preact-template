@@ -16,8 +16,8 @@ src/
   api/index.ts            应用请求实例，绑定公共业务接口
   stores/
     core.ts               最小状态容器与公共类型，不依赖 Preact
-    hooks.ts              useStore / useStoreInstance，Preact 接入
-    index.ts              通用能力导出
+    hooks.ts              通用 hooks 与 useRouteStore 业务绑定
+    index.ts              通用能力及业务绑定 hook 导出
     route.ts              当前实际使用的路由状态
   services/               多步骤业务流程与普通业务函数
   hooks/
@@ -44,6 +44,8 @@ src/
 
 `useStore(instance)` 只订阅快照，不负责销毁。需要跨路由存活的流程 store 不应归属于会卸载的单个步骤页面。销毁不可逆；离开后重新进入应创建新实例。BFCache 恢复和 History 返回监听依照 browser 包文档处理，不能把页面卸载与 pagehide 混为一谈。
 
+常用业务可提供 `useRouteStore()` 这样的薄绑定 hook，一次返回 `{ state, store }`，内部组合实例创建和订阅。它只供实例所有者使用，每个调用位置创建独立实例；消费者通过 props/Context 获取同一个 store，再用 `useStore(store)` 订阅。绑定 hook 不创建全局单例，不调用反馈 UI，也不增加业务状态副本。
+
 ## 快照与 action
 
 `createStore(initial)` 返回稳定的 `getSnapshot/subscribe/update/dispose`。没有更新时快照引用不变；返回原快照表示不更新。快照仅浅冻结，嵌套对象也必须不可变更新；每次调用业务工厂都应新建嵌套初始值，避免多个实例引用同一对象。
@@ -64,7 +66,7 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 依赖方向：pages → hooks/stores/components；stores → services/api；services → API 或显式传入的接口。API 不反向导入应用状态。Service 需要更新状态时使用回调或窄接口，避免与 store 相互导入。
 
-组件从 `stores/index.ts` 使用通用能力；业务 store 直接从 `./core` 导入状态容器，不通过包含 Preact hooks 的聚合入口。具体业务工厂从 `stores/<name>` 导入，不全部汇总到基础入口。纯数据代码不依赖场景 hooks 或反馈组件。
+组件从 `stores/index.ts` 使用通用能力或业务绑定 hook；业务 store 直接从 `./core` 导入状态容器，不通过包含 Preact hooks 的聚合入口。具体业务工厂从 `stores/<name>` 导入，不全部汇总到基础入口。纯数据代码不依赖场景 hooks 或反馈组件。
 
 简单查询允许 store action → API，不强制经过 service；没有复用或业务判断的转发层无需创建。
 

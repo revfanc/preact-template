@@ -33,9 +33,9 @@ pnpm --filter @apps/landing preview:test
 | `src/api/`        | 应用请求客户端，按需绑定公共业务接口        |
 | `src/router/`     | 文件路由发现、解析及懒加载                  |
 
-业务、表单、请求结果及 pending/error 统一由所属作用域的 store 管理。store 使用工厂创建，不默认全局共享；所有者通过 `useStoreInstance` 创建并清理，消费者通过 `useStore` 订阅同一个实例。局部动画和布局测量可保留在 UI 内。
+业务、表单、请求结果及 pending/error 统一由所属作用域的 store 管理。store 使用工厂创建，不默认全局共享；所有者通过 `useRouteStore()` 等绑定 hook 创建、订阅并清理实例，消费者通过 `useStore(store)` 订阅传入的同一个实例。分别调用绑定 hook 会创建不同实例。局部动画和布局测量可保留在 UI 内。
 
-useStore、useStoreInstance 由 stores/index.ts 导出，纯数据容器位于 stores/core.ts。store 不直接展示提示、弹窗或导航；这些交给场景 hook / 页面。简单 action 可直接调用 API，复杂流程提取 service。service 是普通 TypeScript 函数，不是 hooks；不建立 API、service、store 间的空转发层。完整规则见[架构说明](ARCHITECTURE.md)。
+useRouteStore、useStore、useStoreInstance 由 stores/index.ts 导出，纯数据容器位于 stores/core.ts。store 不直接展示提示、弹窗或导航；这些交给场景 hook / 页面。简单 action 可直接调用 API，复杂流程提取 service。service 是普通 TypeScript 函数，不是 hooks；不建立 API、service、store 间的空转发层。完整规则见[架构说明](ARCHITECTURE.md)。
 
 ## 新增页面
 

@@ -1,11 +1,9 @@
 import { useLayoutEffect, useMemo } from 'preact/hooks';
 import { loading, type Close } from '@packages/feedback';
-import { useStore, useStoreInstance } from '../stores';
-import { createRouteStore } from '../stores/route';
+import { useRouteStore } from '../stores';
 
 export function useRouteLoading() {
-  const store = useStoreInstance(createRouteStore);
-  const { isLoading } = useStore(store);
+  const { state, store } = useRouteStore();
   const feedback = useMemo(() => {
     let close: Close | undefined;
     let disposed = false;
@@ -29,7 +27,7 @@ export function useRouteLoading() {
   }, [store]);
   useLayoutEffect(() => () => feedback.dispose(), [feedback]);
   return {
-    isLoading,
+    isLoading: state.isLoading,
     startLoading: feedback.startLoading,
     finishLoading: feedback.finishLoading,
   };
