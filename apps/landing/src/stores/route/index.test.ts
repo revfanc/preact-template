@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { createRouteStore } from './route';
+import { createRouteStore } from './index';
 
 it('manages route state without UI and ignores repeated transitions or updates after disposal', () => {
   const store = createRouteStore();

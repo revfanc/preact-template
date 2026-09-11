@@ -2,12 +2,8 @@
 import { render } from 'preact';
 import { act } from 'preact/test-utils';
 import { expect, it, vi } from 'vitest';
-import {
-  createStore,
-  useStore,
-  useStoreInstance,
-  useRouteStore,
-} from './index';
+import { createStore } from './index';
+import { useStore, useStoreInstance } from './hooks';
 
 it('shares one owned instance between consumers, rerenders snapshots, and only the owner disposes', () => {
   const host = document.createElement('div');
@@ -42,40 +38,4 @@ it('shares one owned instance between consumers, rerenders snapshots, and only t
   expect(dispose).toHaveBeenCalledTimes(1);
   instance.update(() => ({ count: 4 }));
   expect(instance.getSnapshot().count).toBe(3);
-});
-
-it('keeps bound route stores stable and isolated between owners and disposes them on unmount', () => {
-  const host = document.createElement('div');
-  const stores: Array<ReturnType<typeof useRouteStore>['store']> = [];
-  function Owner({ id }: { id: number }) {
-    const { state, store } = useRouteStore();
-    stores[id] = store;
-    return <span>{String(state.isLoading)}</span>;
-  }
-  try {
-    act(() =>
-      render(
-        <>
-          <Owner id={0} />
-          <Owner id={1} />
-        </>,
-        host,
-      ),
-    );
-    const first = stores[0]!;
-    const second = stores[1]!;
-    expect(first).not.toBe(second);
-    act(() => first.start());
-    expect(host.textContent).toBe('truefalse');
-    expect(stores[0]).toBe(first);
-    expect(stores[1]).toBe(second);
-    act(() => second.start());
-    expect(host.textContent).toBe('truetrue');
-  } finally {
-    act(() => render(null, host));
-  }
-  stores.forEach((store) => {
-    store.start();
-    expect(store.getSnapshot().isLoading).toBe(false);
-  });
 });

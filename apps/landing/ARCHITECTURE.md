@@ -6,7 +6,7 @@
 
 ```text
 src/
-  app.tsx                 应用装配与顶层错误边界
+  app.tsx                 应用装配、共享实例所有者与顶层错误边界
   main.tsx                挂载、兼容补丁、首屏 loading 交接
   pages/                  路由入口，只装配参数、状态、UI 与导航
     p1/<code>/index.tsx    后续真实活动页的路径形式
@@ -15,16 +15,32 @@ src/
     page-error/index.tsx  页面加载失败
   api/index.ts            应用请求实例，绑定公共业务接口
   stores/
-    core.ts               最小状态容器与公共类型，不依赖 Preact
-    hooks.ts              通用 hooks 与 useRouteStore 业务绑定
-    index.ts              通用能力及业务绑定 hook 导出
-    route.ts              当前实际使用的路由状态
+    core/
+      index.ts            最小状态容器与公共类型，不依赖 Preact
+      hooks.ts            通用创建/订阅 hooks，不导入业务模块
+    app/
+      index.ts            应用共享实例集合，目前无业务成员
+      context.tsx         Context 与 Provider，只传递实例
+      hooks.ts            useAppStores 获取已有集合
+    route/
+      index.ts            当前实际使用的路由状态
+      hooks.ts            useLocalRouteStore 局部绑定
+    index.ts              对外接入能力导出
+    README.md             目录、作用域与使用约定
   hooks/
     use-route-loading.ts  连接 Router、路由状态与 Loading 展示
   router/                 文件路由解析、懒加载
 ```
 
-不提前创建虚构的渠道、登录、订单字段或无实际职责的转发层。新业务出现时，按业务名称增加文件。示例页面已从生产入口移除；测试交互仅位于 `test/fixture`。
+不提前创建虚构的渠道、登录、订单字段或无实际职责的转发层。新业务出现时，在 stores 下按业务名称增加目录，测试就近放置。目录按业务职责组织，全局或局部作用域由实例所有者决定，不另建 global/local 目录。示例页面已从生产入口移除；测试交互仅位于 `test/fixture`。
+
+## 文件与依赖规则
+
+模块中的 `index.ts` 固定放纯数据工厂、类型和 action，`hooks.ts` 固定放 store 的 `useXxx` 接入函数，`context.tsx` 只定义 Context 和传递已有实例的 Provider。按需创建文件，不要求每个模块都有 Context；有 hook 就必须放在 hooks.ts。顶层 `stores/index.ts` 是面向调用方的聚合入口，不适用模块数据入口规则。
+
+`core` 只提供通用能力，`app` 只组装应用共享实例，其他目录按业务组织。业务数据模块不读取整个应用集合；需要其他实例时由所有者传入依赖。共享业务 hook 可以读取 app Context 再订阅对应成员。内部文件不反向导入顶层 stores 聚合入口。
+
+`pnpm test` 中的 `tests/store-boundaries.test.ts` 检查上述关键依赖边界及 hook 文件位置；包括禁止数据模块导入 Preact、反馈/展示组件、场景 hooks、路由及 store 接入文件，禁止 core 依赖业务模块、业务数据依赖 app、内部模块引用聚合入口。检查静态依赖和可识别的动态导入，不能代替对 action 语义、实例生命周期的审查。
 
 ## 状态归属
 
@@ -32,18 +48,28 @@ src/
 
 | 作用域         | 实例所有者                 | 销毁时机           |
 | -------------- | -------------------------- | ------------------ |
-| 应用           | app 或其 Provider          | 应用卸载           |
+| 应用           | `app.tsx` 所有者           | 应用卸载           |
 | 多步骤申请流程 | 跨步骤保持挂载的流程所有者 | 流程退出、重新开始 |
 | 页面           | 页面入口                   | 页面卸载           |
 | 弹窗           | 弹窗内容的所有者           | 弹窗卸载           |
 
 所有 store 使用工厂创建；禁止在模块顶层无意创建共享单例。一个所有者只创建一次实例，子组件通过 props 或 Context 获取这个实例。子组件调用同一工厂会得到另一份状态，不会自动共享。
 
+`app.tsx` 已在 Router 外接入应用共享空壳：通过 `useStoreInstance(createAppStores)` 持有集合，`AppStoresProvider` 只传递集合，`useAppStores()` 只读取已有集合；缺少 Provider 时明确报错。集合目前没有渠道、用户或申请字段，不代表已经实现这些业务。
+
+全局集合只组装应用范围的业务 store，不能演变成包办所有字段的大快照。以后渠道、会话按业务分别实现；申请表单、协议勾选和银行卡选择属于一次流程，订单结果与轮询属于订单任务。多页面共用的数据应放在最小共同作用域，不因“以后可能复用”就提升到应用全局。
+
+业务身份变化时需要明确重置或重建哪些实例。页面路径切换不等于流程结束，也不因任意 query 变化就重建全局集合。首次真实流程接入时必须确定跨步骤所有者和结束条件；当前不预置流程容器或字段。
+
 `useStoreInstance(factory)` 仅供所有者使用：首次渲染创建实例，卸载调用 `dispose()`。传入的工厂不能在创建时发请求、监听 DOM 或启动计时器；这些操作应显式启动。工厂参数不会因后续渲染自动同步；需要重建实例时，为所有者设置业务身份对应的 key。
 
 `useStore(instance)` 只订阅快照，不负责销毁。需要跨路由存活的流程 store 不应归属于会卸载的单个步骤页面。销毁不可逆；离开后重新进入应创建新实例。BFCache 恢复和 History 返回监听依照 browser 包文档处理，不能把页面卸载与 pagehide 混为一谈。
 
-常用业务可提供 `useRouteStore()` 这样的薄绑定 hook，一次返回 `{ state, store }`，内部组合实例创建和订阅。它只供实例所有者使用，每个调用位置创建独立实例；消费者通过 props/Context 获取同一个 store，再用 `useStore(store)` 订阅。绑定 hook 不创建全局单例，不调用反馈 UI，也不增加业务状态副本。
+命名区分创建与读取：`useLocalXxxStore()` 创建局部实例，`useXxxStore()` 留给获取 Context 中已有业务实例并订阅的 hook，`useAppStores()` 获取应用共享集合。当前局部绑定为 `useLocalRouteStore()`，返回 `{ state, store }`；多个调用位置各有独立实例，消费者共享时使用 `useStore(store)`。禁止同一个 hook 隐式决定创建还是共享，不保留旧名 `useRouteStore`。
+
+业务绑定就近放在 `stores/<name>/hooks.ts`，不集中导入通用 `stores/core/hooks.ts`。组件只订阅需要的业务 store，共享集合本身不提供全量订阅或任意字段写入；数据修改仍经业务 action。
+
+函数式 Modal 是独立渲染根，页面 Context 不会自动传播。使用同一个集合显式包裹 `AppStoresProvider`，或传入所需业务 store；Provider 不拥有清理权，弹窗关闭只清理弹窗资源。应用共享也不等于持久化，刷新、BFCache、跨标签页和独立 Agreement 应用不能依靠 Context 自动恢复或共享。
 
 ## 快照与 action
 
@@ -57,14 +83,14 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 - API：定义接口和输入输出、校验/转换后端数据；不控制 UI、路由或 store 生命周期。
 - Store：管理状态及数据 action，调用 API 并保存 pending/error 和结果。不得直接展示 Toast、Loading、Modal 或执行导航。
-- Store hooks：`stores/hooks.ts` 提供实例创建、订阅和卸载清理，属于 store 的 Preact 接入能力。
+- Store hooks：`stores/core/hooks.ts` 提供实例创建、订阅和卸载清理，属于 store 的 Preact 接入能力。
 - 场景 Hook：顶层 `hooks/` 连接路由、状态和 UI 行为，组织用户操作流程，持有并清理反馈句柄；不额外维护 pending/error 副本。单一能力和业务流程按职责区分，暂不强制拆分子目录。
 - UI：读取状态、触发 action、处理局部视觉交互；通用展示组件通过 props/events 通信，不直接请求接口。
 - Pages：组装 store/hook/UI，解释路由参数和业务结果，调用应用导航或反馈；不堆放表单和复杂业务实现。
 
 默认调用路径：UI → 场景 hook → store action → API。提交时，store 维护请求状态和结果，hook 根据结果展示提示或导航。简单 UI 也可直接触发传入的 action，不强制增加专用 hook。API 不反向导入应用状态，store 不反向导入场景 hook。
 
-组件从 `stores/index.ts` 使用通用能力或业务绑定 hook；业务 store 直接从 `./core` 导入状态容器，不通过包含 Preact hooks 的聚合入口。具体业务工厂从 `stores/<name>` 导入，不全部汇总到基础入口。纯数据代码不依赖场景 hooks 或反馈组件。
+组件从 `stores/index.ts` 使用通用能力或业务绑定 hook；业务 store 直接从 `../core` 导入状态容器，不通过包含 Preact hooks 的聚合入口。具体业务工厂从 `stores/<name>` 导入，不全部汇总到基础入口。纯数据代码不依赖场景 hooks 或反馈组件。
 
 纯校验、转换和计算使用普通函数，按业务需要就近提取；不为了分层给每个接口创建 hook 或转发函数。多个能力 hook 协作时接收同一个 store 实例，避免各自重新创建状态。
 
@@ -74,7 +100,7 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 同一动作的防重放在 action 内，而不只禁用按钮。重试按接口语义决定；不要给签约等提交统一自动重试。轮询间隔、结束条件属于业务，启动和停止与实例生命周期绑定。
 
-`stores/route.ts` 只保存 isLoading 并提供 start/finish 数据 action。`hooks/use-route-loading.ts` 持有 Loading 关闭句柄，连接 Router 回调并在卸载时关闭提示；开始和结束时直接协调状态与反馈，不依赖延迟 effect 展示。公共反馈包仍管理自身 UI 资源，不依赖 Landing store。
+`stores/route/index.ts` 只保存 isLoading 并提供 start/finish 数据 action。`hooks/use-route-loading.ts` 持有 Loading 关闭句柄，连接 Router 回调并在卸载时关闭提示；开始和结束时直接协调状态与反馈，不依赖延迟 effect 展示。公共反馈包仍管理自身 UI 资源，不依赖 Landing store。
 
 ## 新增一个功能
 

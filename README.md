@@ -34,7 +34,9 @@ scripts/                  构建产物检查
 
 store action 处理数据变化并调用 API；场景 hook 组织用户操作流程、展示 Toast、Loading、Modal 或执行导航。store 和 API 不直接控制 UI。校验与计算使用普通函数，不为简单请求增加转发层，也不提前创建虚构订单字段或模拟接口。
 
-store 的通用能力集中在 `stores/core.ts`、`stores/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useRouteStore()` 等绑定 hook，一次获取 state 和 store；共享消费者使用 `useStore(store)` 订阅同一实例。顶层 hooks 只保留具体场景的接入逻辑。
+store 的通用能力集中在 `stores/core/index.ts`、`stores/core/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useLocalRouteStore()` 等绑定 hook，一次获取 state 和 store；共享消费者使用 `useStore(store)` 订阅同一实例。顶层 hooks 只保留具体场景的接入逻辑。
+
+应用共享空壳已接入 `app.tsx`：`stores/app/index.ts` 创建独立的业务 store 集合，`stores/app/context.tsx` 只定义 Context 和 Provider，`stores/app/hooks.ts` 提供读取 hook。`useAppStores()` 只获取已有集合，`useLocalXxxStore()` 明确创建局部实例，`useXxxStore()` 留给读取共享业务实例的 hook。当前集合无业务成员；以后按渠道、会话等业务分别扩展，不集中存放全部状态。申请数据归流程、临时编辑归页面或弹窗，生命周期不匹配的数据不提升为应用全局。详细命名和作用域规则见 [Stores 说明](apps/landing/src/stores/README.md)。
 
 ## 文档导航
 

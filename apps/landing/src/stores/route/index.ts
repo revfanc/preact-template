@@ -1,4 +1,4 @@
-import { createStore } from './core';
+import { createStore } from '../core';
 
 export function createRouteStore() {
   const state = createStore({ isLoading: false });
