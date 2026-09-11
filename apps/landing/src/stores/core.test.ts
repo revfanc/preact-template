@@ -1,5 +1,5 @@
 import { expect, it, vi } from 'vitest';
-import { createStore } from './create-store';
+import { createStore } from './core';
 
 it('isolates instances and keeps snapshots stable until an immutable update', () => {
   const first = createStore({ count: 0 });

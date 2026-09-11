@@ -15,12 +15,13 @@ src/
     page-error/index.tsx  页面加载失败
   api/index.ts            应用请求实例，绑定公共业务接口
   stores/
-    create-store.ts       最小的实例状态容器
+    core.ts               最小状态容器与公共类型，不依赖 Preact
+    hooks.ts              useStore / useStoreInstance，Preact 接入
+    index.ts              通用能力导出
     route.ts              当前实际使用的路由状态
   services/               多步骤业务流程与普通业务函数
   hooks/
-    use-store.ts          store 创建、订阅和卸载清理
-    use-route-loading.ts  将路由状态接入 Router
+    use-route-loading.ts  连接 Router、路由状态与 Loading 展示
   router/                 文件路由解析、懒加载
 ```
 
@@ -54,13 +55,16 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 ## 各层职责
 
 - API：定义接口和输入输出、校验/转换后端数据；不控制 UI、路由或 store 生命周期。
-- Store：管理状态及 action。简单 action 可以直接调用 API；多个步骤或可复用规则调用 service。
+- Store：管理状态及数据 action。简单 action 可以直接调用 API；多个步骤或可复用规则调用 service。不得直接展示 Toast、Loading、Modal 或执行导航。
 - Service：普通 TypeScript 函数，组织业务步骤和判断结果；依赖通过参数显式传入，不使用 Preact hooks，不固定引用全局实例。
-- Hook：把实例接入组件，处理订阅和生命周期；不额外维护 pending/error 副本。
+- Store hooks：`stores/hooks.ts` 提供实例创建、订阅和卸载清理，属于 store 的 Preact 接入能力。
+- 场景 Hook：顶层 `hooks/` 连接路由、状态和 UI 行为，持有并清理反馈句柄；不额外维护 pending/error 副本。
 - UI：读取状态、触发 action、处理局部视觉交互；通用展示组件通过 props/events 通信，不直接请求接口。
 - Pages：组装 store/hook/UI，解释路由参数和业务结果，调用应用导航或反馈；不堆放表单和复杂业务实现。
 
 依赖方向：pages → hooks/stores/components；stores → services/api；services → API 或显式传入的接口。API 不反向导入应用状态。Service 需要更新状态时使用回调或窄接口，避免与 store 相互导入。
+
+组件从 `stores/index.ts` 使用通用能力；业务 store 直接从 `./core` 导入状态容器，不通过包含 Preact hooks 的聚合入口。具体业务工厂从 `stores/<name>` 导入，不全部汇总到基础入口。纯数据代码不依赖场景 hooks 或反馈组件。
 
 简单查询允许 store action → API，不强制经过 service；没有复用或业务判断的转发层无需创建。
 
@@ -70,7 +74,7 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 同一动作的防重放在 action 内，而不只禁用按钮。重试按接口语义决定；不要给签约等提交统一自动重试。轮询间隔、结束条件属于业务，启动和停止与实例生命周期绑定。
 
-路由 loading 是基础 UI 状态，现已通过 route store 验证实例接入；它的关闭句柄保存在私有闭包中。公共反馈包仍管理自身 UI 资源，不需要依赖 Landing store。
+`stores/route.ts` 只保存 isLoading 并提供 start/finish 数据 action。`hooks/use-route-loading.ts` 持有 Loading 关闭句柄，连接 Router 回调并在卸载时关闭提示；开始和结束时直接协调状态与反馈，不依赖延迟 effect 展示。公共反馈包仍管理自身 UI 资源，不依赖 Landing store。
 
 ## 新增一个功能
 

@@ -2,8 +2,7 @@
 import { render } from 'preact';
 import { act } from 'preact/test-utils';
 import { expect, it, vi } from 'vitest';
-import { createStore } from '../stores/create-store';
-import { useStore, useStoreInstance } from './use-store';
+import { createStore, useStore, useStoreInstance } from './index';
 
 it('shares one owned instance between consumers, rerenders snapshots, and only the owner disposes', () => {
   const host = document.createElement('div');

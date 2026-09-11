@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from 'preact/hooks';
 import { useSyncExternalStore } from 'preact/compat';
-import type { ReadableStore } from '../stores/create-store';
+import type { ReadableStore } from './core';
 
 /** Subscribers share an owner's instance; they do not destroy it. */
 export function useStore<State>(store: ReadableStore<State>) {

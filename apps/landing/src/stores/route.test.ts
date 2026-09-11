@@ -1,25 +1,21 @@
 import { expect, it, vi } from 'vitest';
-const { loading, close } = vi.hoisted(() => {
-  const close = vi.fn();
-  return { close, loading: vi.fn(() => close) };
-});
-vi.mock('@packages/feedback', () => ({ loading }));
 import { createRouteStore } from './route';
 
-it('owns one loading handle, clears it on disposal and cannot restart after disposal', () => {
+it('manages route state without UI and ignores repeated transitions or updates after disposal', () => {
   const store = createRouteStore();
+  const notify = vi.fn();
+  store.subscribe(notify);
   store.start();
   store.start();
-  expect(loading).toHaveBeenCalledTimes(1);
+  expect(notify).toHaveBeenCalledTimes(1);
   expect(store.getSnapshot().isLoading).toBe(true);
   store.finish();
   store.finish();
-  expect(close).toHaveBeenCalledTimes(1);
+  expect(notify).toHaveBeenCalledTimes(2);
   store.start();
   store.dispose();
   store.dispose();
   store.start();
-  expect(loading).toHaveBeenCalledTimes(2);
-  expect(close).toHaveBeenCalledTimes(2);
+  expect(notify).toHaveBeenCalledTimes(4);
   expect(store.getSnapshot().isLoading).toBe(false);
 });
