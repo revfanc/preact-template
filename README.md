@@ -13,7 +13,6 @@ apps/
       pages/              路由入口
       components/         应用 UI
       stores/             状态容器、Preact 接入及有明确作用域的状态/action
-      services/           普通业务函数和多步骤流程
       hooks/              具体场景的路由、状态与 UI 行为接入
       api/                应用请求实例
       router/             文件路由与懒加载
@@ -33,7 +32,7 @@ scripts/                  构建产物检查
 
 **业务状态统一放入所属作用域的 store，store 不等于全局单例。** 每次工厂调用创建独立实例，所有者负责清理，消费者通过 props/Context 共享。hook 不另存 pending/error 副本；DOM、计时器和取消句柄放实例私有资源，局部视觉状态允许留在组件。
 
-store action 处理数据变化，复杂流程调用 service；store 不直接展示 Toast、Loading、Modal 或导航，这些由场景 hook / 页面处理。API 不控制 UI，service 不使用 hooks。不存在真实业务时不创建空转 service、虚构订单字段或模拟接口。
+store action 处理数据变化并调用 API；场景 hook 组织用户操作流程、展示 Toast、Loading、Modal 或执行导航。store 和 API 不直接控制 UI。校验与计算使用普通函数，不为简单请求增加转发层，也不提前创建虚构订单字段或模拟接口。
 
 store 的通用能力集中在 `stores/core.ts`、`stores/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useRouteStore()` 等绑定 hook，一次获取 state 和 store；共享消费者使用 `useStore(store)` 订阅同一实例。顶层 hooks 只保留具体场景的接入逻辑。
 

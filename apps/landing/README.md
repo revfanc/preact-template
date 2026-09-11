@@ -28,20 +28,19 @@ pnpm --filter @apps/landing preview:test
 | `src/pages/`      | 路由入口与装配，不放复杂业务或整块表单      |
 | `src/components/` | 应用 UI，每个组件独立目录                   |
 | `src/stores/`     | 状态容器、实例 action、资源清理和通用 hooks |
-| `src/services/`   | 普通业务函数、多步骤流程，目前仅保留说明    |
 | `src/hooks/`      | 具体场景的路由、状态与反馈 UI 接入          |
 | `src/api/`        | 应用请求客户端，按需绑定公共业务接口        |
 | `src/router/`     | 文件路由发现、解析及懒加载                  |
 
 业务、表单、请求结果及 pending/error 统一由所属作用域的 store 管理。store 使用工厂创建，不默认全局共享；所有者通过 `useRouteStore()` 等绑定 hook 创建、订阅并清理实例，消费者通过 `useStore(store)` 订阅传入的同一个实例。分别调用绑定 hook 会创建不同实例。局部动画和布局测量可保留在 UI 内。
 
-useRouteStore、useStore、useStoreInstance 由 stores/index.ts 导出，纯数据容器位于 stores/core.ts。store 不直接展示提示、弹窗或导航；这些交给场景 hook / 页面。简单 action 可直接调用 API，复杂流程提取 service。service 是普通 TypeScript 函数，不是 hooks；不建立 API、service、store 间的空转发层。完整规则见[架构说明](ARCHITECTURE.md)。
+useRouteStore、useStore、useStoreInstance 由 stores/index.ts 导出，纯数据容器位于 stores/core.ts。store 不直接展示提示、弹窗或导航；这些交给场景 hook / 页面。store action 调用 API 并管理请求状态，场景 hook 组织用户操作流程。纯校验和计算使用普通函数，不为简单请求增加转发层。完整规则见[架构说明](ARCHITECTURE.md)。
 
 ## 新增页面
 
 使用 `src/pages/p1/<code>/index.tsx` 等目录形式，路由入口装配 `src/components/<name>/index.tsx`。组件样式放同目录的 `index.module.css`。`[id]` 支持动态参数，`[...path]` 支持末尾捕获；下划线目录不生成业务路由，`_404/index.tsx` 为兜底。
 
-先确定状态的共享范围和销毁时机，再增加业务 store、实际接口和所需 service。目前 `stores/route.ts` 是已接入的路由状态实例；没有预置渠道、登录或订单模型。公共业务接口放在 [packages/api](../../packages/api/README.md)，应用专属接口可留在 `src/api/`。
+先确定状态的共享范围和销毁时机，再增加业务 store、实际接口和所需场景 hook。目前 `stores/route.ts` 是已接入的路由状态实例；没有预置渠道、登录或订单模型。公共业务接口放在 [packages/api](../../packages/api/README.md)，应用专属接口可留在 `src/api/`。
 
 样式使用 CSS / CSS Modules，按 375px 设计宽度写 px，构建转换为 rem；固定像素沿用 `no-rem` 约定。主题使用 `src/theme.css` 覆盖公共 CSS 变量，变量名称使用单个单词。旧设备目标与限制见[根 README](../../README.md)。
 

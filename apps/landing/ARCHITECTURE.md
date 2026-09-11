@@ -19,13 +19,12 @@ src/
     hooks.ts              通用 hooks 与 useRouteStore 业务绑定
     index.ts              通用能力及业务绑定 hook 导出
     route.ts              当前实际使用的路由状态
-  services/               多步骤业务流程与普通业务函数
   hooks/
     use-route-loading.ts  连接 Router、路由状态与 Loading 展示
   router/                 文件路由解析、懒加载
 ```
 
-不提前创建虚构的渠道、登录、订单字段或空转 service。新业务出现时，按业务名称增加文件。示例页面已从生产入口移除；测试交互仅位于 `test/fixture`。
+不提前创建虚构的渠道、登录、订单字段或无实际职责的转发层。新业务出现时，按业务名称增加文件。示例页面已从生产入口移除；测试交互仅位于 `test/fixture`。
 
 ## 状态归属
 
@@ -57,18 +56,17 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 ## 各层职责
 
 - API：定义接口和输入输出、校验/转换后端数据；不控制 UI、路由或 store 生命周期。
-- Store：管理状态及数据 action。简单 action 可以直接调用 API；多个步骤或可复用规则调用 service。不得直接展示 Toast、Loading、Modal 或执行导航。
-- Service：普通 TypeScript 函数，组织业务步骤和判断结果；依赖通过参数显式传入，不使用 Preact hooks，不固定引用全局实例。
+- Store：管理状态及数据 action，调用 API 并保存 pending/error 和结果。不得直接展示 Toast、Loading、Modal 或执行导航。
 - Store hooks：`stores/hooks.ts` 提供实例创建、订阅和卸载清理，属于 store 的 Preact 接入能力。
-- 场景 Hook：顶层 `hooks/` 连接路由、状态和 UI 行为，持有并清理反馈句柄；不额外维护 pending/error 副本。
+- 场景 Hook：顶层 `hooks/` 连接路由、状态和 UI 行为，组织用户操作流程，持有并清理反馈句柄；不额外维护 pending/error 副本。单一能力和业务流程按职责区分，暂不强制拆分子目录。
 - UI：读取状态、触发 action、处理局部视觉交互；通用展示组件通过 props/events 通信，不直接请求接口。
 - Pages：组装 store/hook/UI，解释路由参数和业务结果，调用应用导航或反馈；不堆放表单和复杂业务实现。
 
-依赖方向：pages → hooks/stores/components；stores → services/api；services → API 或显式传入的接口。API 不反向导入应用状态。Service 需要更新状态时使用回调或窄接口，避免与 store 相互导入。
+默认调用路径：UI → 场景 hook → store action → API。提交时，store 维护请求状态和结果，hook 根据结果展示提示或导航。简单 UI 也可直接触发传入的 action，不强制增加专用 hook。API 不反向导入应用状态，store 不反向导入场景 hook。
 
 组件从 `stores/index.ts` 使用通用能力或业务绑定 hook；业务 store 直接从 `./core` 导入状态容器，不通过包含 Preact hooks 的聚合入口。具体业务工厂从 `stores/<name>` 导入，不全部汇总到基础入口。纯数据代码不依赖场景 hooks 或反馈组件。
 
-简单查询允许 store action → API，不强制经过 service；没有复用或业务判断的转发层无需创建。
+纯校验、转换和计算使用普通函数，按业务需要就近提取；不为了分层给每个接口创建 hook 或转发函数。多个能力 hook 协作时接收同一个 store 实例，避免各自重新创建状态。
 
 ## 异步生命周期
 
@@ -82,8 +80,8 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 1. 定义 API 输入输出；应用层绑定请求实例。
 2. 确定状态所有者、初始值、共享范围和清理时机。
-3. 创建对应业务 store；复杂流程提取 service。
-4. hook/Context 接入实例，pages 装配 UI。
+3. 创建对应业务 store，定义数据 action 并接入 API。
+4. hook/Context 接入实例，场景 hook 按需组织用户操作流程，pages 装配 UI。
 5. 测试实例隔离、重复提交、旧响应及销毁；再验证浏览器交互。
 
 组件使用目录包裹：`components/<name>/index.tsx` 与 `index.module.css`。路由使用 `pages/p1/<code>/index.tsx` 等形式，路由目录尽量只放入口。
