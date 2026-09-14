@@ -1,8 +1,8 @@
 import { expect, it, vi } from 'vitest';
-import { createRouteStore } from './index';
+import { createLoadingStore } from './index';
 
-it('manages route state without UI and ignores repeated transitions or updates after disposal', () => {
-  const store = createRouteStore();
+it('manages loading state without UI and ignores repeated transitions or updates after disposal', () => {
+  const store = createLoadingStore();
   const notify = vi.fn();
   store.subscribe(notify);
   store.start();

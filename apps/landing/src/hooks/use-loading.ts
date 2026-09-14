@@ -1,9 +1,9 @@
 import { useLayoutEffect, useMemo } from 'preact/hooks';
 import { loading, type Close } from '@packages/feedback';
-import { useLocalRouteStore } from '@/stores';
+import { useLocalLoadingStore } from '@/stores';
 
-export function useRouteLoading() {
-  const { state, store } = useLocalRouteStore();
+export function useLoading() {
+  const { state, store } = useLocalLoadingStore();
   const feedback = useMemo(() => {
     let close: Close | undefined;
     let disposed = false;

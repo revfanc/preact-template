@@ -1,6 +1,6 @@
 import { createStore } from '@/stores/core';
 
-export function createRouteStore() {
+export function createLoadingStore() {
   const state = createStore({ isLoading: false });
   const finish = () => {
     state.update((current) =>

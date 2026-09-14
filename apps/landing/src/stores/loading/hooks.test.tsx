@@ -2,13 +2,13 @@
 import { render } from 'preact';
 import { act } from 'preact/test-utils';
 import { expect, it } from 'vitest';
-import { useLocalRouteStore } from './hooks';
+import { useLocalLoadingStore } from './hooks';
 
-it('keeps bound route stores stable and isolated between owners and disposes them on unmount', () => {
+it('keeps bound loading stores stable and isolated between owners and disposes them on unmount', () => {
   const host = document.createElement('div');
-  const stores: Array<ReturnType<typeof useLocalRouteStore>['store']> = [];
+  const stores: Array<ReturnType<typeof useLocalLoadingStore>['store']> = [];
   function Owner({ id }: { id: number }) {
-    const { state, store } = useLocalRouteStore();
+    const { state, store } = useLocalLoadingStore();
     stores[id] = store;
     return <span>{String(state.isLoading)}</span>;
   }

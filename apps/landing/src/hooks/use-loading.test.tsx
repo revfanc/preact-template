@@ -7,27 +7,27 @@ const { loading, close } = vi.hoisted(() => {
   return { close, loading: vi.fn(() => close) };
 });
 vi.mock('@packages/feedback', () => ({ loading }));
-import { useRouteLoading } from './use-route-loading';
+import { useLoading } from './use-loading';
 
 it('owns feedback, closes immediately, keeps callbacks stable and ignores starts after unmount', () => {
   const host = document.createElement('div');
-  let route!: ReturnType<typeof useRouteLoading>;
+  let feedbackState!: ReturnType<typeof useLoading>;
   function Owner() {
-    route = useRouteLoading();
-    return <span>{String(route.isLoading)}</span>;
+    feedbackState = useLoading();
+    return <span>{String(feedbackState.isLoading)}</span>;
   }
   try {
     act(() => render(<Owner />, host));
-    const start = route.startLoading;
-    const finish = route.finishLoading;
+    const start = feedbackState.startLoading;
+    const finish = feedbackState.finishLoading;
     act(() => {
       start();
       start();
       expect(loading).toHaveBeenCalledExactlyOnceWith({ mask: true });
     });
     expect(host.textContent).toBe('true');
-    expect(route.startLoading).toBe(start);
-    expect(route.finishLoading).toBe(finish);
+    expect(feedbackState.startLoading).toBe(start);
+    expect(feedbackState.finishLoading).toBe(finish);
     act(() => {
       finish();
       finish();
@@ -39,8 +39,8 @@ it('owns feedback, closes immediately, keeps callbacks stable and ignores starts
     act(() => render(null, host));
   }
   expect(close).toHaveBeenCalledTimes(2);
-  route.startLoading();
-  route.finishLoading();
+  feedbackState.startLoading();
+  feedbackState.finishLoading();
   expect(loading).toHaveBeenCalledTimes(2);
   expect(close).toHaveBeenCalledTimes(2);
 });

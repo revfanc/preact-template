@@ -22,13 +22,13 @@ src/
       index.ts            应用共享实例集合，目前无业务成员
       context.tsx         Context 与 Provider，只传递实例
       hooks.ts            useAppStores 获取已有集合
-    route/
-      index.ts            当前实际使用的路由状态
-      hooks.ts            useLocalRouteStore 局部绑定
+    loading/
+      index.ts            独立的 Loading 状态
+      hooks.ts            useLocalLoadingStore 局部绑定
     index.ts              对外接入能力导出
     README.md             目录、作用域与使用约定
   hooks/
-    use-route-loading.ts  连接 Router、路由状态与 Loading 展示
+    use-loading.ts  连接 Loading 状态与反馈展示
   router/                 文件路由解析、懒加载
 ```
 
@@ -73,7 +73,7 @@ src/
 
 `useStore(instance)` 只订阅快照，不负责销毁。需要跨路由存活的流程 store 不应归属于会卸载的单个步骤页面。销毁不可逆；离开后重新进入应创建新实例。BFCache 恢复和 History 返回监听依照 browser 包文档处理，不能把页面卸载与 pagehide 混为一谈。
 
-命名区分创建与读取：`useLocalXxxStore()` 创建局部实例，`useXxxStore()` 留给获取 Context 中已有业务实例并订阅的 hook，`useAppStores()` 获取应用共享集合。当前局部绑定为 `useLocalRouteStore()`，返回 `{ state, store }`；多个调用位置各有独立实例，消费者共享时使用 `useStore(store)`。禁止同一个 hook 隐式决定创建还是共享，不保留旧名 `useRouteStore`。
+命名区分创建与读取：`useLocalXxxStore()` 创建局部实例，`useXxxStore()` 留给获取 Context 中已有业务实例并订阅的 hook，`useAppStores()` 获取应用共享集合。当前局部绑定为 `useLocalLoadingStore()`，返回 `{ state, store }`；多个调用位置各有独立实例，消费者共享时使用 `useStore(store)`。禁止同一个 hook 隐式决定创建还是共享。
 
 业务绑定就近放在 `stores/<name>/hooks.ts`，不集中导入通用 `stores/core/hooks.ts`。组件只订阅需要的业务 store，共享集合本身不提供全量订阅或任意字段写入；数据修改仍经业务 action。
 
@@ -108,7 +108,7 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 同一动作的防重放在 action 内，而不只禁用按钮。重试按接口语义决定；不要给签约等提交统一自动重试。轮询间隔、结束条件属于业务，启动和停止与实例生命周期绑定。
 
-`stores/route/index.ts` 只保存 isLoading 并提供 start/finish 数据 action。`hooks/use-route-loading.ts` 持有 Loading 关闭句柄，连接 Router 回调并在卸载时关闭提示；开始和结束时直接协调状态与反馈，不依赖延迟 effect 展示。公共反馈包仍管理自身 UI 资源，不依赖 Landing store。
+`stores/loading/index.ts` 只保存 isLoading 并提供 start/finish 数据 action。`hooks/use-loading.ts` 持有 Loading 关闭句柄，提供 startLoading/finishLoading 并在卸载时关闭提示；Router 只是当前调用方；开始和结束时直接协调状态与反馈，不依赖延迟 effect 展示。公共反馈包仍管理自身 UI 资源，不依赖 Landing store。
 
 ## 新增一个功能
 

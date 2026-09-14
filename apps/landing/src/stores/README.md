@@ -14,9 +14,9 @@ stores/
     context.tsx       Context 与 AppStoresProvider，只传递实例
     hooks.ts          useAppStores 读取已有集合
     hooks.test.tsx
-  route/
-    index.ts          路由状态工厂，只管理数据
-    hooks.ts          useLocalRouteStore 局部绑定
+  loading/
+    index.ts          Loading 状态工厂，只管理数据
+    hooks.ts          useLocalLoadingStore 局部绑定
     index.test.ts
     hooks.test.tsx
   index.ts            供组件和场景 hooks 使用的统一入口
@@ -38,7 +38,7 @@ stores/
 
 文件按需创建，职责固定。顶层 `stores/index.ts` 是对外聚合入口，允许导出 hooks 和 Provider；模块内的 `index.ts` 则必须保持纯数据。
 
-跨模块使用 `@/`，模块内部使用 `./`；例如路由数据工厂导入 `@/stores/core`，路由绑定 hook 导入 `./index`。别名不会绕过依赖边界检查。
+跨模块使用 `@/`，模块内部使用 `./`；例如Loading 数据工厂导入 `@/stores/core`，Loading 绑定 hook 导入 `./index`。别名不会绕过依赖边界检查。
 
 内部模块直接引用具体模块，不能反向引用顶层 `stores/index.ts`，避免循环依赖。`core/` 不导入 app 或业务模块；各模块的 `index.ts` 保持纯 TypeScript，Preact 接入单独放在 hooks/context 文件。
 
@@ -49,9 +49,9 @@ stores/
 业务 store 从 `@/stores/core` 导入状态容器，避免加载 Preact 接入层。组件使用方式：
 
 ```ts
-import { useLocalRouteStore } from '@/stores';
+import { useLocalLoadingStore } from '@/stores';
 
-const { state, store } = useLocalRouteStore();
+const { state, store } = useLocalLoadingStore();
 // state.isLoading 读取渲染状态，store.start() / store.finish() 修改数据。
 ```
 
@@ -67,7 +67,13 @@ const { state, store } = useLocalRouteStore();
 | `useXxxStore()`      | 预留给读取 Context 中已有的业务实例并订阅的 hook   | 共享实例的所有者     |
 | `useStore(store)`    | 只订阅显式传入的实例                               | 不负责销毁           |
 
-`useLocalRouteStore()` 每个调用位置都有独立实例；需要共享时，通过 props/Context 传递返回的 store，消费者调用 `useStore(store)`。禁止在缺少 Context 时自动回退到创建新实例。原 `useRouteStore` 已改名，不保留含义模糊的别名。
+`useLocalLoadingStore()` 每个调用位置都有独立实例；需要共享时，通过 props/Context 传递返回的 store，消费者调用 `useStore(store)`。禁止在缺少 Context 时自动回退到创建新实例。
+
+## Loading 的复用范围
+
+`createLoadingStore()` 只管理 `isLoading` 和 start/finish 数据 action；`useLocalLoadingStore()` 创建并订阅局部实例。`hooks/use-loading.ts` 的 `useLoading()` 进一步管理带遮罩的反馈展示，返回 `{ isLoading, startLoading, finishLoading }`，可用于路由或其他需要显式开始/结束提示的场景。
+
+每次调用创建独立状态；重复 start 不计数，一次 finish 即结束当前实例的 loading。它不是并发请求计数器，也不会自动与其他业务 store 的 pending 状态同步。已有请求状态时，以业务 store 为准，由场景 hook 协调反馈，避免额外维护一份相同状态。公共反馈仍沿用单实例机制，多处调用不代表能同时展示多个 Loading。
 
 ## 全局入口与边界
 
