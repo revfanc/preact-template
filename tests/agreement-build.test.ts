@@ -57,7 +57,7 @@ it('generates all TSX documents with custom base, static CSS and only a classic 
       mode: 'prod',
       logLevel: 'silent',
     });
-    const output = path.join(fixture, 'dist/prod');
+    const output = path.join(fixture, 'dist');
     const files = await readdir(output, { recursive: true });
     expect(
       files

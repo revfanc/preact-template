@@ -14,8 +14,8 @@ pnpm --filter @apps/agreement preview:test
 ```
 
 - 开发地址：`http://127.0.0.1:5174/agreement/`；服务端实时渲染 TSX，保存后刷新。
-- 预览地址：`http://127.0.0.1:4174/agreement/`，读取 `dist/test`。
-- prod 使用 `build:prod` / `preview:prod`，输出 `dist/prod`。
+- 预览地址：`http://127.0.0.1:4174/agreement/`，读取 `dist`。
+- prod 使用 `build:prod` / `preview:prod`，输出 `dist`。
 - 两种环境统一使用 Vite mode，不再维护额外的模式变量。
 - `.env.test` / `.env.prod` 的 `VITE_BASE_PATH` 控制部署前缀，`VITE_APP_ENV` 必须与 mode 一致。当前没有 API 请求，`VITE_API_BASE_URL` 尚未接入运行时。
 - 部署按输出目录提供静态文件，不配置 SPA 回退。未知协议返回 404。
@@ -45,7 +45,7 @@ export default function AgreementPage() {
 }
 ```
 
-例如 `src/pages/privacy/index.tsx` 输出 `dist/test/privacy/index.html`，访问 `/agreement/privacy/`。所有页面均显式交给预渲染插件，不依赖首页是否包含链接。没有客户端路由，跳转使用普通 `<a>`。当前只支持确定的目录路径，不支持 `[id]`、URL 查询参数生成无限页面或 Landing 的路由约定。
+例如 `src/pages/privacy/index.tsx` 输出 `dist/privacy/index.html`，访问 `/agreement/privacy/`。所有页面均显式交给预渲染插件，不依赖首页是否包含链接。没有客户端路由，跳转使用普通 `<a>`。当前只支持确定的目录路径，不支持 `[id]`、URL 查询参数生成无限页面或 Landing 的路由约定。
 
 预渲染使用 [@preact/preset-vite 官方能力](https://github.com/preactjs/preset-vite#prerendering-configuration) 和 `preact-render-to-string`。构建专用 JS 会从发布产物移除，正文不依赖 Preact 浏览器运行时。不要在页面组件中读取 `window`、操作 DOM 或依赖 `useEffect`：这些组件只在 Node 中执行。
 

@@ -31,7 +31,7 @@ src/
     use-loading/
       index.ts            连接 Loading 状态与反馈展示
       index.test.tsx      就近测试
-  router/                 文件路由解析、懒加载
+  router/                 消费生成的路由表、懒加载
 ```
 
 不提前创建虚构的渠道、登录、订单字段或无实际职责的转发层。新业务出现时，在 stores 下按业务名称增加目录，测试就近放置。目录按业务职责组织，全局或局部作用域由实例所有者决定，不另建 global/local 目录。示例页面已从生产入口移除；测试交互仅位于 `test/fixture`。
@@ -42,7 +42,7 @@ src/
 - 公共包通过 `@packages/*` 的公开入口引用，不通过应用别名或相对路径穿透包源码。
 - 别名仅缩短路径，不改变依赖边界：业务 store 使用 `@/stores/core`，不能通过 `@/stores` 反向引用聚合入口。
 - 根 `tsconfig.json` 是当前 Landing 路径映射的唯一来源；正式应用、测试夹具及 Vitest 启用 `resolve.tsconfigPaths`。测试夹具的 `@/` 同样指向正式 Landing 源码；夹具内部继续使用相对路径。
-- 路由发现的 `import.meta.glob` 保持现有相对路径及键值解析约定，不混入普通模块导入的路径替换。
+- `build/routes/` 的 Vite 插件负责扫描、解析和校验 `src/pages/`，通过 `virtual:file-routes` 输出懒加载路由表。运行时不扫描目录、不解析文件命名规则；开发时新增或删除页面会刷新路由。
 
 ## 文件与依赖规则
 

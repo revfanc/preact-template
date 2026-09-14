@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest';
-import { createFileRoutes } from '../apps/landing/src/router/file-routes';
+import { createFileRoutes } from '../apps/landing/build/routes/patterns';
 
 describe('file routes', () => {
   it('maps index pages, parameters and catch-all pages, ignoring private files', () => {

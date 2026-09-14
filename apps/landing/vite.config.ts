@@ -1,11 +1,10 @@
-import { readdirSync } from 'node:fs';
 import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
 import legacy from '@vitejs/plugin-legacy';
 import { defineConfig, loadEnv } from 'vite';
 import { cssTargets, legacyTargets } from '../../tooling/compatibility.ts';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
-import { createFileRoutes } from './src/router/file-routes.ts';
+import { fileRoutes } from './build/routes/index.ts';
 import { landingHtml } from './build/html.ts';
 
 const root = import.meta.dirname;
@@ -26,7 +25,7 @@ export default defineConfig(({ mode }) => {
       rolldownOptions: { transform: { jsx: { importSource: 'preact' } } },
     },
     css: { postcss: { plugins: createPostcssPlugins(true, theme) } },
-    build: { outDir: `dist/${mode}`, minify: 'terser', cssTarget: cssTargets },
+    build: { cssTarget: cssTargets },
     server: { host: '127.0.0.1', port: 5173, strictPort: true },
     preview: {
       host: '127.0.0.1',
@@ -37,6 +36,7 @@ export default defineConfig(({ mode }) => {
     plugins: [
       legacy({ targets: legacyTargets }),
       preact({ reactAliasesEnabled: false }),
+      fileRoutes(),
       landingHtml(theme),
       {
         name: 'agreement-dev-navigation',
@@ -56,17 +56,6 @@ export default defineConfig(({ mode }) => {
             response.writeHead(302, { Location: url.href });
             response.end();
           });
-        },
-      },
-      {
-        name: 'validate-file-routes',
-        buildStart() {
-          createFileRoutes(
-            readdirSync(new URL('./src/pages/', import.meta.url), {
-              recursive: true,
-              encoding: 'utf8',
-            }).map((file) => file.replace(/\\/g, '/')),
-          );
         },
       },
     ],

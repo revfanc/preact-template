@@ -32,7 +32,7 @@ export default defineConfig(({ mode, command }) => {
     preview: { host: '127.0.0.1', port: 4174, strictPort: true },
     css: { postcss: { plugins: createPostcssPlugins(false, theme) } },
     build: {
-      outDir: `dist/${mode}`,
+      outDir: 'dist',
       cssTarget: cssTargets,
       cssCodeSplit: false,
     },
@@ -163,7 +163,7 @@ export default defineConfig(({ mode, command }) => {
           await build({
             configFile: runtimeConfig,
             mode,
-            build: { outDir: `dist/${mode}/runtime` },
+            build: { outDir: 'dist/runtime' },
           });
         },
       },

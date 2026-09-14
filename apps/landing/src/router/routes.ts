@@ -1,34 +1,17 @@
-import type { ComponentType } from 'preact';
 import { lazy } from 'preact-iso';
-import { createFileRoutes, type FileRoute } from './file-routes';
+import { routes as files } from 'virtual:file-routes';
 import { PageError } from '@/components/page-error';
 
-type PageModule = { default: ComponentType };
-const pages = {
-  ...import.meta.glob<PageModule>([
-    '../pages/**/index.tsx',
-    '!../pages/**/_*/**',
-  ]),
-  ...import.meta.glob<PageModule>('../pages/_404/index.tsx'),
-};
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
-
-export const routes = createFileRoutes(
-  Object.keys(pages).map((file) => file.slice('../pages/'.length)),
-).map((route) => {
-  const scoped: FileRoute = route.default
-    ? route
-    : { ...route, path: base + route.path };
-  return {
-    ...scoped,
-    component: lazy(() =>
-      pages[`../pages/${route.file}`]!()
-        .then((module) => {
-          if (typeof module.default !== 'function')
-            throw new Error(`Page needs a default component: ${route.file}`);
-          return module.default;
-        })
-        .catch(() => PageError),
-    ),
-  };
-});
+export const routes = files.map(({ load, ...route }) => ({
+  ...(route.default ? route : { ...route, path: base + route.path }),
+  component: lazy(() =>
+    load()
+      .then((module) => {
+        if (typeof module.default !== 'function')
+          throw new Error(`Page needs a default component: ${route.file}`);
+        return module.default;
+      })
+      .catch(() => PageError),
+  ),
+}));

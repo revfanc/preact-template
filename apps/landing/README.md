@@ -13,8 +13,8 @@ pnpm --filter @apps/landing preview:test
 ```
 
 - 开发地址：`http://127.0.0.1:5173/landing/`。
-- 预览地址：`http://127.0.0.1:4173/landing/`，读取 `dist/test`；修改源码后需重新构建。
-- prod 使用 `build:prod` / `preview:prod`，输出 `dist/prod`。
+- 预览地址：`http://127.0.0.1:4173/landing/`，读取 `dist`；修改源码后需重新构建。
+- prod 使用 `build:prod` / `preview:prod`，输出 `dist`。
 - 单独部署时配置 `/landing/` 下非静态路径回退到 `index.html`。
 
 `.env.test` / `.env.prod` 中的 `VITE_BASE_PATH` 控制部署前缀，`VITE_APP_ENV` 与构建模式一致。`VITE_API_BASE_URL` 是公开接口地址，空值使用应用路径；不再请求 `site-config.json`。本地覆盖使用 `.env.<mode>.local`，不要在 `VITE_` 变量中保存秘密。
@@ -30,7 +30,8 @@ pnpm --filter @apps/landing preview:test
 | `src/stores/`     | 状态容器、实例 action、资源清理和通用 hooks     |
 | `src/hooks/`      | 组合函数独立目录，入口 `use-<name>/index.ts(x)` |
 | `src/api/`        | 应用请求客户端，按需绑定公共业务接口            |
-| `src/router/`     | 文件路由发现、解析及懒加载                      |
+| `src/router/`     | 消费生成的路由表并接入懒加载                    |
+| `build/routes/`   | Vite 文件路由插件：扫描、规则校验、生成路由表   |
 
 业务、表单、请求结果及 pending/error 统一由所属作用域的 store 管理。store 使用工厂创建，不默认全局共享；所有者通过 `useLocalLoadingStore()` 等绑定 hook 创建、订阅并清理实例，消费者通过 `useStore(store)` 订阅传入的同一个实例。分别调用绑定 hook 会创建不同实例。局部动画和布局测量可保留在 UI 内。
 

@@ -15,7 +15,7 @@ apps/
       stores/             状态容器、Preact 接入及有明确作用域的状态/action
       hooks/              具体场景的路由、状态与 UI 行为接入
       api/                应用请求实例
-      router/             文件路由与懒加载
+      router/             生成路由表的运行时接入与懒加载
     test/                 独立回归夹具，不进入发布产物
   agreement/              静态协议布局、页面和普通脚本入口
 packages/
@@ -82,10 +82,12 @@ pnpm preview:test
 # 或 pnpm preview:prod
 ```
 
-| 应用      | test 输出                | prod 输出                | 部署路径    |
-| --------- | ------------------------ | ------------------------ | ----------- |
-| landing   | apps/landing/dist/test   | apps/landing/dist/prod   | /landing/   |
-| agreement | apps/agreement/dist/test | apps/agreement/dist/prod | /agreement/ |
+| 应用      | 构建输出            | 部署路径    |
+| --------- | ------------------- | ----------- |
+| landing   | apps/landing/dist   | /landing/   |
+| agreement | apps/agreement/dist | /agreement/ |
+
+test 和 prod 都写入各应用的 `dist/`，后一次构建覆盖前一次产物，不同时保留两套环境。预览读取最近一次构建；`preview:test` / `preview:prod` 只选择预览配置，不会切换或重新生成产物。检查时使用与最近构建一致的 `pnpm check:build test` 或 `pnpm check:build prod`。
 
 预览端口为 4173 / 4174，预览读取构建产物；恢复源码或切换分支后需重新构建。两种环境均使用生产优化，不设置 NODE_ENV=test。两个应用统一通过 Vite mode 选择环境。
 
@@ -100,7 +102,7 @@ pnpm preview:test
 
 ## 路由、样式与兼容
 
-pages 下 index.tsx 自动发现，支持 [id] 动态段与 [...path] 末尾捕获；下划线目录不生成路由，_404/index.tsx 为兜底。路由冲突在构建时报告。活动入口使用 pages/p1/<code>/index.tsx 形式，目录尽量只放路由组件。
+pages 下 index.tsx 自动发现，支持 [id] 动态段与 [...path] 末尾捕获；下划线目录不生成路由，_404/index.tsx 为兜底。路由冲突在构建时报告。`fileRoutes()` 插件统一负责扫描与规则解析，通过 `virtual:file-routes` 提供懒加载路由表，解析逻辑不进入浏览器；开发时增删页面会刷新。活动入口使用 pages/p1/<code>/index.tsx 形式，目录尽量只放路由组件。
 
 目前只有空白首页和 404，保留加载失败重试页及 HTML 首屏三圆点交接。新增业务页面时不要恢复演示依赖。
 

@@ -5,6 +5,7 @@ import { defineConfig } from 'vite';
 import { cssTargets, legacyTargets } from '../../../tooling/compatibility.ts';
 import { createPostcssPlugins } from '../../../tooling/postcss.ts';
 import { landingHtml } from '../build/html.ts';
+import { fileRoutes } from '../build/routes/index.ts';
 
 const theme = fileURLToPath(new URL('../src/theme.css', import.meta.url));
 export default defineConfig(({ mode }) => ({
@@ -21,6 +22,7 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     legacy({ targets: legacyTargets }),
     preact({ reactAliasesEnabled: false }),
+    fileRoutes(),
     landingHtml(theme),
   ],
   build: {
@@ -40,7 +42,6 @@ export default defineConfig(({ mode }) => ({
     },
     outDir: '../dist',
     emptyOutDir: true,
-    minify: 'terser',
     cssTarget: cssTargets,
   },
   preview: {

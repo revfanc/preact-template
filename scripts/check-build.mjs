@@ -21,7 +21,7 @@ function checkTheme(css, app) {
 
 {
   const app = 'landing';
-  const directory = path.join(root, 'apps', app, 'dist', mode);
+  const directory = path.join(root, 'apps', app, 'dist');
   const html = await readFile(path.join(directory, 'index.html'), 'utf8');
   assert(
     html.includes(`name="app-env" content="${mode}"`),
@@ -96,7 +96,7 @@ function checkTheme(css, app) {
 }
 
 const appRoot = path.join(root, 'apps/agreement');
-const directory = path.join(appRoot, 'dist', mode);
+const directory = path.join(appRoot, 'dist');
 const files = await readdir(directory, { recursive: true });
 const pages = files.filter((file) => file.endsWith('.html'));
 assert(pages.includes('index.html'), 'agreement: missing index.html');
