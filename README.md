@@ -48,6 +48,7 @@ store 的通用能力集中在 `stores/core/index.ts`、`stores/core/hooks.ts`�
 | [Landing 架构](apps/landing/ARCHITECTURE.md)    | 数据、业务、UI 分层和 store 实例生命周期 |
 | [Agreement 应用](apps/agreement/README.md)      | 静态协议、动态脚本与独立部署             |
 | [API 包](packages/api/README.md)                | 公共业务接口与请求客户端边界             |
+| [Request 包](packages/request/README.md)        | Fetch 封装、错误、返回类型与浏览器兼容   |
 | [Feedback 包](packages/feedback/README.md)      | Toast、Loading 和函数式 Modal            |
 | [Browser 包](packages/browser/README.md)        | 返回拦截栈、异步放行及 History 边界      |
 | [Landing 测试夹具](apps/landing/test/README.md) | 独立回归页面与正式应用的区别             |
@@ -109,7 +110,7 @@ tooling/compatibility.ts 集中管理 Chrome 49、iOS 10 / Safari 10 构建目�
 
 ## 公共包
 
-- request：createRequestClient；浏览器使用 @packages/request/browser 的兼容客户端。支持 JSON、文本、超时、取消及明确错误类型，不自动弹 Toast。
+- request：ofetch 1.5.1 的项目适配层，使用 `request(url, { body, query })`；完整转导出上游类型（客户端使用 `$Fetch`），运行时只提供项目工厂与 FetchError。默认不重试、不弹 Toast。浏览器使用 @packages/request/browser，缺少可取消的 fetch 时使用 XHR 补丁。超时沿用 ofetch v1 语义：传入 signal 时由调用方管理截止时间。协议静态内容不引入客户端请求代码，详见 [request 说明](packages/request/README.md)。
 - api：按真实业务逐项增加接口，客户端由应用注入，不依赖页面或全局 store。
 - browser：register(handler) 返回精确注销函数，done 消费当前层；主动修改 History 前等待注销。详情见 [Browser 文档](packages/browser/README.md)。
 - feedback：Toast、Loading、Modal 及类型统一从 @packages/feedback 导入，使用方需安装 Preact 10。Toast 与 Loading 共用实例；Modal 内容由 render 提供。详情见 [Feedback 文档](packages/feedback/README.md)。

@@ -9,6 +9,7 @@
   },
   "dependencies": {
     "abort-controller": "3.0.0",
+    "ofetch": "1.5.1",
     "whatwg-fetch": "3.6.20"
   }
 }

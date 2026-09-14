@@ -138,6 +138,9 @@ importers:
       abort-controller:
         specifier: 3.0.0
         version: 3.0.0
+      ofetch:
+        specifier: 1.5.1
+        version: 1.5.1
       whatwg-fetch:
         specifier: 3.6.20
         version: 3.6.20

@@ -1,4 +1,4 @@
-import type { RequestClient } from '@packages/request';
+import type { $Fetch } from '@packages/request';
 
 export interface SiteConfig {
   title: string;
@@ -10,10 +10,10 @@ export interface ApiOptions {
   configPath: string;
 }
 
-export function createApi(client: RequestClient, options: ApiOptions) {
+export function createApi(client: $Fetch, options: ApiOptions) {
   return {
     async getConfig(signal?: AbortSignal): Promise<SiteConfig> {
-      const data = await client.request(options.configPath, { signal });
+      const data = await client<unknown>(options.configPath, { signal });
       if (!isSiteConfig(data)) throw new Error('站点配置格式不正确');
       return data;
     },

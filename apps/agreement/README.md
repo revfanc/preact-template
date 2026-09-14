@@ -43,6 +43,8 @@ pnpm --filter @apps/agreement preview:test
 
 应用可按需声明公共包依赖，使用 `@packages/request/browser` 的兼容请求客户端，并绑定 [packages/api](../../packages/api/README.md) 中的真实业务接口。当前没有安装业务请求依赖，也不会请求 `site-config.json`。动态状态按当前页面实例管理，不共享 Landing 的全局对象。
 
+构建时可确定的数据使用 Astro frontmatter 获取并静态输出；若使用共享请求客户端，选择 `@packages/request` 默认入口和绝对 baseURL，不能在构建进程导入 browser 入口。浏览器实时请求才使用兼容入口。错误、超时、取消和返回值约定见 [request 说明](../../packages/request/README.md)。
+
 IIFE 构建沿用仓库 Chrome 49、iOS 10 / Safari 10 目标。语法转换不自动补齐运行时 API；新增 Promise、fetch 等能力时要检查对应兼容实现。现代浏览器测试不能替代旧设备验收。
 
 ## 验证

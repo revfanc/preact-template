@@ -13,7 +13,7 @@ it('uses the configured endpoint and rejects malformed configuration', async () 
     .mockResolvedValueOnce(Response.json(config))
     .mockResolvedValueOnce(Response.json({ title: 123 }));
   const api = createApi(
-    createRequestClient({ baseURL: '/api', fetch: fetcher }),
+    createRequestClient({ baseURL: '/api' }, { fetch: fetcher }),
     { configPath: 'config' },
   );
   await expect(api.getConfig()).resolves.toEqual(config);

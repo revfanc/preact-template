@@ -24,6 +24,14 @@ export default defineConfig(({ mode }) => ({
     landingHtml(theme),
   ],
   build: {
+    rolldownOptions: {
+      input: {
+        app: fileURLToPath(new URL('./fixture/index.html', import.meta.url)),
+        request: fileURLToPath(
+          new URL('./fixture/request.html', import.meta.url),
+        ),
+      },
+    },
     outDir: '../dist',
     emptyOutDir: true,
     minify: 'terser',
