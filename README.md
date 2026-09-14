@@ -36,7 +36,7 @@ store action 处理数据变化并调用 API；场景 hook 组织用户操作流
 
 Landing 使用 `@/` 引用 `apps/landing/src/` 下的跨模块代码，同模块保留 `./`，公共包使用 `@packages/*`。映射统一在根 `tsconfig.json`，Landing 开发/构建、测试夹具和 Vitest 通过 Vite 8 的 `resolve.tsconfigPaths` 读取；该别名仅供 Landing 使用，公共包不得依赖它，Agreement 仍使用自己的独立配置。
 
-store 的通用能力集中在 `stores/core/index.ts`、`stores/core/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useLocalLoadingStore()` 等绑定 hook，一次获取 state 和 store；共享消费者使用 `useStore(store)` 订阅同一实例。顶层 hooks 只保留具体场景的接入逻辑。
+store 的通用能力集中在 `stores/core/index.ts`、`stores/core/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useLocalLoadingStore()` 等绑定 hook，一次获取 state 和 store；共享消费者使用 `useStore(store)` 订阅同一实例。顶层 hooks 只保留具体场景的接入逻辑，每个组合函数放入 `hooks/use-<name>/index.ts(x)`，调用方导入目录，测试就近放置。
 
 应用共享空壳已接入 `app.tsx`：`stores/app/index.ts` 创建独立的业务 store 集合，`stores/app/context.tsx` 只定义 Context 和 Provider，`stores/app/hooks.ts` 提供读取 hook。`useAppStores()` 只获取已有集合，`useLocalXxxStore()` 明确创建局部实例，`useXxxStore()` 留给读取共享业务实例的 hook。当前集合无业务成员；以后按渠道、会话等业务分别扩展，不集中存放全部状态。申请数据归流程、临时编辑归页面或弹窗，生命周期不匹配的数据不提升为应用全局。详细命名和作用域规则见 [Stores 说明](apps/landing/src/stores/README.md)。
 

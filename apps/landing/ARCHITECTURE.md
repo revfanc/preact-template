@@ -28,7 +28,9 @@ src/
     index.ts              对外接入能力导出
     README.md             目录、作用域与使用约定
   hooks/
-    use-loading.ts  连接 Loading 状态与反馈展示
+    use-loading/
+      index.ts            连接 Loading 状态与反馈展示
+      index.test.tsx      就近测试
   router/                 文件路由解析、懒加载
 ```
 
@@ -92,7 +94,7 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 - API：定义接口和输入输出、校验/转换后端数据；不控制 UI、路由或 store 生命周期。
 - Store：管理状态及数据 action，调用 API 并保存 pending/error 和结果。不得直接展示 Toast、Loading、Modal 或执行导航。
 - Store hooks：`stores/core/hooks.ts` 提供实例创建、订阅和卸载清理，属于 store 的 Preact 接入能力。
-- 场景 Hook：顶层 `hooks/` 连接路由、状态和 UI 行为，组织用户操作流程，持有并清理反馈句柄；不额外维护 pending/error 副本。单一能力和业务流程按职责区分，暂不强制拆分子目录。
+- 场景 Hook：顶层 `hooks/` 连接路由、状态和 UI 行为，组织用户操作流程，持有并清理反馈句柄；不额外维护 pending/error 副本。每个组合函数用独立目录包裹，入口为 `hooks/use-<name>/index.ts`，含 JSX 时使用 `index.tsx`，测试就近放置。单一能力和业务流程按职责区分，不额外增加分类目录。
 - UI：读取状态、触发 action、处理局部视觉交互；通用展示组件通过 props/events 通信，不直接请求接口。
 - Pages：组装 store/hook/UI，解释路由参数和业务结果，调用应用导航或反馈；不堆放表单和复杂业务实现。
 
@@ -108,7 +110,7 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 同一动作的防重放在 action 内，而不只禁用按钮。重试按接口语义决定；不要给签约等提交统一自动重试。轮询间隔、结束条件属于业务，启动和停止与实例生命周期绑定。
 
-`stores/loading/index.ts` 只保存 isLoading 并提供 start/finish 数据 action。`hooks/use-loading.ts` 持有 Loading 关闭句柄，提供 startLoading/finishLoading 并在卸载时关闭提示；Router 只是当前调用方；开始和结束时直接协调状态与反馈，不依赖延迟 effect 展示。公共反馈包仍管理自身 UI 资源，不依赖 Landing store。
+`stores/loading/index.ts` 只保存 isLoading 并提供 start/finish 数据 action。`hooks/use-loading/index.ts` 持有 Loading 关闭句柄，提供 startLoading/finishLoading 并在卸载时关闭提示；Router 只是当前调用方；开始和结束时直接协调状态与反馈，不依赖延迟 effect 展示。公共反馈包仍管理自身 UI 资源，不依赖 Landing store。
 
 ## 新增一个功能
 
@@ -119,3 +121,5 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 5. 测试实例隔离、重复提交、旧响应及销毁；再验证浏览器交互。
 
 组件使用目录包裹：`components/<name>/index.tsx` 与 `index.module.css`。路由使用 `pages/p1/<code>/index.tsx` 等形式，路由目录尽量只放入口。
+
+顶层 hooks 和测试夹具中的组合函数均使用 `hooks/use-<name>/index.ts(x)`；调用方导入目录，例如 `@/hooks/use-loading`。Store 自身的接入函数仍集中在 `stores/<业务>/hooks.ts`，遵循 store 的文件职责约定。

@@ -7,3 +7,5 @@ fixture 仅用于自动化验证请求、反馈、Modal、路由与 browser 接�
 在仓库根目录执行 `pnpm --filter @apps/landing test:build`，生成 `apps/landing/test/dist`。Playwright 在 4176 独立启动，路径为 `/landing/`；夹具固定使用 test 模式，不受 `BUILD_MODE` 影响。正式应用的 build:test/build:prod 不构建这里，也不发布这些页面。正式应用另由 scaffold.spec.ts 检查空白入口、404、静态协议与示例资源清理。
 
 完整回归执行 `pnpm test:browser`，需提前构建两应用并保持 4173–4176 端口空闲。命令及环境切换见[根 README](../../../README.md)，正式代码职责见 [Landing 架构](../ARCHITECTURE.md)。
+
+夹具中的组合函数与正式应用一致，使用 `src/hooks/use-<name>/index.ts(x)` 组织；调用方导入目录，夹具内部引用保持相对路径。`use-loading/index.ts` 复用正式应用的 `@/hooks/use-loading`。

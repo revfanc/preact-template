@@ -7,7 +7,7 @@ const { loading, close } = vi.hoisted(() => {
   return { close, loading: vi.fn(() => close) };
 });
 vi.mock('@packages/feedback', () => ({ loading }));
-import { useLoading } from './use-loading';
+import { useLoading } from './index';
 
 it('owns feedback, closes immediately, keeps callbacks stable and ignores starts after unmount', () => {
   const host = document.createElement('div');

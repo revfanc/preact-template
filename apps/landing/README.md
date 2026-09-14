@@ -21,16 +21,16 @@ pnpm --filter @apps/landing preview:test
 
 ## 代码入口与分层
 
-| 位置              | 职责                                        |
-| ----------------- | ------------------------------------------- |
-| `src/main.tsx`    | 兼容补丁、挂载、HTML 首屏 Loading 交接      |
-| `src/app.tsx`     | Router 装配与页面错误处理，不新增 app 目录  |
-| `src/pages/`      | 路由入口与装配，不放复杂业务或整块表单      |
-| `src/components/` | 应用 UI，每个组件独立目录                   |
-| `src/stores/`     | 状态容器、实例 action、资源清理和通用 hooks |
-| `src/hooks/`      | 具体场景的路由、状态与反馈 UI 接入          |
-| `src/api/`        | 应用请求客户端，按需绑定公共业务接口        |
-| `src/router/`     | 文件路由发现、解析及懒加载                  |
+| 位置              | 职责                                            |
+| ----------------- | ----------------------------------------------- |
+| `src/main.tsx`    | 兼容补丁、挂载、HTML 首屏 Loading 交接          |
+| `src/app.tsx`     | Router 装配与页面错误处理，不新增 app 目录      |
+| `src/pages/`      | 路由入口与装配，不放复杂业务或整块表单          |
+| `src/components/` | 应用 UI，每个组件独立目录                       |
+| `src/stores/`     | 状态容器、实例 action、资源清理和通用 hooks     |
+| `src/hooks/`      | 组合函数独立目录，入口 `use-<name>/index.ts(x)` |
+| `src/api/`        | 应用请求客户端，按需绑定公共业务接口            |
+| `src/router/`     | 文件路由发现、解析及懒加载                      |
 
 业务、表单、请求结果及 pending/error 统一由所属作用域的 store 管理。store 使用工厂创建，不默认全局共享；所有者通过 `useLocalLoadingStore()` 等绑定 hook 创建、订阅并清理实例，消费者通过 `useStore(store)` 订阅传入的同一个实例。分别调用绑定 hook 会创建不同实例。局部动画和布局测量可保留在 UI 内。
 

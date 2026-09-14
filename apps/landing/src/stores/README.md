@@ -71,7 +71,7 @@ const { state, store } = useLocalLoadingStore();
 
 ## Loading 的复用范围
 
-`createLoadingStore()` 只管理 `isLoading` 和 start/finish 数据 action；`useLocalLoadingStore()` 创建并订阅局部实例。`hooks/use-loading.ts` 的 `useLoading()` 进一步管理带遮罩的反馈展示，返回 `{ isLoading, startLoading, finishLoading }`，可用于路由或其他需要显式开始/结束提示的场景。
+`createLoadingStore()` 只管理 `isLoading` 和 start/finish 数据 action；`useLocalLoadingStore()` 创建并订阅局部实例。`hooks/use-loading/index.ts` 的 `useLoading()` 进一步管理带遮罩的反馈展示，返回 `{ isLoading, startLoading, finishLoading }`，可用于路由或其他需要显式开始/结束提示的场景。
 
 每次调用创建独立状态；重复 start 不计数，一次 finish 即结束当前实例的 loading。它不是并发请求计数器，也不会自动与其他业务 store 的 pending 状态同步。已有请求状态时，以业务 store 为准，由场景 hook 协调反馈，避免额外维护一份相同状态。公共反馈仍沿用单实例机制，多处调用不代表能同时展示多个 Loading。
 

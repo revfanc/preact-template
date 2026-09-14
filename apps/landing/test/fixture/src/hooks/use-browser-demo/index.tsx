@@ -6,7 +6,7 @@ import {
   ModalCancelledError,
   type ModalPromise,
 } from '@packages/feedback';
-import { BackConfirm } from '../components/back-confirm';
+import { BackConfirm } from '../../components/back-confirm';
 
 type Layer = { id: number; unregister: Unregister };
 const isAbort = (error: unknown) =>

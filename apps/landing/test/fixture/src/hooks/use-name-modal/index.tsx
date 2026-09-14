@@ -5,7 +5,7 @@ import {
   toast,
   type ModalPromise,
 } from '@packages/feedback';
-import { NameModal } from '../components/name-modal';
+import { NameModal } from '../../components/name-modal';
 
 export function useNameModal(onConfirm: (value: string) => void) {
   const pending = useRef<ModalPromise<string>[]>([]);
