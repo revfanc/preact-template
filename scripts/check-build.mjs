@@ -120,7 +120,7 @@ for (const page of pages) {
   const tags = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)];
   assert.equal(tags.length, 1, `${page}: expected only the classic runtime`);
   assert(
-    !/type="module"|\bnomodule\b|astro-island|astro-slot/.test(html),
+    !/type="module"|\bnomodule\b|modulepreload/.test(html),
     `${page}: unexpected client framework/module entry`,
   );
   const attrs = tags[0][1];
@@ -158,6 +158,11 @@ for (const page of pages) {
   }
 }
 assert.equal(scripts.size, 1, 'agreement: pages must share one runtime');
+assert.deepEqual(
+  files.filter((file) => /\.(?:js|mjs|map)$/.test(file)).sort(),
+  [...scripts].map((file) => path.normalize(file)).sort(),
+  'agreement: build-only document code must not be published',
+);
 for (const file of scripts) {
   parse(await readFile(path.join(directory, file), 'utf8'), {
     ecmaVersion: 2015,

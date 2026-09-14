@@ -14,7 +14,6 @@ export default defineConfig({
     {
       command: 'pnpm dev',
       cwd: fileURLToPath(new URL('./apps/agreement', import.meta.url)),
-      env: { ASTRO_DEV_BACKGROUND: '1' },
       url: 'http://127.0.0.1:5174/agreement/',
       reuseExistingServer: !process.env.CI,
     },

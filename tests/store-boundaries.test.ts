@@ -41,7 +41,7 @@ it('keeps store imports within their layer and out of the consumer barrel', () =
         ) ||
         /^(components|pages|router|hooks)\//.test(target) ||
         /^\.\.\/\.\.\/\.\.\/packages\/(feedback|components)\//.test(target) ||
-        /\.(css|astro)$/.test(specifier);
+        specifier.endsWith('.css');
       const adapterTarget = /\/(hooks\.ts|context\.tsx)$/.test(target);
       if (
         target === 'stores/index.ts' ||

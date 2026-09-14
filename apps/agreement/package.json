@@ -3,19 +3,18 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "cross-env AGREEMENT_MODE=test astro dev --mode test",
-    "build:test": "cross-env AGREEMENT_MODE=test astro build --mode test",
-    "build:prod": "cross-env AGREEMENT_MODE=prod astro build --mode prod",
-    "preview:test": "cross-env AGREEMENT_MODE=test astro preview --mode test",
-    "preview:prod": "cross-env AGREEMENT_MODE=prod astro preview --mode prod",
-    "check": "cross-env AGREEMENT_MODE=test astro check"
+    "dev": "vite --mode test",
+    "build:test": "vite build --mode test",
+    "build:prod": "vite build --mode prod",
+    "preview:test": "vite preview --mode test",
+    "preview:prod": "vite preview --mode prod",
+    "check": "tsc --noEmit -p tsconfig.json"
   },
   "dependencies": {
-    "astro": "7.3.2"
+    "preact": "10.29.8",
+    "preact-render-to-string": "6.7.0"
   },
   "devDependencies": {
-    "@astrojs/check": "0.9.10",
-    "cross-env": "10.1.0",
     "@packages/theme": "workspace:*"
   }
 }

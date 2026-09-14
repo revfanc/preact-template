@@ -1,6 +1,6 @@
 # preact-template
 
-移动端 Web 单仓库：Landing 使用 Preact 10 + Vite 8；Agreement 使用 Astro 7 静态生成。两个应用独立构建和部署，当前正式入口均不包含演示业务。
+移动端 Web 单仓库：Landing 使用 Preact 10 + Vite 8；Agreement 使用 Preact + Vite SSG 静态生成。两个应用独立构建和部署，当前正式入口均不包含演示业务。
 
 ## 结构与分层
 
@@ -69,9 +69,9 @@ pnpm dev
 - 单独启动：pnpm dev:landing / pnpm dev:agreement
 - Landing 开发服务将 /agreement/ 重定向到 5174；预览服务通过代理访问 4174。
 
-VS Code 打开仓库根目录并安装推荐的 Oxc、Prettier、Astro 扩展。项目配置启用 Oxc 实时检查、手动保存时安全修复及 Prettier 保存时格式化；禁用 ESLint 检查和 Oxfmt。首次提示时选择工作区 TypeScript。
+VS Code 打开仓库根目录并安装推荐的 Oxc、Prettier 扩展。项目配置启用 Oxc 实时检查、手动保存时安全修复及 Prettier 保存时格式化；禁用 ESLint 检查和 Oxfmt。首次提示时选择工作区 TypeScript。
 
-Oxlint 使用默认插件与 correctness: error，补充 no-debugger、no-var、prefer-const、ban-ts-comment、no-explicit-any。格式化统一由 Prettier（含 Astro 插件）处理，类型检查由 tsc 和 astro check 负责。
+Oxlint 使用默认插件与 correctness: error，补充 no-debugger、no-var、prefer-const、ban-ts-comment、no-explicit-any。格式化统一由 Prettier处理，类型检查由 两个应用各自的 tsc 负责。
 
 ## 环境与部署
 
@@ -87,7 +87,7 @@ pnpm preview:test
 | landing   | apps/landing/dist/test   | apps/landing/dist/prod   | /landing/   |
 | agreement | apps/agreement/dist/test | apps/agreement/dist/prod | /agreement/ |
 
-预览端口为 4173 / 4174，预览读取构建产物；恢复源码或切换分支后需重新构建。两种环境均使用生产优化，不设置 NODE_ENV=test。Astro 通过 AGREEMENT_MODE 与 Vite mode 保持一致。
+预览端口为 4173 / 4174，预览读取构建产物；恢复源码或切换分支后需重新构建。两种环境均使用生产优化，不设置 NODE_ENV=test。两个应用统一通过 Vite mode 选择环境。
 
 应用 .env.test / .env.prod 保存公开构建配置；本地覆盖使用 .env.test.local / .env.prod.local。VITE_ 变量会进入客户端产物，不能保存秘密。
 
@@ -108,7 +108,7 @@ pages 下 index.tsx 自动发现，支持 [id] 动态段与 [...path] 末尾捕�
 
 Landing 按 375px 设计宽度写 px，构建转换为 rem；根字号随视口变化并在 540px 封顶。固定像素样式沿用 no-rem 约定。Agreement 使用普通 px 与响应式容器，不自动转 rem。
 
-tooling/compatibility.ts 集中管理 Chrome 49、iOS 10 / Safari 10 构建目标。Landing 使用 legacy 双入口；Agreement 的 main.ts 由独立 Vite 配置输出 IIFE 普通脚本。main.ts 当前无动态业务，保留入口供后续渐进增强。运行时 API 必须按实际使用补齐，不能仅靠语法转换。现代浏览器模拟缺少 API 不等于旧设备验收。
+tooling/compatibility.ts 集中管理 Chrome 49、iOS 10 / Safari 10 构建目标。Landing 使用 legacy 双入口；Agreement 的 TSX 正文仅在构建和开发服务端渲染，main.ts 由独立 Vite 配置输出 IIFE 普通脚本。main.ts 当前无动态业务，保留入口供后续渐进增强。运行时 API 必须按实际使用补齐，不能仅靠语法转换。现代浏览器模拟缺少 API 不等于旧设备验收。
 
 ## 公共包
 

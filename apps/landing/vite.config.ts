@@ -41,7 +41,7 @@ export default defineConfig(({ mode }) => {
       {
         name: 'agreement-dev-navigation',
         configureServer(server) {
-          // Astro's dev modules use root URLs; keep its origin separate from Vite.
+          // Keep the two applications' Vite development modules on separate origins.
           server.middlewares.use((request, response, next) => {
             const url = new URL(
               request.url || '/',

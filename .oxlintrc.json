@@ -9,7 +9,6 @@
   },
   "ignorePatterns": [
     "**/dist/**",
-    "**/.astro/**",
     "apps/agreement/public/runtime/**",
     "**/node_modules/**",
     "test-results/**",
@@ -21,13 +20,5 @@
     "prefer-const": "error",
     "typescript/ban-ts-comment": "error",
     "typescript/no-explicit-any": "error"
-  },
-  "overrides": [
-    {
-      "globals": {
-        "Astro": "readonly"
-      },
-      "files": ["**/*.astro"]
-    }
-  ]
+  }
 }
