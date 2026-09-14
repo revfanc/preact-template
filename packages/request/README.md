@@ -78,7 +78,7 @@ HTTP 4xx/5xx 和发送阶段的网络/取消错误由 ofetch 的 `FetchError` �
 
 应用构建仍负责语法转换和 Promise、Symbol、Set、URLSearchParams 等运行时能力。目标保持 Chrome 49、iOS 10 / Safari 10。XHR 补丁不提供流式响应、keepalive、完整的 cache/redirect 控制；本模板旧设备场景使用普通 JSON、文本和表单请求。
 
-协议正文由 Preact SSG 生成静态 HTML。构建时请求用默认入口及绝对 baseURL；浏览器实时内容才声明包依赖并使用 browser 入口，复用 packages/api 中的接口。Agreement 的 IIFE 构建只转换语法，未来接入动态请求时还需补齐上述运行时 API。当前没有动态接口，不为共享而让静态协议加载请求库。
+协议正文由 Preact SSG 生成静态 HTML。构建时请求用默认入口及绝对 baseURL；浏览器实时内容才声明包依赖并使用 browser 入口，复用 packages/api 中的接口。Agreement 暂未启用 legacy，接入请求时使用 browser 入口补齐 Web API，但旧设备的语法及语言 polyfill 仍需后续构建方案支持。当前没有动态接口，不为共享而让静态协议加载请求库。
 
 两个应用独立构建，不保证下载缓存跨应用复用。体积评估应包含 ofetch、Fetch/Abort 补丁和应用 polyfill。
 

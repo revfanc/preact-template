@@ -13,14 +13,26 @@ it('generates lazy routes and invalidates the virtual module when pages are adde
     path.join(directory, 'index.tsx'),
     'export default function Home() { return null; }',
   );
+  let watcherReady!: Promise<void>;
   const server = await createServer({
     configFile: false,
     root,
-    plugins: [fileRoutes()],
+    plugins: [
+      fileRoutes(),
+      {
+        name: 'test-watch-ready',
+        configureServer(server) {
+          watcherReady = new Promise((resolve) =>
+            server.watcher.once('ready', resolve),
+          );
+        },
+      },
+    ],
     server: { port: 0 },
   });
   try {
     await server.listen();
+    await watcherReady;
     const send = vi.spyOn(server.ws, 'send');
     const read = async () =>
       (await server.transformRequest('virtual:file-routes'))!.code;

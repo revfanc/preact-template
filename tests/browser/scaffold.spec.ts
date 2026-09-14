@@ -91,7 +91,7 @@ test('static agreement is readable without JS and no example data is published',
   }
 });
 
-test('agreement style is stable before and after its classic entry and refresh', async ({
+test('agreement style is stable before and after hydration and refresh', async ({
   page,
 }) => {
   let release!: () => void;
@@ -100,8 +100,8 @@ test('agreement style is stable before and after its classic entry and refresh',
   });
   const requests: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
-  await page.route('**/runtime/agreement.js', async (route) => {
-    await gate;
+  await page.route('**/*', async (route) => {
+    if (route.request().resourceType() === 'script') await gate;
     await route.continue();
   });
   try {

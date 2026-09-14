@@ -202,7 +202,7 @@ for (const legacyCase of [
     apis: ['AbortController', 'AbortSignal'],
   },
 ]) {
-  test(`legacy bundles boot both apps with ${legacyCase.name}`, async ({
+  test(`legacy landing boots and static agreement stays readable with ${legacyCase.name}`, async ({
     page,
   }) => {
     const errors: string[] = [];
@@ -290,15 +290,10 @@ for (const legacyCase of [
       page.getByRole('heading', { name: '协议', exact: true }),
     ).toBeVisible();
     await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
-    const agreementEntry = await page
-      .locator('#agreement-runtime')
-      .getAttribute('src');
-    expect(loaded).toEqual(
-      expect.arrayContaining([
-        new URL(landingEntry!, 'http://127.0.0.1:4176/landing/').href,
-        new URL(agreementEntry!, 'http://127.0.0.1:4176/agreement/').href,
-      ]),
+    expect(loaded).toContain(
+      new URL(landingEntry!, 'http://127.0.0.1:4176/landing/').href,
     );
+    await expect(page.locator('#vite-legacy-entry')).toHaveCount(0);
     expect(errors).toEqual([]);
   });
 }

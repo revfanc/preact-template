@@ -1,6 +1,6 @@
 # preact-template
 
-移动端 Web 单仓库：Landing 使用 Preact 10 + Vite 8；Agreement 使用 Preact + Vite SSG 静态生成。两个应用独立构建和部署，当前正式入口均不包含演示业务。
+移动端 Web 单仓库：Landing 使用 Preact 10 + Vite 8；Agreement 使用 Preact + Vite SSG + hydration。两个应用独立构建和部署，当前正式入口均不包含演示业务。
 
 ## 结构与分层
 
@@ -17,7 +17,7 @@ apps/
       api/                应用请求实例
       router/             生成路由表的运行时接入与懒加载
     test/                 独立回归夹具，不进入发布产物
-  agreement/              静态协议布局、页面和普通脚本入口
+  agreement/              静态协议页面、官方预渲染与 hydration 入口
 packages/
   api/                    公共业务接口预留包，示例接口已移除
   request/                HTTP、错误、超时、取消、浏览器适配
@@ -110,7 +110,7 @@ pages 下 index.tsx 自动发现，支持 [id] 动态段与 [...path] 末尾捕�
 
 Landing 按 375px 设计宽度写 px，构建转换为 rem；根字号随视口变化并在 540px 封顶。固定像素样式沿用 no-rem 约定。Agreement 使用普通 px 与响应式容器，不自动转 rem。
 
-tooling/compatibility.ts 集中管理 Chrome 49、iOS 10 / Safari 10 构建目标。Landing 使用 legacy 双入口；Agreement 的 TSX 正文仅在构建和开发服务端渲染，main.ts 由独立 Vite 配置输出 IIFE 普通脚本。main.ts 当前无动态业务，保留入口供后续渐进增强。运行时 API 必须按实际使用补齐，不能仅靠语法转换。现代浏览器模拟缺少 API 不等于旧设备验收。
+tooling/compatibility.ts 管理 Landing 的 Chrome 49、iOS 10 / Safari 10 legacy 目标，以及两应用的 CSS 目标。Agreement 使用 Preact 官方预渲染插件生成静态正文与内联样式，浏览器通过 preact-iso hydration 接管组件；暂不提供 legacy 动态交互，后续补齐。详见 [Agreement 说明](apps/agreement/README.md)。
 
 ## 公共包
 

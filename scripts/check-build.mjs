@@ -117,29 +117,25 @@ for (const page of pages) {
     /<h1\b/.test(html) && /<main\b/.test(html),
     `${page}: missing static body`,
   );
-  const tags = [...html.matchAll(/<script\b([^>]*)>([\s\S]*?)<\/script>/g)];
-  assert.equal(tags.length, 1, `${page}: expected only the classic runtime`);
   assert(
-    !/type="module"|\bnomodule\b|modulepreload/.test(html),
-    `${page}: unexpected client framework/module entry`,
+    html.includes('type="module"') && !html.includes('id="vite-legacy-entry"'),
+    `${page}: missing module hydration entry`,
   );
-  const attrs = tags[0][1];
   assert(
-    /\bid="agreement-runtime"/.test(attrs) && /\bdefer\b/.test(attrs),
-    `${page}: missing deferred runtime`,
+    html.includes('type="isodata"') && !html.includes('ssr-outlet'),
+    `${page}: missing prerendered hydration marker`,
   );
-  const source = /\bsrc="([^"]+)"/.exec(attrs)?.[1];
-  assert(
-    source === `${base}runtime/agreement.js`,
-    `${page}: runtime has wrong base`,
-  );
-  assert.equal(tags[0][2].trim(), '', `${page}: unexpected inline script`);
-  const script = source.slice(base.length);
-  assert(
-    files.includes(path.normalize(script)),
-    `${page}: runtime file missing`,
-  );
-  scripts.add(script);
+  for (const [, source] of html.matchAll(
+    /<script\b[^>]*\b(?:src|data-src)="([^"]+)"/g,
+  )) {
+    assert(source.startsWith(base), `${page}: script has wrong base`);
+    const script = source.slice(base.length);
+    assert(
+      files.includes(path.normalize(script)),
+      `${page}: script file missing`,
+    );
+    scripts.add(script);
+  }
   const head = /<head>([\s\S]*?)<\/head>/.exec(html)?.[1] ?? '';
   const styles = [...head.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)].map(
     (match) => match[1],
@@ -150,30 +146,12 @@ for (const page of pages) {
       !/<link\b[^>]*rel="stylesheet"/.test(head),
     `${page}: agreement styles must be inline`,
   );
-  const links = [
-    ...head.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g),
-  ];
-  assert(styles.length + links.length > 0, `${page}: no initial stylesheet`);
-  for (const [, href] of links) {
-    assert(
-      href.startsWith(base) &&
-        files.includes(path.normalize(href.slice(base.length))),
-      `${page}: stylesheet file missing or wrong base`,
-    );
-  }
 }
-assert.equal(scripts.size, 1, 'agreement: pages must share one runtime');
-assert.deepEqual(
-  files.filter((file) => /\.(?:js|mjs|map)$/.test(file)).sort(),
-  [...scripts].map((file) => path.normalize(file)).sort(),
-  'agreement: build-only document code must not be published',
+assert(scripts.size > 0, 'agreement: missing client entry');
+assert(
+  !files.some((file) => /runtime|\.map$|-legacy-/.test(file)),
+  'agreement: old runtime artifacts must not be published',
 );
-for (const file of scripts) {
-  parse(await readFile(path.join(directory, file), 'utf8'), {
-    ecmaVersion: 2015,
-    sourceType: 'script',
-  });
-}
 const css =
   inlineCss +
   (
@@ -190,5 +168,5 @@ assert(
 assert(css.includes('16px'), 'agreement: normal text sizing missing');
 checkTheme(css, 'agreement');
 console.log(
-  `agreement/${mode}: ${pages.length} HTML pages, environment, CSS and one classic script checked`,
+  `agreement/${mode}: ${pages.length} HTML pages, environment, inline CSS and module hydration checked`,
 );

@@ -12,6 +12,10 @@ test('agreement dev entry and refresh keep static styles without example request
   ).toBeVisible();
   await expect(page.locator('body')).toHaveCSS('font-size', '16px');
   await expect(page.locator('h1')).toHaveCSS('font-size', '28px');
+  await expect(
+    page.locator('style[data-vite-dev-id$="/src/style.css"]'),
+  ).toHaveCount(1);
+  await expect(page.locator('link[rel="stylesheet"]')).toHaveCount(0);
   const bounds = await page.locator('h1').boundingBox();
   await page.reload();
   await expect(page.locator('h1')).toHaveCSS('font-size', '28px');
