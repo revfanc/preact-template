@@ -52,11 +52,13 @@ export default function AgreementPage() {
 
 ## 样式与动态增强
 
-关闭 JavaScript 仍可阅读正文；样式作为 HTML 中的 stylesheet 加载，不等待脚本挂载。使用普通 px 和响应式容器，不做 Landing 的 px 转 rem。主题变量沿用共享 PostCSS 编译及旧浏览器 CSS 目标。
+所有协议样式统一放在 `src/style.css`，TSX 正文组件不再单独导入 CSS。开发与发布复用同一份编译结果；主题变量、CSS `@import` 和兼容性处理仍由 Vite/PostCSS 完成。
+
+关闭 JavaScript 仍可阅读正文；公共样式通过 Vite 的 `?inline` 编译后直接写入 HTML 的 `<style id="agreement-style">`，不请求独立 CSS，也不等待脚本挂载。使用普通 px 和响应式容器，不做 Landing 的 px 转 rem。主题变量沿用共享 PostCSS 编译及旧浏览器 CSS 目标。
 
 动态内容从 `src/main.ts` 接入：少量字段直接更新对应 DOM；复杂交互可单独挂载 Preact 组件到预留容器。不要替换整篇正文。运行时获取的渠道、用户和订单信息不能在构建时预先确定，静态部分必须保留合理的阅读内容。
 
-浏览器代码与静态页面依赖图独立。动态组件需要的 CSS 统一放入文档的 `src/style.css`（可使用 CSS `@import`），让初始 HTML 加载；不要只通过 `main.ts` 导入样式，导致样式等待动态脚本或生成无人引用的 CSS。
+浏览器代码与静态页面依赖图独立。动态组件需要的 CSS 统一放入文档的 `src/style.css`（可使用 CSS `@import`），随初始 HTML 内联；不要只通过 `main.ts` 导入样式，导致样式等待动态脚本或生成无人引用的 CSS。
 
 后续请求可按需声明 `@packages/request` 与 `@packages/api` 依赖，复用业务接口。浏览器使用 `@packages/request/browser`，构建时使用默认入口及绝对 baseURL，不把 browser 入口导入 Node。当前没有动态接口，不为预留能力加载请求库，也不共享 Landing 的全局 store。
 
@@ -66,4 +68,4 @@ export default function AgreementPage() {
 
 根目录执行 `pnpm typecheck`、`pnpm lint`、`pnpm test`。两个应用构建后执行 `pnpm check:build test`、`pnpm test:browser`；开发服务执行 `pnpm test:browser:dev`。prod 对应 `pnpm build:prod` 与 `pnpm check:build prod`。
 
-`tests/agreement-build.test.ts` 用临时协议验证多页输出、自定义部署前缀、标题转义、页面 CSS、无客户端组件脚本和静态 404。浏览器回归验证禁用 JavaScript 阅读、脚本延迟时的样式稳定及刷新。测试内容不会进入正式应用。
+`tests/agreement-build.test.ts` 用临时协议验证多页输出、自定义部署前缀、标题转义、公共样式内联、无独立 CSS 和客户端组件脚本和静态 404。浏览器回归验证禁用 JavaScript 阅读、脚本延迟时的样式稳定及刷新。测试内容不会进入正式应用。

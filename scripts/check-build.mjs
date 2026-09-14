@@ -145,6 +145,11 @@ for (const page of pages) {
     (match) => match[1],
   );
   inlineCss += styles.join('\n');
+  assert(
+    /<style\b[^>]*id="agreement-style"/.test(head) &&
+      !/<link\b[^>]*rel="stylesheet"/.test(head),
+    `${page}: agreement styles must be inline`,
+  );
   const links = [
     ...head.matchAll(/<link\b[^>]*rel="stylesheet"[^>]*href="([^"]+)"[^>]*>/g),
   ];

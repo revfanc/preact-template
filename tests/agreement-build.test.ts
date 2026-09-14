@@ -42,14 +42,14 @@ it('generates all TSX documents with custom base, static CSS and only a classic 
     await writeFile(
       path.join(fixture, 'src/pages/terms/index.tsx'),
       `
-      import './style.css';
       export const title = '条款 & <说明>';
       export default function Terms() { return <h1 class="terms">静态正文</h1>; }
     `,
     );
     await writeFile(
-      path.join(fixture, 'src/pages/terms/style.css'),
-      '.terms { padding: 17px; }',
+      path.join(fixture, 'src/style.css'),
+      (await readFile(path.join(fixture, 'src/style.css'), 'utf8')) +
+        '\n.terms { padding: 17px; color: var(--primary); }',
     );
     await writeFile(
       path.join(fixture, 'src/main.ts'),
@@ -82,11 +82,10 @@ it('generates all TSX documents with custom base, static CSS and only a classic 
     expect(html).toContain('name="app-env" content="prod"');
     expect(html).toContain('src="/legal/runtime/agreement.js"');
     expect(html).not.toMatch(/type="module"|modulepreload/);
-    const cssPath = /href="\/legal\/([^"]+\.css)"/.exec(html)?.[1];
-    expect(cssPath).toBeDefined();
-    expect(await readFile(path.join(output, cssPath!), 'utf8')).toContain(
-      '17px',
-    );
+    expect(html).toContain('<style id="agreement-style">');
+    expect(html).toContain('17px');
+    expect(html).not.toMatch(/rel="stylesheet"|var\(--/);
+    expect(files.filter((file) => file.endsWith('.css'))).toEqual([]);
     const server = await preview({
       configFile: path.join(fixture, 'vite.config.ts'),
       mode: 'prod',
@@ -129,10 +128,9 @@ it('generates all TSX documents with custom base, static CSS and only a classic 
       expect(document).toContain(
         '<main><h1 class="terms">静态正文</h1></main>',
       );
-      expect(document).toContain('href="/legal/src/pages/terms/style.css"');
-      expect(
-        await (await fetch(`${origin}/legal/src/pages/terms/style.css`)).text(),
-      ).toContain('17px');
+      expect(document).toContain('<style id="agreement-style">');
+      expect(document).toContain('17px');
+      expect(document).not.toMatch(/rel="stylesheet"|var\(--/);
       expect((await fetch(`${origin}/legal/missing/`)).status).toBe(404);
     } finally {
       await dev.close();

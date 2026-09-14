@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import preact from '@preact/preset-vite';
 import { build, defineConfig, loadEnv } from 'vite';
-import type { BuildOptions, EnvironmentModuleNode } from 'vite';
+import type { BuildOptions } from 'vite';
 import { cssTargets, scriptTargets } from '../../tooling/compatibility.ts';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
 import type { prerender } from './src/prerender.tsx';
@@ -141,32 +141,13 @@ export default defineConfig(({ mode, command }) => {
                   req.url || '/',
                   template,
                 );
-                // SSR evaluates CSS imports without attaching them to the document.
-                // Link the same styles explicitly so development matches static output.
-                const styles = new Set<string>();
-                const visited = new Set<EnvironmentModuleNode>();
-                function collectStyles(node: EnvironmentModuleNode) {
-                  if (visited.has(node)) return;
-                  visited.add(node);
-                  if (node.url.endsWith('.css')) styles.add(node.url);
-                  for (const dependency of node.importedModules)
-                    collectStyles(dependency);
-                }
-                const entry =
-                  await server.environments.ssr?.moduleGraph.getModuleByUrl(
-                    '/src/prerender.tsx',
-                  );
-                if (entry) collectStyles(entry);
-                const styleLinks = [...styles]
-                  .map(
-                    (url) =>
-                      `<link rel="stylesheet" href="${base}${url.slice(1).replace(/&/g, '&amp;').replace(/"/g, '&quot;')}">`,
-                  )
-                  .join('');
                 res.setHeader('Content-Type', 'text/html; charset=utf-8');
                 res.end(
                   html
-                    .replace('</head>', () => `${styleLinks}</head>`)
+                    .replace(
+                      '</head>',
+                      () => `${[...result.head.elements].join('')}</head>`,
+                    )
                     .replace('<body>', () => `<body>${result.html}`)
                     .replace(
                       /<title>.*?<\/title>/,

@@ -1,6 +1,9 @@
 import type { ComponentType } from 'preact';
 import { renderToString } from 'preact-render-to-string';
 import AgreementLayout from './layouts/agreement';
+import stylesheet from './style.css?inline';
+
+const style = `<style id="agreement-style">${stylesheet.replace(/</g, '\\3c ')}</style>`;
 
 const modules = import.meta.glob<{
   default: ComponentType;
@@ -26,7 +29,7 @@ export function prerender({ url }: { url: string }) {
         <Page />
       </AgreementLayout>,
     ),
-    head: { title: page.title },
+    head: { title: page.title, elements: new Set([style]) },
     links: new Set(Object.keys(pages)),
   };
 }
