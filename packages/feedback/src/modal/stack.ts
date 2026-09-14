@@ -173,6 +173,12 @@ export function activateModal(entry: ModalEntry) {
   if (!entry.host.contains(document.activeElement)) focusEntry(entry);
   sync();
 }
+/** Async content replacement can remove the currently focused loading button. */
+export function refreshModalFocus(node: HTMLElement) {
+  const entry = top();
+  if (entry && !entry.closing && entry.host.contains(node))
+    activateModal(entry);
+}
 export function removeModal(entry: ModalEntry) {
   const index = stack.indexOf(entry);
   if (index < 0) return;

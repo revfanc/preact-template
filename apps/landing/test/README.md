@@ -2,6 +2,8 @@
 
 fixture 仅用于自动化验证请求、反馈、Modal、路由与 browser 接入，不属于正式 Landing 应用。
 
+`async-modal.html` / `async-modal.tsx` 动态导入真实组件分包，用于验证异步 Modal 的加载、失败、重试、焦点恢复及多层取消。`tests/browser/async-modal.spec.ts` 包含 modern/legacy 入口测试；页面仅作为自动化夹具，不添加正式示例路由。
+
 `request.html` / `request.ts` 是无 UI 框架依赖的独立 ofetch 请求测试入口。`tests/browser/request.spec.ts` 在原生能力、缺少取消 API、缺少整个 Fetch API、强制 legacy 构建并移除 Promise/URL API 四种环境验证真实请求、请求头、HTTP 错误、禁止默认重试、超时和取消。仅模拟 API 缺失，不代表实际旧设备测试。
 
 `persist.html` / `persist.ts` 是独立 store 持久化测试入口，引用正式 core 扩展。`tests/browser/persist.spec.ts` 验证 sessionStorage 刷新恢复和标签页隔离、localStorage 不同渠道 key、停止同步与清缓存、存储不可用以及 legacy 入口。测试只使用测试浏览器的 fixture 缓存，不接入正式 Landing 页面。

@@ -33,6 +33,9 @@ export default defineConfig(({ mode }) => ({
         persist: fileURLToPath(
           new URL('./fixture/persist.html', import.meta.url),
         ),
+        asyncModal: fileURLToPath(
+          new URL('./fixture/async-modal.html', import.meta.url),
+        ),
       },
     },
     outDir: '../dist',

@@ -74,3 +74,58 @@ try {
 - Modal 使用独立 Preact 渲染根，不自动继承调用位置的 Context；通过 props 传入数据，需要 Provider 时在 render 内显式包裹。页面持有任务时应在卸载时调用各自的 close。
 
 参考：[Preact render](https://preactjs.com/guide/v10/api-reference/#render)、[WAI-ARIA Dialog](https://www.w3.org/WAI/ARIA/apg/patterns/dialog-modal/)。
+
+## 异步弹窗内容
+
+使用 `AsyncModalContent` 加载动态组件，仍然通过 `modal({ render })` 打开。同步 Modal 不变；异步组件仅管理加载过程，不创建额外遮罩，不调用全局 Toast/Loading。加载和失败占位与最终内容共用同一个栈项。
+
+```tsx
+import {
+  AsyncModalContent,
+  modal,
+  ModalCancelledError,
+} from '@packages/feedback';
+
+const task = modal<string>({
+  render: (controls) => (
+    <AsyncModalContent
+      controls={controls}
+      load={() => import('./components/name-form')}
+      render={({ default: NameForm }, current) => (
+        <NameForm
+          initial="小明"
+          closing={current.closing}
+          onConfirm={current.resolve}
+          onCancel={() => current.reject()}
+        />
+      )}
+    />
+  ),
+});
+
+try {
+  const name = await task;
+  // 消费业务结果；组件下载完成不会结束此 Promise。
+} catch (error) {
+  if (!(error instanceof ModalCancelledError)) throw error;
+}
+// 页面卸载时调用 task.close()。
+```
+
+| 属性          | 约定                                                              |
+| ------------- | ----------------------------------------------------------------- |
+| `controls`    | 传入当前 Modal 的完整 controls，包含 closing、resolve、reject     |
+| `load`        | 返回组件模块的 Promise；每次挂载只加载一次，重试调用同一个 loader |
+| `render`      | 接收加载结果和最新 controls，自行传递业务 props；不要在这里发请求 |
+| `timeout`     | 每次尝试的超时时间，默认 15000ms，必须是有限正数；挂载时确定      |
+| `loading`     | 可选的加载占位节点；默认是三圆点、加载文字和取消按钮              |
+| `renderError` | 可选的失败渲染函数，收到 error、retry 及完整 Modal controls       |
+
+- 默认占位使用主题色和固定 18px 字号，提供独立的无障碍弹窗语义。默认失败视图提供“重试”和“关闭”；自定义视图需保留清楚的状态说明、可访问名称和关闭入口。可在 `loading` 中通过外层 controls.reject() 提供取消。
+- 失败或超时停留在当前弹窗，Promise 保持 pending；重试期间合并重复点击，不自动循环重试。关闭按钮按取消拒绝；自定义失败视图可调用 `reject(error)`，让调用方收到原始加载错误。超时错误类型为主入口导出的 `ModalLoadTimeoutError`。
+- 关闭或卸载后忽略迟到结果；超时后即使原导入完成也不会替换失败视图或覆盖新一轮结果。`import()` 不能通过此组件取消，资源下载及模块顶层代码仍可能执行，所以模块顶层不要执行提交、支付或打开弹窗等业务副作用。
+- `load` 和 `timeout` 在挂载时捕获，父组件重渲染不会重新导入。确需换资源时为 `AsyncModalContent` 更换 key；数据和回调通过 render 的最新闭包传入。更换 key 表示丢弃原内容实例。
+- 已成功加载的业务内容在关闭时继续收到 `closing: true`，自行处理退场动画。加载/失败默认视图提供退场效果；每层独立维护状态，完成下层加载不会夺取栈顶焦点。
+- 业务组件的渲染错误沿用 Modal 错误边界：清理该层并拒绝 Promise，不作为资源错误自动重试。组件内部 API 请求、表单状态和提交错误仍由业务 hook/store 处理。
+- 重试不保证再次发起网络请求或成功：浏览器/加载器可能缓存模块失败，发布后旧分包也可能已被删除。需要刷新时由应用通过自定义失败视图提示用户；包不会自动刷新页面，也不通过时间戳拼接模块 URL 绕过缓存。参考 [Vite 分包加载错误](https://vite.dev/guide/build#load-error-handling)。
+- 自定义 loading/error 组件应静态导入，确保主内容下载失败时依然可用。原有只使用同步 Modal 的调用方不会执行异步加载逻辑。
