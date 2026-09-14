@@ -67,7 +67,7 @@ pnpm dev
 - Landing：http://127.0.0.1:5173/landing/
 - Agreement：http://127.0.0.1:5174/agreement/
 - 单独启动：pnpm dev:landing / pnpm dev:agreement
-- Landing 开发服务将 /agreement/ 重定向到 5174；预览服务通过代理访问 4174。
+- 开发时两个应用使用各自地址，协议直接访问 5174；Landing 的 5173 端口不转发协议请求。预览服务仍通过代理访问 4174。
 
 VS Code 打开仓库根目录并安装推荐的 Oxc、Prettier 扩展。项目配置启用 Oxc 实时检查、手动保存时安全修复及 Prettier 保存时格式化；禁用 ESLint 检查和 Oxfmt。首次提示时选择工作区 TypeScript。
 

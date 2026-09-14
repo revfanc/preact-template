@@ -38,26 +38,6 @@ export default defineConfig(({ mode }) => {
       preact({ reactAliasesEnabled: false }),
       fileRoutes(),
       landingHtml(theme),
-      {
-        name: 'agreement-dev-navigation',
-        configureServer(server) {
-          // Keep the two applications' Vite development modules on separate origins.
-          server.middlewares.use((request, response, next) => {
-            const url = new URL(
-              request.url || '/',
-              `http://${request.headers.host}`,
-            );
-            if (
-              url.pathname !== '/agreement' &&
-              !url.pathname.startsWith('/agreement/')
-            )
-              return next();
-            url.port = '5174';
-            response.writeHead(302, { Location: url.href });
-            response.end();
-          });
-        },
-      },
     ],
   };
 });

@@ -1,11 +1,11 @@
 import { expect, test } from '@playwright/test';
 
-test('agreement dev redirect and refresh keep static styles without example requests', async ({
+test('agreement dev entry and refresh keep static styles without example requests', async ({
   page,
 }) => {
   const requests: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
-  await page.goto('/agreement/');
+  await page.goto('http://127.0.0.1:5174/agreement/');
   await expect(page).toHaveURL(/:5174\/agreement\//);
   await expect(
     page.getByRole('heading', { name: '协议', exact: true }),
