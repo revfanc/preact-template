@@ -38,6 +38,8 @@ Landing 使用 `@/` 引用 `apps/landing/src/` 下的跨模块代码，同模块
 
 store 的通用能力集中在 `stores/core/index.ts`、`stores/core/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useLocalLoadingStore()` 等绑定 hook，一次获取 state 和 store；共享消费者使用 `useStore(store)` 订阅同一实例。顶层 hooks 只保留具体场景的接入逻辑，每个组合函数放入 `hooks/use-<name>/index.ts(x)`，调用方导入目录，测试就近放置。
 
+`stores/core/persist.ts` 提供可选 `persistStore`：按字段保存、同步恢复并校验版本/结构，可设置有效期；支持注入 sessionStorage/localStorage，存储失败时继续使用内存。默认不开启，业务 key 按渠道/用户/订单划分，销毁与清缓存分开；它不提供跨标签同步，也不代替接口缓存。详见 [持久化说明](apps/landing/src/stores/README.md#可选持久化)。
+
 应用共享空壳已接入 `app.tsx`：`stores/app/index.ts` 创建独立的业务 store 集合，`stores/app/context.tsx` 只定义 Context 和 Provider，`stores/app/hooks.ts` 提供读取 hook。`useAppStores()` 只获取已有集合，`useLocalXxxStore()` 明确创建局部实例，`useXxxStore()` 留给读取共享业务实例的 hook。当前集合无业务成员；以后按渠道、会话等业务分别扩展，不集中存放全部状态。申请数据归流程、临时编辑归页面或弹窗，生命周期不匹配的数据不提升为应用全局。详细命名和作用域规则见 [Stores 说明](apps/landing/src/stores/README.md)。
 
 ## 文档导航

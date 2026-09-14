@@ -7,6 +7,8 @@ stores/
   core/
     index.ts          最小状态容器与公共类型，纯 TypeScript
     hooks.ts          通用 useStore、useStoreInstance
+    persist.ts        可选的字段持久化与恢复，不依赖 Preact
+    persist.test.ts
     index.test.ts
     hooks.test.tsx
   app/
@@ -56,6 +58,72 @@ const { state, store } = useLocalLoadingStore();
 ```
 
 修改、重置数据属于 store action；Toast、Loading、Modal 和导航属于场景 hook / 页面。具体场景的 hook 留在顶层 hooks 目录，不要求每个业务 store 都配专用 hook。
+
+## 可选持久化
+
+`createStore` 默认只使用内存。需要刷新恢复的业务，在工厂内部调用一次 `persistStore(state, options)`；它是独立扩展，不是自动开启的全局插件。必须在 UI 订阅、异步请求开始前接入：同步读取缓存、校验后仅恢复选中字段，再订阅后续变化。当前 Loading 和空的 app 集合不启用持久化。
+
+```ts
+import { createStore, persistStore } from '@/stores/core';
+
+// 仅为接入示例，不在生产应用预置草稿模块。
+export function createDraftStore(channelCode: string) {
+  const state = createStore({ name: '', pending: false });
+  const persistence = persistStore(state, {
+    key: `landing:draft:${encodeURIComponent(channelCode)}`,
+    version: 1,
+    pick: ['name'],
+    storage: () =>
+      typeof window === 'undefined' ? undefined : window.sessionStorage,
+    maxAgeMs: 30 * 60 * 1000,
+    validate: (value): value is { name: string } =>
+      typeof value === 'object' &&
+      value !== null &&
+      'name' in value &&
+      typeof value.name === 'string',
+  });
+
+  return {
+    getSnapshot: state.getSnapshot,
+    subscribe: state.subscribe,
+    setName(name: string) {
+      state.update((current) => ({ ...current, name }));
+    },
+    reset() {
+      state.update(() => ({ name: '', pending: false }));
+      persistence.clear();
+    },
+    dispose() {
+      persistence.dispose();
+      state.dispose();
+    },
+  };
+}
+```
+
+配置统一为：
+
+| 配置       | 规则                                                                                                                                                  |
+| ---------- | ----------------------------------------------------------------------------------------------------------------------------------------------------- |
+| `key`      | 必填、非空，实例创建后固定；按渠道、用户、订单等真实业务范围区分，不把所有渠道保存到同一个大 Map                                                      |
+| `version`  | 必填、非负整数；版本不一致丢弃旧缓存，不提供自动迁移                                                                                                  |
+| `pick`     | 必填，只选择一级字段；字段值必须适合 JSON 保存，嵌套数据的校验由业务提供                                                                              |
+| `storage`  | 必填 getter，返回具有 getItem/setItem/removeItem 的同步存储；返回 undefined 时仅用内存。用 getter 捕获访问 localStorage/sessionStorage 属性本身的异常 |
+| `validate` | 必填类型守卫，校验选中字段；恢复时即使缓存有其他字段，也不会覆盖未选中的内存状态                                                                      |
+| `maxAgeMs` | 可选、正有限数，省略表示无有效期；按最后一次成功写入计算，只在恢复时检查，不定时清空正在使用的内存状态                                                |
+| `onError`  | 可选，默认 console.error；存储访问、JSON 处理、校验器抛错等通过它报告，报告器自身异常也不会中断状态更新                                               |
+
+缓存使用 `{ version, savedAt, data }`。JSON 损坏、版本或结构不符、超过有效期时忽略并尝试删除当前 key，不清空整个存储。存储受限、额度不足或序列化失败时保留内存状态；失败写入不会标记成功，后续更新可以重试。
+
+首次接入不写初始值，恢复也不刷新有效期。仅当 `pick` 数据的 JSON 内容变化时同步写入，不因 pending/loading 等未选中字段变化反复写入。适用于少量 JSON 状态，不是大型数据或高频输入的缓存数据库；不内置异步存储、压缩、加密和跨标签同步。
+
+`persistence.dispose()` 停止同步并解除订阅，保留缓存和内存 store；由业务 store 的 dispose 先调用它，再销毁状态容器。`persistence.clear()` 只删除当前缓存，不重置内存、不停止订阅；随后选中字段变化仍可保存。退出或流程完成时，需要业务 action 先重置内存再清缓存，或者先停止同步再做清理。
+
+存储作用域不等于 store 实例作用域。同一 storage/key 的多个实例仍可能覆盖，扩展不提供锁、合并或 storage 事件同步。sessionStorage 按标签页隔离，但同一标签页切渠道要使用不同 key，新窗口还可能复制 opener 的初始数据；localStorage 按同源共享，只有明确需要共享的数据才使用它。渠道、用户变化时销毁旧实例并按新上下文创建，不让活跃实例悄悄更换缓存 key。
+
+渠道和 siteId 默认仍从当前 URL 对应的初始化接口获取，不以旧缓存覆盖当前路由上下文。订单只恢复定位信息，再向后端确认真实状态；Loading、Modal、请求错误、控制器不持久化。凭证及敏感信息按认证和业务要求单独设计，不随整个 store 自动保存。
+
+单元测试位于 `core/persist.test.ts`，真实浏览器存储验证位于 `tests/browser/persist.spec.ts`，覆盖刷新、多标签页、不同渠道 key、禁用存储及 legacy 构建。测试页面只存在于 Landing 的 test fixture，现代浏览器模拟能力缺失不等于旧设备真机验收。
 
 ## 创建与读取必须区分
 

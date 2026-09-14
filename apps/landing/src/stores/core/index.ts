@@ -1,3 +1,5 @@
+export { persistStore, type PersistOptions } from './persist';
+
 export interface ReadableStore<State> {
   getSnapshot: () => Readonly<State>;
   subscribe: (listener: () => void) => () => void;

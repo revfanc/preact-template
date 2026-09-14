@@ -4,6 +4,8 @@ fixture 仅用于自动化验证请求、反馈、Modal、路由与 browser 接�
 
 `request.html` / `request.ts` 是无 UI 框架依赖的独立 ofetch 请求测试入口。`tests/browser/request.spec.ts` 在原生能力、缺少取消 API、缺少整个 Fetch API、强制 legacy 构建并移除 Promise/URL API 四种环境验证真实请求、请求头、HTTP 错误、禁止默认重试、超时和取消。仅模拟 API 缺失，不代表实际旧设备测试。
 
+`persist.html` / `persist.ts` 是独立 store 持久化测试入口，引用正式 core 扩展。`tests/browser/persist.spec.ts` 验证 sessionStorage 刷新恢复和标签页隔离、localStorage 不同渠道 key、停止同步与清缓存、存储不可用以及 legacy 入口。测试只使用测试浏览器的 fixture 缓存，不接入正式 Landing 页面。
+
 旧演示交互移到这里以保留已存在的浏览器回归覆盖。文件路由解析、路由 loading hook 和兼容补丁引用正式源码；请求/反馈/browser 使用真实公共包。fixture-api 只提供测试数据协议，不由 packages/api 导出。
 
 在仓库根目录执行 `pnpm --filter @apps/landing test:build`，生成 `apps/landing/test/dist`。Playwright 在 4176 独立启动，路径为 `/landing/`；夹具固定使用 test 模式，不受 `BUILD_MODE` 影响。正式应用的 build:test/build:prod 不构建这里，也不发布这些页面。正式应用另由 scaffold.spec.ts 检查空白入口、404、静态协议与示例资源清理。

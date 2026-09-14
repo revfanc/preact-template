@@ -46,6 +46,8 @@ useLocalLoadingStore、useStore、useStoreInstance 由 stores/index.ts 导出，
 
 先确定状态的共享范围和销毁时机，再增加业务 store、实际接口和所需场景 hook。目前 `stores/loading/index.ts` 是已接入的 Loading 状态实例；没有预置渠道、登录或订单模型。公共业务接口放在 [packages/api](../../packages/api/README.md)，应用专属接口可留在 `src/api/`。
 
+需要刷新恢复时使用可选的 `persistStore` 扩展，显式选择字段、存储和业务 key，校验缓存版本与结构，可设置有效期。当前没有业务 store 开启持久化；接入和清理规则见 [Stores 说明](src/stores/README.md#可选持久化)。
+
 样式使用 CSS / CSS Modules，按 375px 设计宽度写 px，构建转换为 rem；固定像素沿用 `no-rem` 约定。主题使用 `src/theme.css` 覆盖公共 CSS 变量，变量名称使用单个单词。旧设备目标与限制见[根 README](../../README.md)。
 
 ## 验证

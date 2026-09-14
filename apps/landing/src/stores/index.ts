@@ -1,4 +1,9 @@
-export { createStore, type ReadableStore } from './core';
+export {
+  createStore,
+  persistStore,
+  type ReadableStore,
+  type PersistOptions,
+} from './core';
 export { useStore, useStoreInstance } from './core/hooks';
 export { useLocalLoadingStore } from './loading/hooks';
 export { createAppStores, type AppStores } from './app';

@@ -30,6 +30,9 @@ export default defineConfig(({ mode }) => ({
         request: fileURLToPath(
           new URL('./fixture/request.html', import.meta.url),
         ),
+        persist: fileURLToPath(
+          new URL('./fixture/persist.html', import.meta.url),
+        ),
       },
     },
     outDir: '../dist',
