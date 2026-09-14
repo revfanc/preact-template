@@ -2,16 +2,13 @@ import { fileURLToPath } from 'node:url';
 import { readFile } from 'node:fs/promises';
 import preact from '@preact/preset-vite';
 import { build, defineConfig, loadEnv } from 'vite';
-import type { EnvironmentModuleNode } from 'vite';
-import { cssTargets } from '../../tooling/compatibility.ts';
+import type { BuildOptions, EnvironmentModuleNode } from 'vite';
+import { cssTargets, scriptTargets } from '../../tooling/compatibility.ts';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
 import type { prerender } from './src/prerender.tsx';
 
-const root = fileURLToPath(new URL('.', import.meta.url));
+const root = import.meta.dirname;
 const theme = fileURLToPath(new URL('./src/theme.css', import.meta.url));
-const runtimeConfig = fileURLToPath(
-  new URL('./vite.runtime.config.ts', import.meta.url),
-);
 
 export default defineConfig(({ mode, command }) => {
   if (mode !== 'test' && mode !== 'prod')
@@ -24,15 +21,40 @@ export default defineConfig(({ mode, command }) => {
       '//',
       '/',
     );
+  const css = () => ({
+    postcss: { plugins: createPostcssPlugins(false, theme) },
+  });
+  const buildRuntime = (options: BuildOptions) =>
+    build({
+      configFile: false,
+      root,
+      base,
+      mode,
+      publicDir: false,
+      css: css(),
+      build: {
+        target: scriptTargets,
+        cssTarget: cssTargets,
+        minify: 'terser',
+        terserOptions: { safari10: true },
+        lib: {
+          entry: 'src/main.ts',
+          name: 'Agreement',
+          formats: ['iife'],
+          fileName: () => 'agreement.js',
+          cssFileName: 'agreement',
+        },
+        ...options,
+      },
+    });
   return {
     root,
     base,
     appType: 'mpa',
     server: { host: '127.0.0.1', port: 5174, strictPort: true },
     preview: { host: '127.0.0.1', port: 4174, strictPort: true },
-    css: { postcss: { plugins: createPostcssPlugins(false, theme) } },
+    css: css(),
     build: {
-      outDir: 'dist',
       cssTarget: cssTargets,
       cssCodeSplit: false,
     },
@@ -67,21 +89,30 @@ export default defineConfig(({ mode, command }) => {
           },
         },
         async configureServer(server) {
-          await build({ configFile: runtimeConfig, mode });
-          const watcher = await build({
-            configFile: runtimeConfig,
-            mode,
-            build: { watch: {} },
+          const watcher = await buildRuntime({
+            outDir: 'public/runtime',
+            watch: {},
           });
           if (!('on' in watcher))
             throw new Error('Expected Vite build watcher');
-          watcher.on('event', (event) => {
-            if (event.code === 'END') server.ws.send({ type: 'full-reload' });
-            if (event.code === 'ERROR')
-              server.config.logger.error(String(event.error));
-          });
           server.httpServer?.once('close', () => {
             void watcher.close();
+          });
+          // Wait for the watcher's first build instead of building twice at startup.
+          await new Promise<void>((resolve, reject) => {
+            watcher.on('event', (event) => {
+              if (event.code === 'END') {
+                server.ws.send({ type: 'full-reload' });
+                resolve();
+              }
+              if (event.code === 'ERROR') {
+                server.config.logger.error(String(event.error));
+                reject(event.error);
+              }
+            });
+          }).catch(async (error: unknown) => {
+            await watcher.close();
+            throw error;
           });
           server.watcher.on('change', (file) => {
             if (/\.(tsx?|css)$/.test(file))
@@ -160,11 +191,7 @@ export default defineConfig(({ mode, command }) => {
         },
         async closeBundle() {
           if (command !== 'build') return;
-          await build({
-            configFile: runtimeConfig,
-            mode,
-            build: { outDir: 'dist/runtime' },
-          });
+          await buildRuntime({ outDir: 'dist/runtime' });
         },
       },
     ],

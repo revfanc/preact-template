@@ -24,7 +24,6 @@ it('generates all TSX documents with custom base, static CSS and only a classic 
       'package.json',
       'tsconfig.json',
       'vite.config.ts',
-      'vite.runtime.config.ts',
     ]) {
       await cp(path.join(source, file), path.join(fixture, file), {
         recursive: true,
@@ -52,6 +51,10 @@ it('generates all TSX documents with custom base, static CSS and only a classic 
       path.join(fixture, 'src/pages/terms/style.css'),
       '.terms { padding: 17px; }',
     );
+    await writeFile(
+      path.join(fixture, 'src/main.ts'),
+      "document.title = 'runtime-initial-' + import.meta.env.VITE_APP_ENV;",
+    );
     await build({
       configFile: path.join(fixture, 'vite.config.ts'),
       mode: 'prod',
@@ -71,6 +74,9 @@ it('generates all TSX documents with custom base, static CSS and only a classic 
         .map((file) => file.replace(/\\/g, '/')),
     ).toEqual(['runtime/agreement.js']);
     const html = await readFile(path.join(output, 'terms/index.html'), 'utf8');
+    expect(
+      await readFile(path.join(output, 'runtime/agreement.js'), 'utf8'),
+    ).toContain('runtime-initial-prod');
     expect(html).toContain('<main><h1 class="terms">静态正文</h1></main>');
     expect(html).toContain('<title>条款 &amp; &lt;说明&gt;</title>');
     expect(html).toContain('name="app-env" content="prod"');
@@ -112,6 +118,14 @@ it('generates all TSX documents with custom base, static CSS and only a classic 
         throw new Error('Missing dev port');
       const origin = `http://127.0.0.1:${address.port}`;
       const document = await (await fetch(`${origin}/legal/terms/`)).text();
+      const runtime = async () =>
+        (await fetch(`${origin}/legal/runtime/agreement.js`)).text();
+      expect(await runtime()).toContain('runtime-initial-prod');
+      await writeFile(
+        path.join(fixture, 'src/main.ts'),
+        "document.title = 'runtime-updated-' + import.meta.env.VITE_APP_ENV;",
+      );
+      await expect.poll(runtime).toContain('runtime-updated-prod');
       expect(document).toContain(
         '<main><h1 class="terms">静态正文</h1></main>',
       );

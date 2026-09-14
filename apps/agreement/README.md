@@ -22,18 +22,17 @@ pnpm --filter @apps/agreement preview:test
 
 ## 页面与静态生成
 
-| 位置                              | 职责                                            |
-| --------------------------------- | ----------------------------------------------- |
-| `index.html`                      | 公共文档 head、环境元信息、首屏样式             |
-| `src/pages/index.tsx`             | 默认协议入口                                    |
-| `src/pages/<name>/index.tsx`      | 每份正式协议，支持多级目录                      |
-| `src/layouts/agreement/index.tsx` | 静态正文容器                                    |
-| `src/prerender.tsx`               | 发现页面、调用 Preact 渲染、提供生成路径和标题  |
-| `src/style.css`                   | 协议排版与响应式布局                            |
-| `src/theme.css`                   | 公共主题覆盖                                    |
-| `src/main.ts`                     | 独立浏览器增强入口，目前无动态业务              |
-| `vite.config.ts`                  | 官方预渲染插件、开发 HTML、移除构建专用组件脚本 |
-| `vite.runtime.config.ts`          | 将浏览器入口构建为兼容旧设备的 IIFE             |
+| 位置                              | 职责                                           |
+| --------------------------------- | ---------------------------------------------- |
+| `index.html`                      | 公共文档 head、环境元信息、首屏样式            |
+| `src/pages/index.tsx`             | 默认协议入口                                   |
+| `src/pages/<name>/index.tsx`      | 每份正式协议，支持多级目录                     |
+| `src/layouts/agreement/index.tsx` | 静态正文容器                                   |
+| `src/prerender.tsx`               | 发现页面、调用 Preact 渲染、提供生成路径和标题 |
+| `src/style.css`                   | 协议排版与响应式布局                           |
+| `src/theme.css`                   | 公共主题覆盖                                   |
+| `src/main.ts`                     | 独立浏览器增强入口，目前无动态业务             |
+| `vite.config.ts`                  | 静态预渲染、开发 HTML 和独立 IIFE 构建         |
 
 新增协议时创建 `src/pages/<name>/index.tsx`，导出 `title` 和默认 Preact 组件即可。正文由业务提供，不用示例条款替代正式法律文本。
 
@@ -48,6 +47,8 @@ export default function AgreementPage() {
 例如 `src/pages/privacy/index.tsx` 输出 `dist/privacy/index.html`，访问 `/agreement/privacy/`。所有页面均显式交给预渲染插件，不依赖首页是否包含链接。没有客户端路由，跳转使用普通 `<a>`。当前只支持确定的目录路径，不支持 `[id]`、URL 查询参数生成无限页面或 Landing 的路由约定。
 
 预渲染使用 [@preact/preset-vite 官方能力](https://github.com/preactjs/preset-vite#prerendering-configuration) 和 `preact-render-to-string`。构建专用 JS 会从发布产物移除，正文不依赖 Preact 浏览器运行时。不要在页面组件中读取 `window`、操作 DOM 或依赖 `useEffect`：这些组件只在 Node 中执行。
+
+开发和发布的浏览器脚本共用 `vite.config.ts` 内的 `buildRuntime()`，统一使用当前 mode、base 和样式配置。开发启动仅等待 watch 的第一次构建，后续改动由同一个 watcher 更新。
 
 ## 样式与动态增强
 
