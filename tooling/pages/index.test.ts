@@ -11,19 +11,27 @@ afterEach(async () => {
 });
 
 async function workspace(
-  files: string[],
+  files: string[] | Record<string, string>,
   options: Parameters<typeof pages>[0] = {},
 ) {
   const root = await mkdtemp(path.join(tmpdir(), 'vite-pages-'));
-  cleanups.push(() => rm(root, { recursive: true, force: true }));
+  cleanups.push(() =>
+    rm(root, { recursive: true, force: true, maxRetries: 3, retryDelay: 100 }),
+  );
   const folder = path.resolve(root, options.directory ?? 'src/pages');
   await mkdir(folder, { recursive: true });
-  for (const file of files) {
+  const entries = Array.isArray(files)
+    ? files.map(
+        (file) =>
+          [
+            file,
+            'export const title = "Test"; export default function Page() { return null; }',
+          ] as const,
+      )
+    : Object.entries(files);
+  for (const [file, source] of entries) {
     await mkdir(path.dirname(path.join(folder, file)), { recursive: true });
-    await writeFile(
-      path.join(folder, file),
-      'export const title = "Test"; export default function Page() { return null; }',
-    );
+    await writeFile(path.join(folder, file), source);
   }
   let ready!: Promise<void>;
   const server = await createServer({
@@ -52,6 +60,8 @@ async function workspace(
     server,
     id,
     read: async () => (await server.ssrLoadModule(id)).pages,
+    readPrerenderPaths: async () =>
+      (await server.ssrLoadModule(id)).prerenderPaths,
   };
 }
 
@@ -89,6 +99,80 @@ it('discovers flat and directory pages and emits lazy imports with stable preced
     ['_404/index.tsx', undefined, true],
   ]);
   expect((await entries[1].load()).title).toBe('Test');
+});
+
+it('collects literal prerender opt-ins without executing page modules', async () => {
+  const app = await workspace({
+    'p1/p2026091101/index.tsx':
+      'export const prerender: boolean = true; throw new Error("Page must stay lazy"); export default () => null;',
+    'disabled.tsx':
+      'export const prerender = false; export default () => null;',
+    'unmarked.tsx': 'export default () => null;',
+    'comment.tsx':
+      '// export const prerender = true;\nexport default () => null;',
+    'string.tsx':
+      'const text = "export const prerender = true"; export default () => <p>{text}</p>;',
+    'local.tsx':
+      'const prerender = true; export default () => <p>{String(prerender)}</p>;',
+  });
+  expect(await app.readPrerenderPaths()).toEqual(['/p1/p2026091101']);
+  expect(await app.read()).toHaveLength(6);
+});
+
+it.each([false, true])(
+  'consumes build metadata and preserves other exports; eager=%s',
+  async (eager) => {
+    const app = await workspace(
+      {
+        'about.tsx':
+          'export const prerender = true; export const title = "About"; export default function Page() { return prerender; }',
+      },
+      { eager },
+    );
+    expect(await app.readPrerenderPaths()).toEqual(['/about']);
+    const [entry] = await app.read();
+    const module = eager ? entry.page : await entry.load();
+    expect(module.prerender).toBeUndefined();
+    expect(module.title).toBe('About');
+    expect(module.default()).toBe(true);
+  },
+);
+
+it.each([
+  'export let prerender = true;',
+  'export const prerender = "true";',
+  'export const prerender = Boolean(1);',
+  'export const prerender = true, title = "Test";',
+])(
+  'rejects nonliteral or mutable prerender declarations: %s',
+  async (source) => {
+    const app = await workspace({ 'index.tsx': source });
+    await expect(app.readPrerenderPaths()).rejects.toThrow(
+      'Use a standalone export const prerender = true or false: index.tsx',
+    );
+  },
+);
+
+it.each(['[id].tsx', '[...path]/index.tsx', '_404/index.tsx'])(
+  'rejects prerendering a route without a concrete path: %s',
+  async (file) => {
+    const app = await workspace({ [file]: 'export const prerender = true;' });
+    await expect(app.readPrerenderPaths()).rejects.toThrow(
+      `Prerender requires a concrete page path: ${file}`,
+    );
+  },
+);
+
+it('refreshes prerender metadata when a page changes', async () => {
+  const app = await workspace({
+    'about.tsx': 'export const prerender = false;',
+  });
+  expect(await app.readPrerenderPaths()).toEqual([]);
+  await writeFile(
+    path.join(app.folder, 'about.tsx'),
+    'export const prerender = true;',
+  );
+  await expect.poll(app.readPrerenderPaths).toEqual(['/about']);
 });
 
 it('preserves module exports in eager mode with a custom folder and glob', async () => {

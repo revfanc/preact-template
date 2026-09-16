@@ -1,6 +1,7 @@
 // preact-iso uses Object.fromEntries, which is newer than our browser targets.
 import 'core-js/es/object/from-entries';
 import { hydrate } from 'preact-iso';
+import { prerenderPaths } from 'virtual:pages';
 import { App } from './app';
 import './style.css';
 
@@ -22,6 +23,6 @@ export async function prerender({ url }: { url: string }) {
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   locationStub(base + url);
   const { html } = await render(<App />);
-  // Only explicit build routes are rendered; business links do not expand the crawl.
-  return { html, links: new Set(['/200.html']) };
+  // The build plugin collects page opt-ins; business links do not expand the crawl.
+  return { html, links: new Set(['/200.html', ...prerenderPaths]) };
 }

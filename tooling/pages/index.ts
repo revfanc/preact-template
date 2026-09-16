@@ -1,5 +1,6 @@
-import { glob } from 'node:fs/promises';
+import { glob, readFile } from 'node:fs/promises';
 import path from 'node:path';
+import ts from 'typescript';
 import { normalizePath } from 'vite';
 import type { Plugin } from 'vite';
 
@@ -28,14 +29,32 @@ export function pages({
     path.matchesGlob(file, pattern) &&
     (!file.split('/').some((part) => part.startsWith('_')) ||
       /^_404(?:\/index)?\.[^.]+$/.test(file));
+  const isPageFile = (filename: string) => {
+    const file = normalizePath(path.relative(folder, filename));
+    return !file.startsWith('../') && !path.isAbsolute(file) && selected(file);
+  };
 
   return {
     name: 'pages',
+    enforce: 'pre',
     configResolved(config) {
       folder = path.resolve(config.root, directory);
     },
     resolveId(id) {
       if (id === name) return internal;
+    },
+    transform(code, id) {
+      if (!isPageFile(id)) return;
+      const metadata = prerenderDeclaration(id, code);
+      if (!metadata) return;
+      // Reserve the prerender export for the render entry; preserve source positions.
+      return {
+        code:
+          code.slice(0, metadata.start) +
+          ' '.repeat(metadata.end - metadata.start) +
+          code.slice(metadata.end),
+        map: null,
+      };
     },
     async load(id) {
       if (id !== internal) return;
@@ -51,35 +70,80 @@ export function pages({
         if (entry.isFile() && selected(file)) list.push(file);
       }
       const imports: string[] = [];
-      const rows = manifest(list, staticOnly).map((page, i) => {
+      const routes = manifest(list, staticOnly);
+      const sources = await Promise.all(
+        routes.map((page) => readFile(path.resolve(folder, page.file), 'utf8')),
+      );
+      const prerenderPaths: string[] = [];
+      const rows = routes.map((page, i) => {
         const filename = normalizePath(path.resolve(folder, page.file));
         this.addWatchFile(filename);
+        if (prerenderDeclaration(page.file, sources[i]!)?.enabled) {
+          if (page.default || page.path.includes(':'))
+            throw new Error(
+              `Prerender requires a concrete page path: ${page.file}`,
+            );
+          prerenderPaths.push(page.path);
+        }
         const url = JSON.stringify('/@fs/' + filename);
         if (eager) imports.push(`import * as p${i} from ${url};`);
         return `{...${JSON.stringify(page)}, ${eager ? `page: p${i}` : `load: () => import(${url})`}}`;
       });
-      return `${imports.join('\n')}\nexport const pages = [${rows.join(',')}];`;
+      return `${imports.join('\n')}\nexport const pages = [${rows.join(',')}];\nexport const prerenderPaths = ${JSON.stringify(prerenderPaths)};`;
     },
     configureServer(server) {
       server.watcher.add(folder);
-      const refresh = (filename: string) => {
-        const file = normalizePath(path.relative(folder, filename));
-        if (file.startsWith('../') || path.isAbsolute(file) || !selected(file))
+      const refresh = (event: string, filename: string) => {
+        if (
+          !['add', 'change', 'unlink'].includes(event) ||
+          !isPageFile(filename)
+        )
           return;
         const module = server.moduleGraph.getModuleById(internal);
         if (!module) return;
         server.moduleGraph.invalidateModule(module);
-        server.ws.send({ type: 'full-reload' });
+        if (event !== 'change') server.ws.send({ type: 'full-reload' });
       };
-      server.watcher.on('add', refresh).on('unlink', refresh);
+      server.watcher.on('all', refresh);
       dispose = () => {
-        server.watcher.off('add', refresh).off('unlink', refresh);
+        server.watcher.off('all', refresh);
       };
     },
     closeBundle() {
       dispose?.();
     },
   };
+}
+
+function prerenderDeclaration(file: string, source: string) {
+  const ast = ts.createSourceFile(file, source, ts.ScriptTarget.Latest);
+  for (const statement of ast.statements) {
+    if (!ts.isVariableStatement(statement)) continue;
+    const exported = statement.modifiers?.find(
+      (modifier) => modifier.kind === ts.SyntaxKind.ExportKeyword,
+    );
+    if (!exported) continue;
+    const { declarations, flags } = statement.declarationList;
+    const declaration = declarations.find(
+      ({ name }) => ts.isIdentifier(name) && name.text === 'prerender',
+    );
+    if (!declaration) continue;
+    const kind = declaration.initializer?.kind;
+    if (
+      !(flags & ts.NodeFlags.Const) ||
+      declarations.length !== 1 ||
+      (kind !== ts.SyntaxKind.TrueKeyword &&
+        kind !== ts.SyntaxKind.FalseKeyword)
+    )
+      throw new Error(
+        `Use a standalone export const prerender = true or false: ${file}`,
+      );
+    return {
+      enabled: kind === ts.SyntaxKind.TrueKeyword,
+      start: exported.getStart(ast),
+      end: exported.end,
+    };
+  }
 }
 
 function manifest(files: string[], staticOnly: boolean): PageEntry[] {

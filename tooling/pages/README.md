@@ -1,37 +1,54 @@
 # Pages 构建插件
 
-`pages()` 在构建期生成页面清单，浏览器只加载组件，不扫描目录、不解析文件名。
+`pages()` 在构建期扫描页面、校验路径并生成路由清单。浏览器使用生成的清单加载组件。
 
 ```ts
 import { pages } from '../../tooling/pages/index.ts';
 
-pages({ pattern: '**/index.tsx' }); // Landing：懒加载
+pages({ pattern: '**/index.tsx' }); // Landing
 pages({ pattern: '**/index.tsx', eager: true, staticOnly: true }); // Agreement
 ```
 
-只有四个选项：
+| 选项       | 默认值         | 作用                                     |
+| ---------- | -------------- | ---------------------------------------- |
+| directory  | src/pages      | 相对应用 root 的页面目录，也支持绝对路径 |
+| pattern    | **/*.{tsx,jsx} | 选择文件范围和扩展名的 glob              |
+| eager      | false          | 同步导入页面模块；默认生成动态 import    |
+| staticOnly | false          | 拒绝包含动态参数的路由                   |
 
-| 选项       | 默认值         | 作用                                           |
-| ---------- | -------------- | ---------------------------------------------- |
-| directory  | src/pages      | 相对应用 root 的页面目录，也支持绝对路径       |
-| pattern    | **/*.{tsx,jsx} | 相对页面目录的 glob，决定文件范围和扩展名      |
-| eager      | false          | true 同步导入，false 生成动态 import           |
-| staticOnly | false          | true 拒绝包含参数的路由，避免生成无效 SSG 地址 |
-
-固定约定：
+## 路由约定
 
 - `index.tsx` → `/`；`about.tsx` 或 `about/index.tsx` → `/about`。
 - `[id].tsx` → `/:id`；`[...path].tsx` → `/:path+`，至少匹配一段，必须位于末尾。
-- `_` 开头的文件和目录被忽略；根级 `_404.tsx` 或 `_404/index.tsx` 为兜底。兜底也必须符合 pattern。
-- 静态名称使用字母、数字、下划线或连字符。只去除最后一个文件扩展名，不支持自定义首页名、复合后缀和嵌套布局。
-- 同一路径、等价动态路由、多个兜底和重复参数均报错。精确路径优先于动态参数和捕获，兜底最后。
+- `_` 开头的文件和目录被忽略，根级 `_404.tsx` 或 `_404/index.tsx` 为兜底；所有页面均须符合 pattern。
+- 静态名称使用字母、数字、下划线或连字符。只去除最后一个扩展名，不支持自定义首页名、复合后缀或嵌套布局。
+- 路由冲突、等价动态路径、重复参数和多个兜底均报错。匹配顺序为静态路径、动态参数、捕获、兜底。
 
-插件可发现平铺文件，当前两个应用通过 pattern 保留目录式入口习惯。普通组件放在匹配范围之外；若需额外过滤，使用 glob，例如 `**/!(*.test|*.spec).tsx`。
+普通组件放在 pattern 匹配范围之外。需要过滤测试文件时可使用 `**/!(*.test|*.spec).tsx`。
 
-懒加载导入 `virtual:pages` 的 `pages` 数组，记录包含 `{ file, path, load }`；同步导入 `virtual:pages/eager`，记录包含 `{ file, path, page }`，page 保留页面模块的全部导出。兜底以 `default: true` 代替 path。
+## 生成模块
 
-部署 base、页面标题、加载反馈、路由匹配和错误 UI 由应用处理。路径语法面向 preact-iso；Agreement 从清单提取静态地址，兜底不会自动生成服务器的 404 文件。
+- `virtual:pages` 导出 `pages`，每项包含 `{ file, path, load }`。
+- `virtual:pages/eager` 导出 `pages`，每项包含 `{ file, path, page }`；page 为同步页面模块。
+- 兜底记录使用 `default: true`，没有 path。
+- 两种模块均导出 `prerenderPaths: string[]`，路径不带部署 base。
 
-实现只在 index.ts 中：Vite 插件负责扫描和模块输出，私有 manifest 函数负责路径转换与校验。使用仓库要求的 Node 24 原生 glob / matchesGlob，不引入扫描依赖。新增、删除、重命名匹配页面时刷新，内容修改由 Vite 正常 HMR 处理。
+部署前缀、页面匹配、标题、加载反馈和错误 UI 由应用处理。路径语法面向 preact-iso。
 
-测试就近放在 index.test.ts，通过真实 Vite 服务验证路由清单、模块导入、冲突与开发更新。扩展先增加具体用例，不增加通用 resolver 或生命周期扩展层。
+## 预渲染声明
+
+页面入口可声明：
+
+```tsx
+export const prerender = true;
+```
+
+声明必须是独立的 `export const`，值为布尔字面量。未声明或为 `false` 时不加入 `prerenderPaths`；动态参数和兜底页面不可声明为 `true`。不支持表达式、转导出或动态参数枚举。
+
+`prerender` 是保留的构建元数据导出：使用 TypeScript 静态解析，编译后移除该导出；组件及其他业务导出保留。元数据收集不会执行页面代码。
+
+Landing 将声明的路径交给官方预渲染器；首页默认预渲染，不能通过 `false` 关闭。Agreement 预渲染全部静态页面，无需逐页声明。兜底不会生成服务器错误页。
+
+## 开发与验证
+
+新增、删除或重命名页面会刷新路由；内容修改会更新生成清单的缓存，组件使用 Vite HMR。`index.test.ts` 通过真实 Vite 服务验证路由、声明解析、模块导出和开发更新。

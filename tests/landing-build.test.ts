@@ -3,7 +3,7 @@ import path from 'node:path';
 import { expect, it } from 'vitest';
 import { createLandingFixture } from './helpers/landing';
 
-it('prerenders only explicit pages and emits an empty SPA fallback with shared CSS', async () => {
+it('prerenders only opted-in pages and emits an empty SPA fallback with shared CSS', async () => {
   const { directory, cleanup } = await createLandingFixture();
   try {
     const output = path.join(directory, 'dist');

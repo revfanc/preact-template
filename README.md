@@ -1,6 +1,6 @@
 # preact-template
 
-移动端 Web 单仓库：Landing 使用 Preact 10 + Vite 8；Agreement 使用 Preact + Vite SSG + hydration。两个应用独立构建和部署，当前正式入口均不包含演示业务。
+移动端 Web 单仓库。Landing 使用 Preact + Vite 预渲染、hydration 和 SPA 路由；Agreement 使用 Preact + Vite SSG + hydration。两个应用独立构建和部署。
 
 ## 结构与分层
 
@@ -19,13 +19,13 @@ apps/
     test/                 独立回归夹具，不进入发布产物
   agreement/              静态协议页面、官方预渲染与 hydration 入口
 packages/
-  api/                    公共业务接口预留包，示例接口已移除
+  api/                    公共业务接口
   request/                HTTP、错误、超时、取消、浏览器适配
   browser/                原生 History 返回拦截
   feedback/               函数式 Toast / Loading / Modal
   components/             跨应用通用 Preact UI
   theme/                  标准 CSS 主题变量
-tooling/                  兼容目标、PostCSS
+tooling/                  文件路由、兼容目标、PostCSS
 tests/                    单元测试与浏览器验收
 scripts/                  构建产物检查
 ```
@@ -34,13 +34,13 @@ scripts/                  构建产物检查
 
 store action 处理数据变化并调用 API；场景 hook 组织用户操作流程、展示 Toast、Loading、Modal 或执行导航。store 和 API 不直接控制 UI。校验与计算使用普通函数，不为简单请求增加转发层，也不提前创建虚构订单字段或模拟接口。
 
-Landing 使用 `@/` 引用 `apps/landing/src/` 下的跨模块代码，同模块保留 `./`，公共包使用 `@packages/*`。映射统一在根 `tsconfig.json`，Landing 开发/构建、测试夹具和 Vitest 通过 Vite 8 的 `resolve.tsconfigPaths` 读取；该别名仅供 Landing 使用，公共包不得依赖它，Agreement 仍使用自己的独立配置。
+Landing 使用 `@/` 引用 `apps/landing/src/` 下的跨模块代码，同模块保留 `./`，公共包使用 `@packages/*`。映射统一在根 `tsconfig.json`，Landing 开发/构建、测试夹具和 Vitest 通过 Vite 8 的 `resolve.tsconfigPaths` 读取；该别名仅供 Landing 使用，公共包不得依赖它，Agreement 使用独立配置。
 
 store 的通用能力集中在 `stores/core/index.ts`、`stores/core/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useLocalLoadingStore()` 等绑定 hook，一次获取 state 和 store；共享消费者使用 `useStore(store)` 订阅同一实例。顶层 hooks 只保留具体场景的接入逻辑，每个组合函数放入 `hooks/use-<name>/index.ts(x)`，调用方导入目录，测试就近放置。
 
 `stores/core/persist.ts` 提供可选 `persistStore`：按字段保存、同步恢复并校验版本/结构，可设置有效期；支持注入 sessionStorage/localStorage，存储失败时继续使用内存。默认不开启，业务 key 按渠道/用户/订单划分，销毁与清缓存分开；它不提供跨标签同步，也不代替接口缓存。详见 [持久化说明](apps/landing/src/stores/README.md#可选持久化)。
 
-应用共享空壳已接入 `app.tsx`：`stores/app/index.ts` 创建独立的业务 store 集合，`stores/app/context.tsx` 只定义 Context 和 Provider，`stores/app/hooks.ts` 提供读取 hook。`useAppStores()` 只获取已有集合，`useLocalXxxStore()` 明确创建局部实例，`useXxxStore()` 留给读取共享业务实例的 hook。当前集合无业务成员；以后按渠道、会话等业务分别扩展，不集中存放全部状态。申请数据归流程、临时编辑归页面或弹窗，生命周期不匹配的数据不提升为应用全局。详细命名和作用域规则见 [Stores 说明](apps/landing/src/stores/README.md)。
+`app.tsx` 持有应用共享实例：`stores/app/index.ts` 创建独立的业务 store 集合，`stores/app/context.tsx` 只定义 Context 和 Provider，`stores/app/hooks.ts` 提供读取 hook。`useAppStores()` 只获取已有集合，`useLocalXxxStore()` 明确创建局部实例，`useXxxStore()` 留给读取共享业务实例的 hook。集合按渠道、会话等业务拆分成员。申请数据归流程、临时编辑归页面或弹窗，生命周期不匹配的数据不提升为应用全局。详细命名和作用域规则见 [Stores 说明](apps/landing/src/stores/README.md)。
 
 ## 文档导航
 
@@ -67,11 +67,11 @@ pnpm dev
 - Landing：http://127.0.0.1:5173/landing/
 - Agreement：http://127.0.0.1:5174/agreement/
 - 单独启动：pnpm dev:landing / pnpm dev:agreement
-- 开发时两个应用使用各自地址，协议直接访问 5174；Landing 的 5173 端口不转发协议请求。预览服务仍通过代理访问 4174。
+- 开发时两个应用使用各自地址，协议直接访问 5174；Landing 的 5173 端口不转发协议请求。预览服务通过代理访问 4174。
 
 VS Code 打开仓库根目录并安装推荐的 Oxc、Prettier 扩展。项目配置启用 Oxc 实时检查、手动保存时安全修复及 Prettier 保存时格式化；禁用 ESLint 检查和 Oxfmt。首次提示时选择工作区 TypeScript。
 
-Oxlint 使用默认插件与 correctness: error，补充 no-debugger、no-var、prefer-const、ban-ts-comment、no-explicit-any。格式化统一由 Prettier处理，类型检查由 两个应用各自的 tsc 负责。
+Oxlint 使用默认插件与 correctness: error，补充 no-debugger、no-var、prefer-const、ban-ts-comment、no-explicit-any。格式化由 Prettier 负责，类型检查由两个应用各自的 tsc 负责。
 
 ## 环境与部署
 
@@ -95,22 +95,21 @@ test 和 prod 都写入各应用的 `dist/`，后一次构建覆盖前一次产�
 
 - VITE_APP_ENV：test / prod，必须与构建模式一致。
 - VITE_BASE_PATH：独立部署的 URL 前缀。
-- Landing 的 VITE_API_BASE_URL：后续真实业务接口地址；空值使用应用路径。
-- SiteConfig、欢迎语与协议示例参数已从正式应用移除。
+- Landing 的 VITE_API_BASE_URL：业务接口地址；空值使用应用路径。
 
 Landing 部署优先匹配路由对应的静态 HTML（含目录 index.html），未预渲染的页面路径回退到 /landing/200.html；Agreement 按输出目录提供静态文件。不要把未命中的静态 JS 资源也回退成 HTML。发布新版本时保留旧 hash 资源供已打开页面继续加载，HTML 应及时重新验证。
 
 ## 路由、样式与兼容
 
-两个应用通过配置选择 pages 下的 index.tsx，插件本身也支持平铺文件、通过 glob 选择扩展名和文件范围。当前约定自动发现 index.tsx，支持 [id] 动态段与 [...path] 末尾捕获；下划线目录不生成路由，_404/index.tsx 为兜底。路由冲突在构建时报告。`tooling/pages` 的 `pages()` 插件供两个应用共享，统一负责扫描与规则解析，Landing 通过 `virtual:pages` 获取懒加载路由，Agreement 通过 `virtual:pages/eager` 获取同步页面模块，解析逻辑不进入浏览器；开发时增删页面会刷新。活动入口使用 pages/p1/<code>/index.tsx 形式，目录尽量只放路由组件。
+两个应用共用 [pages 构建插件](tooling/pages/README.md)，从 `src/pages/**/index.tsx` 生成路由。Landing 懒加载页面，Agreement 同步导入静态页面；目录扫描与规则解析在构建期完成。活动入口使用 `pages/p1/<code>/index.tsx`，只负责路由组件装配。
 
-Landing 使用官方预渲染 + hydration + SPA，当前预渲染空白首页；404 由客户端路由处理。保留加载失败重试页，首次 hydration 不使用全屏 Loading，后续懒加载路由仍显示三圆点。新增业务页面时不要恢复演示依赖。
+Landing 使用官方预渲染 + hydration + SPA，默认预渲染首页；活动页通过独立的 `export const prerender = true` 声明加入构建，无需逐页配置 Vite。`/landing/p1/p2026091101/` 提供活动示例。未标记的页面及 404 由客户端路由处理。保留加载失败重试页，首次 hydration 不使用全屏 Loading，后续懒加载路由仍显示三圆点。页面约定和限制见 [Landing 说明](apps/landing/README.md#预渲染与-spa)。
 
 原生 CSS / CSS Modules，业务组件独立目录。主题使用标准 CSS 变量；packages/theme 提供默认值，各应用 theme.css 覆盖，变量名称使用单个单词。构建时生成旧浏览器可用的颜色值。
 
 Landing 按 375px 设计宽度写 px，构建转换为 rem；根字号随视口变化并在 540px 封顶。固定像素样式沿用 no-rem 约定。Agreement 使用普通 px 与响应式容器，不自动转 rem。
 
-tooling/compatibility.ts 统一管理两个应用及测试夹具的 JS、CSS 和 Autoprefixer 目标：Chrome 64+、Safari 11.1+ / iOS 11.3+、Firefox 67+、Edge 79+。仅输出原生 ES 模块，不再提供 Chrome 49 / iOS 10 的 legacy 入口。Agreement 使用 Preact 官方预渲染与 hydration。构建只转换语法，不自动补齐运行时 API；Landing 为 preact-iso 按需导入 core-js 的 Object.fromEntries 补齐模块，未引入全量入口；现代浏览器测试不等于最低版本真机验收。详见 [Agreement 说明](apps/agreement/README.md)。
+tooling/compatibility.ts 统一管理两个应用及测试夹具的 JS、CSS 和 Autoprefixer 目标：Chrome 64+、Safari 11.1+ / iOS 11.3+、Firefox 67+、Edge 79+。输出原生 ES 模块。构建只转换语法，不自动补齐运行时 API；Landing 为 preact-iso 按需导入 core-js 的 Object.fromEntries 补齐模块；现代浏览器测试不等于最低版本真机验收。详见 [Agreement 说明](apps/agreement/README.md)。
 
 ## 公共包
 
@@ -136,9 +135,9 @@ pnpm build:prod
 pnpm check:build prod
 ```
 
-构建检查覆盖环境、首屏 HTML、CSS、ES 模块语法解析（不等于浏览器兼容性证明）和静态协议资源。单元测试覆盖请求、文件路由、反馈、History 与 store 实例隔离/清理。浏览器测试同时验证正式空白入口和独立交互夹具。
+构建检查覆盖环境、首屏 HTML、CSS、ES 模块语法解析（不等于浏览器兼容性证明）和静态协议资源。单元测试覆盖请求、文件路由、反馈、History 与 store 实例隔离/清理。浏览器测试验证正式入口、预渲染接管和独立交互夹具。
 
-正式应用预览使用 4173/4174；History 夹具使用 4175，交互夹具使用 4176。测试启动服务前应保持对应端口空闲。夹具永远不随应用发布，其欢迎语和弹窗交互仅用于保留回归覆盖，见 [夹具说明](apps/landing/test/README.md)。
+正式应用预览使用 4173/4174；History 夹具使用 4175，交互夹具使用 4176。测试启动服务前应保持对应端口空闲。夹具永远不随应用发布，其欢迎语和弹窗交互用于回归测试，见 [夹具说明](apps/landing/test/README.md)。
 
 浏览器测试默认使用本机 Chrome，可通过 PLAYWRIGHT_CHANNEL=msedge 切换 Edge。开发验收使用 5173/5174，本地可复用开发服务。CI 中不得用跳过失败测试代替问题修复。
 

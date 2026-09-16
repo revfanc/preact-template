@@ -1,0 +1,115 @@
+.page {
+  max-width: 375px;
+  min-height: 100vh;
+  margin: 0 auto;
+  padding: 24px;
+}
+
+.header,
+.footer {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  color: var(--muted);
+  font-size: 12px;
+}
+
+.header {
+  padding-bottom: 18px;
+  border-bottom: 1px solid var(--border);
+  letter-spacing: 1px;
+}
+
+.hero {
+  padding: 44px 0 36px;
+}
+
+.eyebrow {
+  margin: 0 0 18px;
+  color: var(--primary);
+  font-size: 13px;
+}
+
+.hero h1 {
+  margin: 0;
+  font-size: 32px;
+  line-height: 1.4;
+  letter-spacing: -1px;
+}
+
+.description {
+  margin: 22px 0 28px;
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.9;
+}
+
+.button {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 14px 18px;
+  border-radius: 8px;
+  background: var(--primary);
+  color: var(--inverse);
+  font-size: 15px;
+  text-decoration: none;
+}
+
+.button:hover {
+  background: var(--active);
+}
+
+.ideas {
+  padding: 24px 20px;
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  background: var(--surface);
+}
+
+.ideas h2 {
+  margin: 0 0 8px;
+  font-size: 18px;
+}
+
+.list {
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.list li {
+  display: flex;
+  padding: 20px 0;
+}
+
+.list li + li {
+  border-top: 1px solid var(--border);
+}
+
+.list li:last-child {
+  padding-bottom: 0;
+}
+
+.list li > span {
+  flex-shrink: 0;
+  width: 32px;
+  padding-top: 2px;
+  color: var(--decoration);
+  font-size: 12px;
+}
+
+.list h3 {
+  margin: 0 0 6px;
+  font-size: 15px;
+}
+
+.list p {
+  margin: 0;
+  color: var(--muted);
+  font-size: 13px;
+}
+
+.footer {
+  padding: 28px 0 8px;
+}

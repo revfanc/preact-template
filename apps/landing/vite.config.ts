@@ -41,7 +41,6 @@ export default defineConfig(({ mode }) => {
         prerender: {
           enabled: true,
           renderTarget: '#app',
-          additionalPrerenderRoutes: [],
         },
       }),
       pages({ pattern: '**/index.tsx' }),

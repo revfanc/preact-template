@@ -17,7 +17,7 @@ src/
   virtual.d.ts  构建生成页面模块的类型
 ```
 
-App 不查路由、不接收组件参数、不判断页面是否存在。入口只查找一次页面，将 JSX 内容传给 App；预渲染和浏览器使用同一份页面组件。未知构建地址直接报错，浏览器未匹配时显示 404 内容。
+入口负责匹配页面，将 JSX 内容传给 App；预渲染和浏览器使用同一份页面组件。未知构建地址直接报错，浏览器未匹配时显示 404 内容。
 
 ## 新增页面
 
@@ -41,7 +41,7 @@ export default function AgreementPage() {
 
 正文应能静态渲染。浏览器查询参数、缓存和请求放到 effect 中，首次渲染与静态 HTML 保持一致。无 JavaScript 时仍能阅读正文。
 
-接口按需使用工作区请求包，当前没有示例请求或业务状态。需要静态资源时可使用 Vite 标准 public 目录，不再维护独立 runtime 脚本。
+接口按需使用工作区请求包。静态资源使用 Vite 标准 public 目录。
 
 ## 开发和部署
 
@@ -52,8 +52,8 @@ export default function AgreementPage() {
 
 两种环境均输出 dist，以最后一次构建为准。VITE_BASE_PATH 控制部署前缀，VITE_APP_ENV 必须与 mode 一致。部署按目录提供静态文件，正式链接带末尾斜杠，未知地址由服务器返回 404。
 
-保留官方 `preact({ prerender: { enabled: true, renderTarget: '#app' } })`，没有自定义构建脚本、SSR 开发服务或双输出补丁。依赖仅为 Preact、preact-iso 和共享主题包；preact-render-to-string 由 pnpm 自动安装 peer dependency。
+通过 `preact({ prerender: { enabled: true, renderTarget: '#app' } })` 启用预渲染。依赖仅为 Preact、preact-iso 和共享主题包；preact-render-to-string 由 pnpm 自动安装 peer dependency。
 
-JS 与 CSS 使用仓库统一目标：Chrome 64+、Safari 11.1+ / iOS 11.3+、Firefox 67+、Edge 79+。输出原生 ES 模块，不提供 legacy 入口；最低版本尚需真机验收。
+JS 与 CSS 使用仓库统一目标：Chrome 64+、Safari 11.1+ / iOS 11.3+、Firefox 67+、Edge 79+。输出原生 ES 模块；最低版本尚需真机验收。
 
 验证：类型检查、Lint、多页与自定义 base 构建测试、浏览器 hydration 及刷新样式稳定性测试。

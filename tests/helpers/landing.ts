@@ -1,13 +1,5 @@
 import { execFile } from 'node:child_process';
-import {
-  cp,
-  mkdir,
-  mkdtemp,
-  readFile,
-  rm,
-  symlink,
-  writeFile,
-} from 'node:fs/promises';
+import { cp, mkdir, mkdtemp, rm, symlink, writeFile } from 'node:fs/promises';
 import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
@@ -26,8 +18,14 @@ export async function createLandingFixture() {
     ]) {
       await cp(path.join(source, file), path.join(directory, file), {
         recursive: true,
+        filter: (filename) => filename !== path.join(source, 'src/pages'),
       });
     }
+    await cp(
+      path.join(source, 'src/pages/_404'),
+      path.join(directory, 'src/pages/_404'),
+      { recursive: true },
+    );
     await symlink(
       path.join(source, 'node_modules'),
       path.join(directory, 'node_modules'),
@@ -45,14 +43,6 @@ export async function createLandingFixture() {
         include: ['src'],
       }),
     );
-    const config = path.join(directory, 'vite.config.ts');
-    await writeFile(
-      config,
-      (await readFile(config, 'utf8')).replace(
-        'additionalPrerenderRoutes: []',
-        "additionalPrerenderRoutes: ['/offer/']",
-      ),
-    );
     for (const [name, source] of Object.entries({
       'index.tsx': `
         import { useEffect, useState } from 'preact/hooks';
@@ -61,9 +51,11 @@ export async function createLandingFixture() {
           const [count, setCount] = useState(0);
           const [ready, setReady] = useState(false);
           useEffect(() => setReady(true), []);
-          return <main class="fixture"><h1>静态首屏</h1><button disabled={!ready} onClick={() => setCount(count + 1)}>计数 {count}</button><a href="/campaign/offer/">活动</a><a href="/campaign/detail/7?channel=A">动态页</a></main>;
+          return <main class="fixture"><h1>静态首屏</h1><button disabled={!ready} onClick={() => setCount(count + 1)}>计数 {count}</button><a href="/campaign/offer/">活动</a><a href="/campaign/detail/7?channel=A">动态页</a><a href="/campaign/client/">客户端页面</a></main>;
         }`,
-      'offer/index.tsx': `import '../fixture.css'; export default function Offer() { return <main class="fixture"><h1>预渲染活动</h1><a href="/campaign/">首页</a></main>; }`,
+      'offer/index.tsx': `import '../fixture.css'; export const prerender = true; export default function Offer() { return <main class="fixture"><h1>预渲染活动</h1><a href="/campaign/">首页</a></main>; }`,
+      'client/index.tsx': `export default function Client() { return <main><h1>客户端页面</h1></main>; }`,
+      'disabled/index.tsx': `export const prerender = false; export default function Disabled() { throw new Error('Not a prerendered page'); }`,
       'detail/[id]/index.tsx': `export default function Detail({ id, query }: { id: string; query: Record<string, string> }) { return <main><h1>动态 {id}</h1><p>{query.channel}</p></main>; }`,
     })) {
       const file = path.join(directory, 'src/pages', name);
