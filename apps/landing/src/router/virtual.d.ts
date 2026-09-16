@@ -1,6 +1,6 @@
-declare module 'virtual:file-routes' {
-  export const routes: Array<
-    import('../../../../tooling/file-routes/types').FileRoute & {
+declare module 'virtual:pages' {
+  export const pages: Array<
+    import('../../../../tooling/pages').PageEntry & {
       load: () => Promise<{ default: import('preact').ComponentType }>;
     }
   >;

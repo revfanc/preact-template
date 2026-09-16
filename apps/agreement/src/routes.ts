@@ -1,4 +1,4 @@
-import { routes } from 'virtual:file-routes/eager';
+import { pages as routes } from 'virtual:pages/eager';
 
 export const NotFound = routes.find((route) => route.default)?.page.default;
 

@@ -31,7 +31,7 @@ export default function AgreementPage() {
 }
 ```
 
-支持多级目录。共享 `tooling/file-routes` 插件以 eager 模式收集页面，`routes.ts` 提供具体预渲染地址，不依赖首页是否包含链接；例如 `pages/privacy/index.tsx` 对应 `/agreement/privacy/`，产物为 `dist/privacy/index.html`。协议间使用普通 `<a>` 完整导航，不引入 SPA 路由。下划线目录不作为普通页面。动态参数目录在构建时明确报错；生产未知路径返回 404，开发未匹配路径显示提示。
+支持多级目录。共享 `tooling/pages` 插件以 eager 模式收集页面，`routes.ts` 提供具体预渲染地址，不依赖首页是否包含链接；例如 `pages/privacy/index.tsx` 对应 `/agreement/privacy/`，产物为 `dist/privacy/index.html`。协议间使用普通 `<a>` 完整导航，不引入 SPA 路由。下划线目录不作为普通页面。动态参数目录在构建时明确报错；生产未知路径返回 404，开发未匹配路径显示提示。
 
 ## 样式与动态内容
 
@@ -56,4 +56,4 @@ export default function AgreementPage() {
 
 验证使用 `pnpm typecheck`、`pnpm lint`、`pnpm test`。构建后执行 `pnpm check:build test` 与 `pnpm test:browser`；开发回归使用 `pnpm test:browser:dev`。测试覆盖多协议、自定义 base、标题转义、样式内联、静态 404、hydration 复用原节点和动态交互。
 
-文件选择约定由 Vite 中的 fileRoutes 配置声明；完整选项见 [共享文件路由](../../tooling/file-routes/README.md)。如需平铺页面，调整 include，无须修改核心。_404/index.tsx 可提供组件兜底，但不会自动生成部署服务器的 404 文件。
+文件选择约定由 Vite 中的 pages 配置声明；完整选项见 [共享文件路由](../../tooling/pages/README.md)。如需平铺页面，调整 pattern，无须修改核心。_404/index.tsx 可提供组件兜底，但不会自动生成部署服务器的 404 文件。

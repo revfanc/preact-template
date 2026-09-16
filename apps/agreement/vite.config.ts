@@ -2,7 +2,7 @@ import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
 import { defineConfig, loadEnv } from 'vite';
 import { cssTargets } from '../../tooling/compatibility.ts';
-import { fileRoutes } from '../../tooling/file-routes/index.ts';
+import { pages } from '../../tooling/pages/index.ts';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
 
 const root = import.meta.dirname;
@@ -24,13 +24,7 @@ export default defineConfig(({ mode, command, isPreview }) => {
     css: { postcss: { plugins: createPostcssPlugins(false, theme) } },
     build: { cssTarget: cssTargets },
     plugins: [
-      fileRoutes({
-        include: '**/index.tsx',
-        exclude: '**/_*/**',
-        notFound: '_404/index.tsx',
-        importMode: 'eager',
-        dynamic: false,
-      }),
+      pages({ pattern: '**/index.tsx', eager: true, staticOnly: true }),
       preact({ prerender: { enabled: true, renderTarget: '#app' } }),
     ],
   };

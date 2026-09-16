@@ -1,6 +1,6 @@
-declare module 'virtual:file-routes/eager' {
-  export const routes: Array<
-    import('../../../tooling/file-routes/types').FileRoute & {
+declare module 'virtual:pages/eager' {
+  export const pages: Array<
+    import('../../../tooling/pages').PageEntry & {
       page: { default: import('preact').ComponentType; title: string };
     }
   >;

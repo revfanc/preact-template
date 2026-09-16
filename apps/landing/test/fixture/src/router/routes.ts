@@ -1,5 +1,5 @@
 import { lazy } from 'preact-iso';
-import { routes as files } from 'virtual:file-routes';
+import { pages as files } from 'virtual:pages';
 import { PageError } from '../components/page-error';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');

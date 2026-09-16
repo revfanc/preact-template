@@ -42,7 +42,7 @@ src/
 - 公共包通过 `@packages/*` 的公开入口引用，不通过应用别名或相对路径穿透包源码。
 - 别名仅缩短路径，不改变依赖边界：业务 store 使用 `@/stores/core`，不能通过 `@/stores` 反向引用聚合入口。
 - 根 `tsconfig.json` 是当前 Landing 路径映射的唯一来源；正式应用、测试夹具及 Vitest 启用 `resolve.tsconfigPaths`。测试夹具的 `@/` 同样指向正式 Landing 源码；夹具内部继续使用相对路径。
-- `tooling/file-routes/` 的 Vite 插件负责扫描、解析和校验 `src/pages/`，通过 `virtual:file-routes` 输出懒加载路由表。运行时不扫描目录、不解析文件命名规则；开发时新增或删除页面会刷新路由。
+- `tooling/pages/` 的 Vite 插件负责扫描、解析和校验 `src/pages/`，通过 `virtual:pages` 输出懒加载路由表。运行时不扫描目录、不解析文件命名规则；开发时新增或删除页面会刷新路由。
 
 ## 文件与依赖规则
 
