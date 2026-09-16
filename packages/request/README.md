@@ -76,30 +76,18 @@ HTTP 4xx/5xx 和发送阶段的网络/取消错误由 ofetch 的 `FetchError` �
 
 浏览器入口检测原生 fetch 是否支持取消：支持时用原生传输，否则注入基于 XHR 的 whatwg-fetch 及匹配的 Headers；缺少 AbortController 时注入 abort-controller。补丁静态导入，不增加异步加载阶段，也不强制覆盖可用的原生 fetch。
 
-应用构建仍负责语法转换和 Promise、Symbol、Set、URLSearchParams 等运行时能力。目标保持 Chrome 49、iOS 10 / Safari 10。XHR 补丁不提供流式响应、keepalive、完整的 cache/redirect 控制；本模板旧设备场景使用普通 JSON、文本和表单请求。
+应用构建负责语法转换；Promise、Symbol、Set、URLSearchParams 使用目标浏览器原生能力。目标为 Chrome 64、Safari 11.1 / iOS 11.3、Firefox 67、Edge 79；browser 入口保留 Fetch 与 AbortController 的能力检测及降级。XHR 补丁不提供流式响应、keepalive、完整的 cache/redirect 控制；本模板旧设备场景使用普通 JSON、文本和表单请求。
 
-协议正文由 Preact SSG 生成静态 HTML。构建时请求用默认入口及绝对 baseURL；浏览器实时内容才声明包依赖并使用 browser 入口，复用 packages/api 中的接口。Agreement 暂未启用 legacy，接入请求时使用 browser 入口补齐 Web API，但旧设备的语法及语言 polyfill 仍需后续构建方案支持。当前没有动态接口，不为共享而让静态协议加载请求库。
+协议正文由 Preact SSG 生成静态 HTML。构建时请求用默认入口及绝对 baseURL；浏览器实时内容才声明包依赖并使用 browser 入口，复用 packages/api 中的接口。Agreement 使用统一构建目标，接入请求时使用 browser 入口补齐请求相关 Web API。当前没有动态接口，不为共享而让静态协议加载请求库。
 
 两个应用独立构建，不保证下载缓存跨应用复用。体积评估应包含 ofetch、Fetch/Abort 补丁和应用 polyfill。
 
-## 迁移与验证
+## 验证
 
-旧 API 直接移除，不保留兼容别名：
+测试覆盖默认禁止重试、headers/hooks、响应信息、取消与超时，防止升级依赖时改变公开契约。
 
-| 原写法                       | 现写法                                               |
-| ---------------------------- | ---------------------------------------------------- |
-| client.request(url, options) | request(url, options)                                |
-| json                         | body                                                 |
-| timeoutMs                    | timeout                                              |
-| RequestError.kind            | FetchError 的 status/data/response/cause，或原始异常 |
-| 自定义 RequestOptions        | ofetch 的 FetchOptions                               |
-| RequestClient 类型别名       | ofetch 的 $Fetch                                     |
-| 在默认配置内注入 fetch       | createRequestClient(defaults, { fetch })             |
+运行 `pnpm test`、`pnpm typecheck`、`pnpm lint`。浏览器回归见 `tests/browser/request.spec.ts`：独立测试入口验证原生、缺少取消 API、缺少整个 Fetch API 三种情况。运行方式见根 README；测试页面不进入正式应用。
 
-原先自研的严格 URL 校验、严格 JSON 解析、空值和错误分类规则不再保留。原请求测试已按上述公开契约重写，包含默认禁止重试、headers/hooks、响应信息、取消与超时的真实边界，防止升级依赖时静默改变行为。
-
-运行 `pnpm test`、`pnpm typecheck`、`pnpm lint`。浏览器回归见 `tests/browser/request.spec.ts`：独立测试入口验证原生、缺少取消 API、缺少整个 Fetch API，以及强制 legacy 构建且缺少 Promise/URL API 的情况。运行方式见根 README；测试页面不进入正式应用。
-
-测试在现代 Chrome 中模拟能力缺失，不替代 Chrome 49 或 iOS 10 真机验收。
+测试在现代 Chrome 中模拟能力缺失，不替代 Chrome 64 或 iOS 11.3 真机验收。
 
 参考：[ofetch v1 文档](https://github.com/unjs/ofetch/tree/v1)、[whatwg-fetch 兼容说明](https://github.com/JakeChampion/fetch)。升级时核对实际安装的发布产物及测试，不能以开发分支行为代替锁定版本。

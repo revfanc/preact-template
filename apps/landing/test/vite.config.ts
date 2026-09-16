@@ -1,10 +1,8 @@
 import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
-import legacy from '@vitejs/plugin-legacy';
 import { defineConfig } from 'vite';
-import { cssTargets, legacyTargets } from '../../../tooling/compatibility.ts';
+import { buildTargets } from '../../../tooling/compatibility.ts';
 import { createPostcssPlugins } from '../../../tooling/postcss.ts';
-import { landingHtml } from '../build/html.ts';
 import { pages } from '../../../tooling/pages/index.ts';
 
 const theme = fileURLToPath(new URL('../src/theme.css', import.meta.url));
@@ -20,10 +18,8 @@ export default defineConfig(({ mode }) => ({
   resolve: { tsconfigPaths: true, dedupe: ['preact'] },
   css: { postcss: { plugins: createPostcssPlugins(true, theme) } },
   plugins: [
-    legacy({ targets: legacyTargets }),
     preact({ reactAliasesEnabled: false }),
     pages({ pattern: '**/index.tsx' }),
-    landingHtml(theme),
   ],
   build: {
     rolldownOptions: {
@@ -42,7 +38,8 @@ export default defineConfig(({ mode }) => ({
     },
     outDir: '../dist',
     emptyOutDir: true,
-    cssTarget: cssTargets,
+    target: buildTargets,
+    cssTarget: buildTargets,
   },
   preview: {
     host: '127.0.0.1',

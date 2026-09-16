@@ -8,5 +8,3 @@ playwright-report/
 .env.*.local
 *.tsbuildinfo
 .DS_Store
-
-.astro/

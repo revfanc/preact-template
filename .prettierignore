@@ -3,5 +3,3 @@ dist
 test-results
 playwright-report
 pnpm-lock.yaml
-
-.astro/

@@ -182,9 +182,9 @@ test('configuration failure offers a working retry', async ({ page }) => {
   await expect(page.locator('footer')).toContainText('示例服务提供方');
 });
 
-for (const legacyCase of [
+for (const capabilityCase of [
   {
-    name: 'fetch, Promise and AbortController missing',
+    name: 'fetch and AbortController missing',
     apis: [
       'fetch',
       'Request',
@@ -192,9 +192,6 @@ for (const legacyCase of [
       'Headers',
       'AbortController',
       'AbortSignal',
-      'Promise',
-      'URL',
-      'URLSearchParams',
     ],
   },
   {
@@ -202,7 +199,7 @@ for (const legacyCase of [
     apis: ['AbortController', 'AbortSignal'],
   },
 ]) {
-  test(`legacy landing boots and static agreement stays readable with ${legacyCase.name}`, async ({
+  test(`module landing boots and agreement hydrates with ${capabilityCase.name}`, async ({
     page,
   }) => {
     const errors: string[] = [];
@@ -212,11 +209,6 @@ for (const legacyCase of [
       if (request.resourceType() === 'script') loaded.push(request.url());
     });
     await page.addInitScript((apis) => {
-      Object.defineProperty(Event.prototype, 'composedPath', {
-        value: undefined,
-        writable: true,
-        configurable: true,
-      });
       Object.defineProperty(Object, 'fromEntries', {
         value: undefined,
         writable: true,
@@ -229,30 +221,12 @@ for (const legacyCase of [
           configurable: true,
         });
       }
-    }, legacyCase.apis);
-    await page.route('**/*', async (route) => {
-      if (route.request().resourceType() !== 'document')
-        return route.continue();
-      const response = await route.fetch();
-      const body = (await response.text())
-        .replace(/<script\b[^>]*\btype="module"[^>]*>[\s\S]*?<\/script>/g, '')
-        .replace(/\snomodule\b/g, '');
-      await route.fulfill({ response, body });
-    });
+    }, capabilityCase.apis);
     await page.goto('/landing/');
     const landingEntry = await page
-      .locator('#vite-legacy-entry')
-      .getAttribute('data-src');
-    await page.evaluate(async () => {
-      const system = (
-        window as unknown as {
-          System: { import(url: string): Promise<unknown> };
-        }
-      ).System;
-      await system.import(
-        document.getElementById('vite-legacy-entry')!.getAttribute('data-src')!,
-      );
-    });
+      .locator('script[type="module"][src]')
+      .first()
+      .getAttribute('src');
     await expect(page.locator('footer')).toContainText('示例服务提供方');
     await page.getByLabel('你的称呼').fill('旧版浏览器');
     await page.getByRole('button', { name: '预览欢迎语' }).click();

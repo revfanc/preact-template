@@ -3,9 +3,9 @@ import * as notFound from './pages/_404';
 
 export { notFound };
 
-export const paths = routes.flatMap((route) =>
-  route.default ? [] : [route.path === '/' ? '/' : route.path + '/'],
-);
+export const paths = routes
+  .filter((route) => !route.default)
+  .map((route) => (route.path === '/' ? '/' : route.path + '/'));
 
 export function getPage(path: string) {
   const normalized =

@@ -12,6 +12,9 @@ export const routes = files.map(({ load, ...route }) => ({
           throw new Error(`Page needs a default component: ${route.file}`);
         return module.default;
       })
-      .catch(() => PageError),
+      .catch((error) => {
+        if (typeof window === 'undefined') throw error;
+        return PageError;
+      }),
   ),
 }));

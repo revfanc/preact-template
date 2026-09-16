@@ -7,7 +7,7 @@
 ```text
 src/
   app.tsx                 应用装配、共享实例所有者与顶层错误边界
-  main.tsx                挂载、兼容补丁、首屏 loading 交接
+  main.tsx                预渲染、兼容补丁、hydration 接管
   pages/                  路由入口，只装配参数、状态、UI 与导航
     p1/<code>/index.tsx    后续真实活动页的路径形式
   components/             应用 UI；每个组件单独目录
@@ -127,3 +127,7 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 组件使用目录包裹：`components/<name>/index.tsx` 与 `index.module.css`。路由使用 `pages/p1/<code>/index.tsx` 等形式，路由目录尽量只放入口。
 
 顶层 hooks 和测试夹具中的组合函数均使用 `hooks/use-<name>/index.ts(x)`；调用方导入目录，例如 `@/hooks/use-loading`。Store 自身的接入函数仍集中在 `stores/<业务>/hooks.ts`，遵循 store 的文件职责约定。
+
+## 渲染边界
+
+Landing 使用预渲染 + hydration + SPA。App store 按渲染实例创建；共享业务状态不得成为模块单例。浏览器请求、缓存恢复、History 注册及埋点在 effect 中启动，清理由所属作用域负责。首帧不读取渠道查询或缓存来改变预渲染结构；hydration 后再更新。预渲染路径和部署规则见 [Landing README](README.md#预渲染与-spa)。

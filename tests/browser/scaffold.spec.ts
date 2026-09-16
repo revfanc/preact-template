@@ -39,34 +39,35 @@ test('removed example routes show 404 and return to the empty home', async ({
   await expect(page.getByRole('main', { name: '落地页' })).toBeVisible();
 });
 
-test('production initial loading paints before JS and CSS, then releases', async ({
+test('production prerendered shell remains visible while hydration loads', async ({
   page,
 }) => {
   let release!: () => void;
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route('**/*', async (route) => {
-    if (['script', 'stylesheet'].includes(route.request().resourceType()))
-      await gate;
+  await page.route('**/*.js', async (route) => {
+    await gate;
     await route.continue();
   });
   try {
     await page.goto('/landing/', { waitUntil: 'commit' });
-    await expect
-      .poll(() =>
-        page.evaluate(() => performance.getEntriesByName('first-paint').length),
-      )
-      .toBe(1);
-    await expect(page.locator('.pkg-ui-dots span')).toHaveCount(3);
-    await expect(
-      page.getByRole('status', { name: '正在加载页面' }),
-    ).toBeVisible();
+    const main = page.getByRole('main', { name: '落地页' });
+    await expect(main).toBeVisible();
+    await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
+    const original = await main.elementHandle();
+    release();
+    await page.waitForLoadState('networkidle');
+    expect(
+      await original!.evaluate(
+        (node) => node === document.querySelector('main'),
+      ),
+    ).toBe(true);
+    await expect(main).toBeVisible();
+    await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
   } finally {
     release();
   }
-  await expect(page.getByRole('main', { name: '落地页' })).toBeVisible();
-  await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
 });
 
 test('static agreement is readable without JS and no example data is published', async ({

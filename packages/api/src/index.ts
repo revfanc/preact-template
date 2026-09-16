@@ -1,2 +1,2 @@
-// Real endpoint exports belong here. The demo SiteConfig API has been removed.
+// Shared business endpoint functions and types belong here.
 export {};

@@ -96,32 +96,16 @@ test('closing a pending layer never mounts its late chunk or affects another lay
   await expect(page.locator('[data-modal-root]')).toHaveCount(0);
 });
 
-test('loads modal content through the legacy entry and settles normally', async ({
+test('loads a separate modal chunk through the module entry and settles normally', async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.route('**/async-modal.html', async (route) => {
-    const response = await route.fetch();
-    const body = (await response.text())
-      .replace(/<script\b[^>]*\btype="module"[^>]*>[\s\S]*?<\/script>/g, '')
-      .replace(/\snomodule\b/g, '');
-    await route.fulfill({ response, body });
-  });
   const chunks: string[] = [];
   page.on('request', (request) => {
-    if (request.url().includes('async-dialog-legacy-'))
-      chunks.push(request.url());
+    if (request.url().includes('async-dialog-')) chunks.push(request.url());
   });
   await page.goto('/landing/async-modal.html');
-  await page.evaluate(async () => {
-    const system = (
-      window as unknown as { System: { import(url: string): Promise<unknown> } }
-    ).System;
-    await system.import(
-      document.getElementById('vite-legacy-entry')!.getAttribute('data-src')!,
-    );
-  });
   await page.getByRole('button', { name: '打开异步弹窗' }).click();
   await expect(page.getByLabel('弹窗中的称呼')).toBeVisible();
   await page.getByRole('button', { name: '确认称呼' }).click();

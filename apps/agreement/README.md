@@ -54,6 +54,6 @@ export default function AgreementPage() {
 
 保留官方 `preact({ prerender: { enabled: true, renderTarget: '#app' } })`，没有自定义构建脚本、SSR 开发服务或双输出补丁。依赖仅为 Preact、preact-iso 和共享主题包；preact-render-to-string 由 pnpm 自动安装 peer dependency。
 
-静态 CSS 沿用旧设备目标；动态交互目前使用 Vite 默认现代浏览器目标，尚未提供 Chrome 49 / iOS 10 legacy 支持。
+JS 与 CSS 使用仓库统一目标：Chrome 64+、Safari 11.1+ / iOS 11.3+、Firefox 67+、Edge 79+。输出原生 ES 模块，不提供 legacy 入口；最低版本尚需真机验收。
 
 验证：类型检查、Lint、多页与自定义 base 构建测试、浏览器 hydration 及刷新样式稳定性测试。

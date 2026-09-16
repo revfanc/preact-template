@@ -48,36 +48,12 @@ test('landing demonstrates stacked Back handlers and done stops on the demo page
   expect(errors).toEqual([]);
 });
 
-test('landing Back demo runs through the legacy entry without native Promise', async ({
+test('landing Back demo boots directly through the module entry', async ({
   page,
 }) => {
   const errors: string[] = [];
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.addInitScript(() => {
-    Object.defineProperty(window, 'Promise', {
-      value: undefined,
-      writable: true,
-      configurable: true,
-    });
-  });
-  await page.route('**/*', async (route) => {
-    if (route.request().resourceType() !== 'document') return route.continue();
-    const response = await route.fetch();
-    const body = (await response.text())
-      .replace(/<script\b[^>]*\btype="module"[^>]*>[\s\S]*?<\/script>/g, '')
-      .replace(/\snomodule\b/g, '');
-    await route.fulfill({ response, body });
-  });
   await page.goto('/landing/browser');
-  await page.evaluate(async () => {
-    const system = (
-      window as unknown as { System: { import(url: string): Promise<unknown> } }
-    ).System;
-
-    await system.import(
-      document.getElementById('vite-legacy-entry')!.getAttribute('data-src')!,
-    );
-  });
   await expect(page.getByText('已注册 1 层')).toBeVisible();
   await page.getByRole('button', { name: '模拟返回' }).click();
   await page.getByRole('button', { name: '完成当前层' }).click();

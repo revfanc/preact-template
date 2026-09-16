@@ -28,8 +28,8 @@ function checkTheme(css, app) {
     `${app}: wrong environment`,
   );
   assert(
-    html.includes('vite-legacy-entry') && html.includes('type="module"'),
-    `${app}: missing dual entries`,
+    !html.includes('vite-legacy-entry') && html.includes('type="module"'),
+    `${app}: missing module entry or unexpected legacy entry`,
   );
   const base =
     loadEnv(mode, path.join(root, 'apps', app), 'VITE_').VITE_BASE_PATH || '/';
@@ -42,37 +42,36 @@ function checkTheme(css, app) {
     `${app}: asset URLs must use ${base}`,
   );
   assert(
-    html.includes('id="page-loading-style"') &&
-      html.includes('data-initial-loading') &&
-      html.includes('pkg-ui-dots'),
-    'landing: initial HTML loading indicator missing',
+    html.includes('type="isodata"') && html.includes('data-page='),
+    'landing: missing prerendered app',
+  );
+  assert(
+    !html.includes('data-initial-loading'),
+    'landing: startup must not cover prerendered content',
+  );
+  const fallback = await readFile(path.join(directory, '200.html'), 'utf8');
+  assert(
+    fallback.includes('<div id="app"></div>') &&
+      !fallback.includes('type="isodata"'),
+    'landing: SPA fallback must be empty',
   );
   const assets = await readdir(path.join(directory, 'assets'));
   assert(
-    html.includes('data-entry-css') &&
-      !/<link\b[^>]*\brel="stylesheet"/.test(html),
-    'landing: entry CSS must not block initial loading paint',
+    /<link\b[^>]*rel="stylesheet"/.test(html),
+    'landing: missing first-paint stylesheet',
   );
-  const legacy = assets.filter(
-    (name) => name.includes('-legacy-') && name.endsWith('.js'),
+  const scripts = assets.filter((name) => name.endsWith('.js'));
+  assert(
+    scripts.length > 0 && !scripts.some((name) => name.includes('-legacy-')),
+    `${app}: invalid module output`,
   );
-  assert(legacy.length >= 2, `${app}: missing legacy runtime or polyfills`);
-  for (const file of legacy) {
+  for (const file of scripts) {
     const source = await readFile(path.join(directory, 'assets', file), 'utf8');
-    parse(source, { ecmaVersion: 2015, sourceType: 'script' });
+    parse(source, { ecmaVersion: 2020, sourceType: 'module' });
   }
   const inlineCss = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)]
     .map((match) => match[1])
     .join('\n');
-  let loadingAnimations = 0;
-  postcss.parse(inlineCss).walkAtRules('keyframes', (rule) => {
-    if (rule.params === 'pkg-ui-page-bounce') loadingAnimations++;
-  });
-  assert.equal(
-    loadingAnimations,
-    1,
-    'landing: startup CSS must not be duplicated',
-  );
   const css =
     inlineCss +
     (
@@ -91,7 +90,7 @@ function checkTheme(css, app) {
   assert(css.includes('rem'), 'landing: px-to-rem missing');
   checkTheme(css, app);
   console.log(
-    `${app}/${mode}: environment, static HTML, CSS and ${legacy.length} legacy scripts checked`,
+    `${app}/${mode}: environment, static HTML, CSS and ${scripts.length} module scripts checked`,
   );
 }
 
@@ -148,6 +147,12 @@ for (const page of pages) {
   );
 }
 assert(scripts.size > 0, 'agreement: missing client entry');
+for (const file of files.filter((file) => file.endsWith('.js'))) {
+  parse(await readFile(path.join(directory, file), 'utf8'), {
+    ecmaVersion: 2020,
+    sourceType: 'module',
+  });
+}
 assert(
   !files.some((file) => /runtime|\.map$|-legacy-/.test(file)),
   'agreement: old runtime artifacts must not be published',

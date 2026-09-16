@@ -128,33 +128,8 @@ test('leaving during an async decision expires the old done without pulling the 
   expect(await page.evaluate(() => history.state)).toEqual({ page: 'other' });
 });
 
-test('legacy fixture restores and releases without native Promise', async ({
-  page,
-}) => {
-  await page.addInitScript(() => {
-    Object.defineProperty(window, 'Promise', {
-      value: undefined,
-      configurable: true,
-      writable: true,
-    });
-  });
-  await page.route(`${origin}/**`, async (route) => {
-    if (route.request().resourceType() !== 'document') return route.continue();
-    const response = await route.fetch();
-    const body = (await response.text())
-      .replace(/<script\b[^>]*\btype="module"[^>]*>[\s\S]*?<\/script>/g, '')
-      .replace(/\snomodule\b/g, '');
-    await route.fulfill({ response, body });
-  });
+test('module fixture restores and releases', async ({ page }) => {
   await page.goto(`${origin}/?auto=allow`);
-  await page.evaluate(async () => {
-    const system = (
-      window as unknown as { System: { import(url: string): Promise<unknown> } }
-    ).System;
-    await system.import(
-      document.getElementById('vite-legacy-entry')!.getAttribute('data-src')!,
-    );
-  });
   await expect.poll(() => kind(page)).toBe('guard');
   await back(page);
   await expect

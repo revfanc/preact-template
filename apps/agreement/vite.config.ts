@@ -1,7 +1,7 @@
 import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
 import { defineConfig, loadEnv } from 'vite';
-import { cssTargets } from '../../tooling/compatibility.ts';
+import { buildTargets } from '../../tooling/compatibility.ts';
 import { pages } from '../../tooling/pages/index.ts';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
 
@@ -21,7 +21,7 @@ export default defineConfig(({ mode, command, isPreview }) => {
     server: { host: '127.0.0.1', port: 5174, strictPort: true },
     preview: { host: '127.0.0.1', port: 4174, strictPort: true },
     css: { postcss: { plugins: createPostcssPlugins(false, theme) } },
-    build: { cssTarget: cssTargets },
+    build: { target: buildTargets, cssTarget: buildTargets },
     plugins: [
       pages({ pattern: '**/index.tsx', eager: true, staticOnly: true }),
       preact({ prerender: { enabled: true, renderTarget: '#app' } }),

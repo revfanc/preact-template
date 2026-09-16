@@ -1,6 +1,6 @@
 # Landing
 
-Preact + Vite 客户端应用，默认部署在 `/landing/`。当前首页为空白容器，保留文件路由、404、页面加载失败重试、首屏 Loading 与兼容构建。欢迎语、结果页、详情页、Modal 和返回拦截演示已从正式应用移除。
+Preact + Vite 预渲染 + SPA 应用，默认部署在 `/landing/`。当前首页为空白容器，保留文件路由、404、页面加载失败重试、首屏 hydration 与兼容构建。欢迎语、结果页、详情页、Modal 和返回拦截演示已从正式应用移除。
 
 ## 开发与构建
 
@@ -23,7 +23,7 @@ pnpm --filter @apps/landing preview:test
 
 | 位置                   | 职责                                            |
 | ---------------------- | ----------------------------------------------- |
-| `src/main.tsx`         | 兼容补丁、挂载、HTML 首屏 Loading 交接          |
+| `src/main.tsx`         | 按需 API 补齐、预渲染、hydration 接管           |
 | `src/app.tsx`          | Router 装配与页面错误处理，不新增 app 目录      |
 | `src/pages/`           | 路由入口与装配，不放复杂业务或整块表单          |
 | `src/components/`      | 应用 UI，每个组件独立目录                       |
@@ -56,3 +56,16 @@ useLocalLoadingStore、useStore、useStoreInstance 由 stores/index.ts 导出，
 在根目录执行 `pnpm lint`、`pnpm typecheck`、`pnpm test`；使用 `pnpm build:test` 构建两应用后，执行 `pnpm check:build test` 和 `pnpm test:browser`。后者同时检查正式页面和[独立测试夹具](test/README.md)，需要 4173–4176 端口空闲，完整环境切换方法见根 README。
 
 `test/fixture` 保留旧交互以验证公共能力，只由 `test:build` 构建到 `test/dist`，不参与正式应用构建或部署。不要在正式源码中导入测试夹具。
+
+## 预渲染与 SPA
+
+使用 `@preact/preset-vite` 官方预渲染能力。`main.tsx` 导出 `prerender()`，生成 HTML 后由 `preact-iso` hydration 接管，后续导航继续使用懒加载 Router。
+
+- 默认预渲染 `/`。在 `vite.config.ts` 的 `additionalPrerenderRoutes` 中添加需要预渲染的具体路径，例如 `/p1/p2026091101/`。路径不包含部署 base；动态 `[id]` 页面需要填写实际值。普通页面链接不自动扩展构建列表，避免误触发业务页面。
+- `200.html` 是空的 SPA 入口，不参与 hydration。部署先匹配静态文件和目录 `index.html`，然后把页面请求回退到 `/landing/200.html`；缺失 JS/CSS 应返回 404。Vite 预览默认回退首页，启动时检测路径不匹配后改用客户端渲染。
+- 首屏 HTML 直接展示，不再注入全屏启动 Loading，不再通过 `hidden` 隐藏正文。首次 hydration 等待期间保持正文；后续路由懒加载使用公共 Loading。
+- CSS 使用 Vite 的 `cssCodeSplit: false` 输出公共样式文件，由 HTML 提前加载；JS 继续按页分包。这样无需自定义首屏 CSS 注入插件。页面数量增长时应关注公共 CSS 体积。
+- 页面、store 工厂和渲染过程必须可在 Node 中执行。请求、埋点、History 注册、持久化恢复等浏览器初始化放在 effect 中；不要在模块顶层或 render 中运行。构建期间每次渲染创建独立 App store，不能使用模块级业务单例。
+- 构建和客户端第一次渲染必须使用一致的内容。渠道配置、查询参数、缓存和倒计时应在 hydration 后更新，不能把某个渠道的动态价格烘焙到所有渠道共用的 HTML。渲染错误直接导致构建失败。
+
+当前没有业务页面，因此正式首页仍为空白；架构测试使用独立临时页面验证静态正文、样式、DOM 接管、点击事件、SPA 导航和动态路由刷新，不发布示例内容。

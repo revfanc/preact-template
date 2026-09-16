@@ -41,16 +41,10 @@ function setMask(mask: boolean) {
 
 function ensureElement() {
   if (element) return;
-  layer =
-    document.querySelector<HTMLDivElement>('[data-initial-loading]') ??
-    undefined;
-  if (!layer) {
-    const container = document.createElement('div');
-    container.innerHTML = loadingHtml;
-    layer = container.firstElementChild as HTMLDivElement;
-    document.body.appendChild(layer);
-  }
-  layer.removeAttribute('data-initial-loading');
+  const container = document.createElement('div');
+  container.innerHTML = loadingHtml;
+  layer = container.firstElementChild as HTMLDivElement;
+  document.body.appendChild(layer);
   element = layer.querySelector<HTMLDivElement>('.pkg-ui-notice')!;
   content = element.querySelector<HTMLDivElement>('.pkg-ui-content')!;
   dots = element.querySelector<HTMLDivElement>('.pkg-ui-dots')!;

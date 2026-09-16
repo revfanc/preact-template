@@ -92,7 +92,7 @@ window.addEventListener('pageshow', (event) => {
 
 只保证受管记录间可以确认的同文档单步返回。浏览器无交互跳记录、连续返回跨出记录组、长按选择历史、`go(-N)`、跨文档离开、刷新拦截、关闭标签页和原生 WebView 退出不在保证范围内。`busy` 防止重复业务回调，不是浏览器导航锁。
 
-沿用仓库 Chrome 49、iOS 10 / Safari 10 编译目标；包不自行安装 Promise 等 polyfill，由应用的 legacy 构建提供。现代 Chromium 的脚本 History 测试、强制 legacy 入口和 ES2015 语法检查不能替代目标旧设备或真实工具栏返回测试。
+沿用仓库 Chrome 64、Safari 11.1 / iOS 11.3、Firefox 67、Edge 79 构建目标，依赖浏览器原生 Promise，不提供 legacy 输出。现代 Chromium 的 History 测试和模块语法解析不能替代最低版本设备或真实工具栏返回测试。
 
 独立验收页面放在本包 `test/fixture`，只用于测试，不进入 Landing 或 Agreement 的产物。在仓库根目录执行 `pnpm test:browser` 会自动构建它并在 4175 端口运行，同时运行正式应用及 Landing 交互夹具的验收。正式应用需提前构建，端口及 `BUILD_MODE=prod` 的使用方法见[根 README](../../README.md)。Landing 正式页面没有自动接入返回拦截，业务按需注册；多层交互演示仅保留在[测试夹具](../../apps/landing/test/README.md)。
 

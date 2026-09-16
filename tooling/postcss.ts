@@ -3,7 +3,7 @@ import customProperties from 'postcss-custom-properties';
 import autoprefixer from 'autoprefixer';
 import pxtorem from 'postcss-pxtorem';
 import { fileURLToPath } from 'node:url';
-import { legacyTargets } from './compatibility.ts';
+import { browserTargets } from './compatibility.ts';
 import type { Plugin } from 'postcss';
 
 const defaults = fileURLToPath(
@@ -37,6 +37,6 @@ export function createPostcssPlugins(rem = false, theme?: string) {
           }),
         ]
       : []),
-    autoprefixer({ overrideBrowserslist: legacyTargets }),
+    autoprefixer({ overrideBrowserslist: browserTargets }),
   ];
 }

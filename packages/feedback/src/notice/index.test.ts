@@ -1,7 +1,6 @@
 // @vitest-environment jsdom
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest';
 import { loading, toast, type Close } from '../index';
-import { loadingHtml } from './markup';
 
 const cleanups: Close[] = [];
 beforeEach(() => vi.useFakeTimers());
@@ -191,11 +190,10 @@ describe('loading', () => {
     expect(card?.textContent).toBe('新提示');
   });
 
-  it('adopts initial HTML and keeps its existing dots throughout startup', () => {
-    document.body.innerHTML = loadingHtml;
+  it('keeps the existing dots while concurrent loading handles finish', () => {
+    const startup = loading({ mask: true });
     const original = document.querySelector('.pkg-ui-notice');
     const dot = document.querySelector('.pkg-ui-dots span');
-    const startup = loading({ mask: true });
     const route = loading({ mask: true });
     const request = loading();
     cleanups.push(startup, route, request);
@@ -204,7 +202,6 @@ describe('loading', () => {
     expect(document.querySelector('.pkg-ui-notice')).toBe(original);
     expect(document.querySelector('.pkg-ui-dots span')).toBe(dot);
     expect(document.querySelectorAll('.pkg-ui-layer')).toHaveLength(1);
-    expect(document.querySelector('[data-initial-loading]')).toBeNull();
     request();
     vi.advanceTimersByTime(140);
     expect(original?.isConnected).toBe(false);

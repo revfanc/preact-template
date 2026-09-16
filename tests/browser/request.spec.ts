@@ -1,13 +1,13 @@
 import { expect, test } from '@playwright/test';
 import type { FetchError } from '../../packages/request/src/index';
 
-for (const mode of ['native', 'no-abort', 'no-fetch', 'legacy'] as const) {
+for (const mode of ['native', 'no-abort', 'no-fetch'] as const) {
   test(`request transport works with ${mode}`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.addInitScript((mode) => {
       const missing =
-        mode === 'no-fetch' || mode === 'legacy'
+        mode === 'no-fetch'
           ? [
               'fetch',
               'Request',
@@ -19,7 +19,6 @@ for (const mode of ['native', 'no-abort', 'no-fetch', 'legacy'] as const) {
           : mode === 'no-abort'
             ? ['AbortController', 'AbortSignal']
             : [];
-      if (mode === 'legacy') missing.push('Promise', 'URL', 'URLSearchParams');
       for (const name of missing)
         Object.defineProperty(window, name, {
           value: undefined,
@@ -27,15 +26,6 @@ for (const mode of ['native', 'no-abort', 'no-fetch', 'legacy'] as const) {
           writable: true,
         });
     }, mode);
-    if (mode === 'legacy') {
-      await page.route('**/request.html', async (route) => {
-        const response = await route.fetch();
-        const body = (await response.text())
-          .replace(/<script\b[^>]*\btype="module"[^>]*>[\s\S]*?<\/script>/g, '')
-          .replace(/\snomodule\b/g, '');
-        await route.fulfill({ response, body });
-      });
-    }
     let submitted = 0;
     await page.route('**/__request/echo', async (route) => {
       submitted++;
@@ -58,20 +48,6 @@ for (const mode of ['native', 'no-abort', 'no-fetch', 'legacy'] as const) {
     });
     await page.route('**/__request/slow', () => {});
     await page.goto('http://127.0.0.1:4176/landing/request.html');
-    if (mode === 'legacy') {
-      await page.evaluate(async () => {
-        const system = (
-          window as unknown as {
-            System: { import(url: string): Promise<unknown> };
-          }
-        ).System;
-        await system.import(
-          document
-            .getElementById('vite-legacy-entry')!
-            .getAttribute('data-src')!,
-        );
-      });
-    }
     await page.waitForFunction(() => Boolean(window.requestFixture));
     expect(
       await page.evaluate(() =>

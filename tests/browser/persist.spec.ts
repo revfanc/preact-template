@@ -76,42 +76,18 @@ test('blocked browser storage keeps the store usable in memory', async ({
   expect(errors).toEqual([]);
 });
 
-test('persistence runs through the legacy entry without native fromEntries or URLSearchParams', async ({
-  page,
-}) => {
+test('persistence works without Object.fromEntries', async ({ page }) => {
   await page.addInitScript(() => {
     Object.defineProperty(Object, 'fromEntries', {
       value: undefined,
       configurable: true,
       writable: true,
     });
-    Object.defineProperty(window, 'URLSearchParams', {
-      value: undefined,
-      configurable: true,
-      writable: true,
-    });
-  });
-  await page.route('**/persist.html?**', async (route) => {
-    const response = await route.fetch();
-    const body = (await response.text())
-      .replace(/<script\b[^>]*\btype="module"[^>]*>[\s\S]*?<\/script>/g, '')
-      .replace(/\snomodule\b/g, '');
-    await route.fulfill({ response, body });
   });
   const boot = async () => {
     await page.goto(
       'http://127.0.0.1:4176/landing/persist.html?storage=session',
     );
-    await page.evaluate(async () => {
-      const system = (
-        window as unknown as {
-          System: { import(url: string): Promise<unknown> };
-        }
-      ).System;
-      await system.import(
-        document.getElementById('vite-legacy-entry')!.getAttribute('data-src')!,
-      );
-    });
     await page.waitForFunction(() => Boolean(window.persistenceFixture));
   };
   await boot();

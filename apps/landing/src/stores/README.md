@@ -123,7 +123,7 @@ export function createDraftStore(channelCode: string) {
 
 渠道和 siteId 默认仍从当前 URL 对应的初始化接口获取，不以旧缓存覆盖当前路由上下文。订单只恢复定位信息，再向后端确认真实状态；Loading、Modal、请求错误、控制器不持久化。凭证及敏感信息按认证和业务要求单独设计，不随整个 store 自动保存。
 
-单元测试位于 `core/persist.test.ts`，真实浏览器存储验证位于 `tests/browser/persist.spec.ts`，覆盖刷新、多标签页、不同渠道 key、禁用存储及 legacy 构建。测试页面只存在于 Landing 的 test fixture，现代浏览器模拟能力缺失不等于旧设备真机验收。
+单元测试位于 `core/persist.test.ts`，真实浏览器存储验证位于 `tests/browser/persist.spec.ts`，覆盖刷新、多标签页、不同渠道 key、禁用存储及缺少 Object.fromEntries。测试页面只存在于 Landing 的 test fixture，现代浏览器模拟能力缺失不等于旧设备真机验收。
 
 ## 创建与读取必须区分
 

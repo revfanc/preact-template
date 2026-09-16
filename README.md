@@ -9,7 +9,7 @@ apps/
   landing/
     src/
       app.tsx             应用装配
-      main.tsx            挂载与首屏交接
+      main.tsx            预渲染与 hydration 接管
       pages/              路由入口
       components/         应用 UI
       stores/             状态容器、Preact 接入及有明确作用域的状态/action
@@ -98,19 +98,19 @@ test 和 prod 都写入各应用的 `dist/`，后一次构建覆盖前一次产�
 - Landing 的 VITE_API_BASE_URL：后续真实业务接口地址；空值使用应用路径。
 - SiteConfig、欢迎语与协议示例参数已从正式应用移除。
 
-部署 SPA 需要将 /landing/ 下非静态资源路径回退到 Landing index.html；Agreement 按输出目录提供静态文件。不要把未命中的静态 JS 资源也回退成 HTML。发布新版本时保留旧 hash 资源供已打开页面继续加载，HTML 应及时重新验证。
+Landing 部署优先匹配路由对应的静态 HTML（含目录 index.html），未预渲染的页面路径回退到 /landing/200.html；Agreement 按输出目录提供静态文件。不要把未命中的静态 JS 资源也回退成 HTML。发布新版本时保留旧 hash 资源供已打开页面继续加载，HTML 应及时重新验证。
 
 ## 路由、样式与兼容
 
 两个应用通过配置选择 pages 下的 index.tsx，插件本身也支持平铺文件、通过 glob 选择扩展名和文件范围。当前约定自动发现 index.tsx，支持 [id] 动态段与 [...path] 末尾捕获；下划线目录不生成路由，_404/index.tsx 为兜底。路由冲突在构建时报告。`tooling/pages` 的 `pages()` 插件供两个应用共享，统一负责扫描与规则解析，Landing 通过 `virtual:pages` 获取懒加载路由，Agreement 通过 `virtual:pages/eager` 获取同步页面模块，解析逻辑不进入浏览器；开发时增删页面会刷新。活动入口使用 pages/p1/<code>/index.tsx 形式，目录尽量只放路由组件。
 
-目前只有空白首页和 404，保留加载失败重试页及 HTML 首屏三圆点交接。新增业务页面时不要恢复演示依赖。
+Landing 使用官方预渲染 + hydration + SPA，当前预渲染空白首页；404 由客户端路由处理。保留加载失败重试页，首次 hydration 不使用全屏 Loading，后续懒加载路由仍显示三圆点。新增业务页面时不要恢复演示依赖。
 
 原生 CSS / CSS Modules，业务组件独立目录。主题使用标准 CSS 变量；packages/theme 提供默认值，各应用 theme.css 覆盖，变量名称使用单个单词。构建时生成旧浏览器可用的颜色值。
 
 Landing 按 375px 设计宽度写 px，构建转换为 rem；根字号随视口变化并在 540px 封顶。固定像素样式沿用 no-rem 约定。Agreement 使用普通 px 与响应式容器，不自动转 rem。
 
-tooling/compatibility.ts 管理 Landing 的 Chrome 49、iOS 10 / Safari 10 legacy 目标，以及两应用的 CSS 目标。Agreement 使用 Preact 官方预渲染插件生成静态正文与内联样式，浏览器通过 preact-iso hydration 接管组件；暂不提供 legacy 动态交互，后续补齐。详见 [Agreement 说明](apps/agreement/README.md)。
+tooling/compatibility.ts 统一管理两个应用及测试夹具的 JS、CSS 和 Autoprefixer 目标：Chrome 64+、Safari 11.1+ / iOS 11.3+、Firefox 67+、Edge 79+。仅输出原生 ES 模块，不再提供 Chrome 49 / iOS 10 的 legacy 入口。Agreement 使用 Preact 官方预渲染与 hydration。构建只转换语法，不自动补齐运行时 API；Landing 为 preact-iso 按需导入 core-js 的 Object.fromEntries 补齐模块，未引入全量入口；现代浏览器测试不等于最低版本真机验收。详见 [Agreement 说明](apps/agreement/README.md)。
 
 ## 公共包
 
@@ -136,7 +136,7 @@ pnpm build:prod
 pnpm check:build prod
 ```
 
-构建检查覆盖环境、首屏 HTML、CSS、legacy 脚本 ES2015 语法和静态协议资源。单元测试覆盖请求、文件路由、反馈、History 与 store 实例隔离/清理。浏览器测试同时验证正式空白入口和独立交互夹具。
+构建检查覆盖环境、首屏 HTML、CSS、ES 模块语法解析（不等于浏览器兼容性证明）和静态协议资源。单元测试覆盖请求、文件路由、反馈、History 与 store 实例隔离/清理。浏览器测试同时验证正式空白入口和独立交互夹具。
 
 正式应用预览使用 4173/4174；History 夹具使用 4175，交互夹具使用 4176。测试启动服务前应保持对应端口空闲。夹具永远不随应用发布，其欢迎语和弹窗交互仅用于保留回归覆盖，见 [夹具说明](apps/landing/test/README.md)。
 

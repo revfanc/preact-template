@@ -2,6 +2,7 @@
   box-sizing: border-box;
 }
 html {
+  font-size: 10vw;
   background: var(--background);
 }
 body {
@@ -31,4 +32,10 @@ button:focus,
 input:focus {
   outline: 2px solid var(--primary);
   outline-offset: 3px;
+}
+
+@media (min-width: 540px) {
+  html {
+    font-size: 54px;
+  }
 }

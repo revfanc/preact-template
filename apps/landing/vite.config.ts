@@ -1,11 +1,9 @@
 import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
-import legacy from '@vitejs/plugin-legacy';
 import { defineConfig, loadEnv } from 'vite';
-import { cssTargets, legacyTargets } from '../../tooling/compatibility.ts';
+import { buildTargets } from '../../tooling/compatibility.ts';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
 import { pages } from '../../tooling/pages/index.ts';
-import { landingHtml } from './build/html.ts';
 
 const root = import.meta.dirname;
 const theme = fileURLToPath(new URL('./src/theme.css', import.meta.url));
@@ -25,7 +23,11 @@ export default defineConfig(({ mode }) => {
       rolldownOptions: { transform: { jsx: { importSource: 'preact' } } },
     },
     css: { postcss: { plugins: createPostcssPlugins(true, theme) } },
-    build: { cssTarget: cssTargets },
+    build: {
+      target: buildTargets,
+      cssTarget: buildTargets,
+      cssCodeSplit: false,
+    },
     server: { host: '127.0.0.1', port: 5173, strictPort: true },
     preview: {
       host: '127.0.0.1',
@@ -34,10 +36,15 @@ export default defineConfig(({ mode }) => {
       proxy: { '/agreement/': 'http://127.0.0.1:4174' },
     },
     plugins: [
-      legacy({ targets: legacyTargets }),
-      preact({ reactAliasesEnabled: false }),
+      preact({
+        reactAliasesEnabled: false,
+        prerender: {
+          enabled: true,
+          renderTarget: '#app',
+          additionalPrerenderRoutes: [],
+        },
+      }),
       pages({ pattern: '**/index.tsx' }),
-      landingHtml(theme),
     ],
   };
 });

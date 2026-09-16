@@ -46,9 +46,9 @@ export function persistStore<State extends object, Key extends keyof State>(
   }
 
   function select(state: Pick<State, Key>): Pick<State, Key> {
-    return Object.fromEntries(
-      fields.map((field) => [field, state[field]]),
-    ) as Pick<State, Key>;
+    const selected = Object.create(null) as Pick<State, Key>;
+    for (const field of fields) selected[field] = state[field];
+    return selected;
   }
 
   function remove() {

@@ -6,17 +6,20 @@ const mode = process.env.BUILD_MODE ?? process.argv[2] ?? 'test';
 assert(['test', 'prod'].includes(mode), 'Use test or prod mode');
 const root = new URL(`../dist/${mode}/`, import.meta.url);
 const html = await readFile(new URL('index.html', root), 'utf8');
-assert(html.includes('vite-legacy-entry') && html.includes('type="module"'));
-const files = (await readdir(new URL('assets/', root))).filter(
-  (name) => name.includes('-legacy-') && name.endsWith('.js'),
+assert(!html.includes('vite-legacy-entry') && html.includes('type="module"'));
+const files = (await readdir(new URL('assets/', root))).filter((name) =>
+  name.endsWith('.js'),
 );
-assert(files.length >= 2, 'Missing legacy entry or polyfills');
+assert(
+  files.length > 0 && !files.some((name) => name.includes('-legacy-')),
+  'Invalid module output',
+);
 for (const file of files) {
   parse(await readFile(new URL(`assets/${file}`, root), 'utf8'), {
-    ecmaVersion: 2015,
-    sourceType: 'script',
+    ecmaVersion: 2020,
+    sourceType: 'module',
   });
 }
 console.log(
-  `browser/${mode}: dual entries and ${files.length} ES2015 legacy scripts checked`,
+  `browser/${mode}: module entry and ${files.length} scripts checked`,
 );

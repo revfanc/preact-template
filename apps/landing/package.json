@@ -13,8 +13,9 @@
   "dependencies": {
     "@packages/browser": "workspace:*",
     "@packages/components": "workspace:*",
-    "@packages/request": "workspace:*",
     "@packages/feedback": "workspace:*",
+    "@packages/request": "workspace:*",
+    "core-js": "^3.50.0",
     "preact": "10.29.8",
     "preact-iso": "2.12.2"
   },
