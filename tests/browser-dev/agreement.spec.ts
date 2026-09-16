@@ -22,3 +22,16 @@ test('agreement dev entry and refresh keep static styles without example request
   expect(await page.locator('h1').boundingBox()).toEqual(bounds);
   expect(requests.some((url) => url.includes('site-config'))).toBe(false);
 });
+
+test('unknown agreement routes show the 404 page and can return home', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:5174/agreement/missing/');
+  await expect(page).toHaveTitle('页面不存在');
+  await expect(page.getByRole('heading', { name: '页面不存在' })).toBeVisible();
+  await page.getByRole('link', { name: '返回协议首页' }).click();
+  await expect(page).toHaveURL('http://127.0.0.1:5174/agreement/');
+  await expect(
+    page.getByRole('heading', { name: '协议', exact: true }),
+  ).toBeVisible();
+});

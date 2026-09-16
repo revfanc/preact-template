@@ -1,6 +1,5 @@
-import { getPage, NotFound } from './routes';
+import type { ComponentChildren } from 'preact';
 
-export function App({ path }: { path: string }) {
-  const Page = getPage(path)?.default ?? NotFound;
-  return <main>{Page ? <Page /> : <h1>页面不存在</h1>}</main>;
+export function App({ children }: { children: ComponentChildren }) {
+  return <main>{children}</main>;
 }

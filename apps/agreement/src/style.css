@@ -41,3 +41,27 @@ button:focus {
 p {
   overflow-wrap: break-word;
 }
+.not-found {
+  padding: 64px 0;
+  text-align: center;
+}
+.not-found-code {
+  margin: 0;
+  color: var(--primary);
+  font-size: 64px;
+  font-weight: bold;
+  line-height: 1;
+}
+.not-found a {
+  display: inline-block;
+  margin-top: 16px;
+  padding: 8px 16px;
+  border: 1px solid var(--primary);
+  border-radius: 4px;
+  color: var(--primary);
+  text-decoration: none;
+}
+.not-found a:focus {
+  outline: 2px solid var(--primary);
+  outline-offset: 3px;
+}

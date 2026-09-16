@@ -10,4 +10,3 @@ playwright-report/
 .DS_Store
 
 .astro/
-apps/agreement/public/runtime/

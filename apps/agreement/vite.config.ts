@@ -17,7 +17,6 @@ export default defineConfig(({ mode, command, isPreview }) => {
   return {
     root,
     base: env.VITE_BASE_PATH || '/agreement/',
-    publicDir: false,
     appType: command === 'serve' && !isPreview ? 'spa' : 'mpa',
     server: { host: '127.0.0.1', port: 5174, strictPort: true },
     preview: { host: '127.0.0.1', port: 4174, strictPort: true },

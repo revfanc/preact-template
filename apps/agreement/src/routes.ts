@@ -1,6 +1,7 @@
 import { pages as routes } from 'virtual:pages/eager';
+import * as notFound from './pages/_404';
 
-export const NotFound = routes.find((route) => route.default)?.page.default;
+export { notFound };
 
 export const paths = routes.flatMap((route) =>
   route.default ? [] : [route.path === '/' ? '/' : route.path + '/'],
