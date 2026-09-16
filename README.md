@@ -102,7 +102,7 @@ test 和 prod 都写入各应用的 `dist/`，后一次构建覆盖前一次产�
 
 ## 路由、样式与兼容
 
-pages 下 index.tsx 自动发现，支持 [id] 动态段与 [...path] 末尾捕获；下划线目录不生成路由，_404/index.tsx 为兜底。路由冲突在构建时报告。`fileRoutes()` 插件统一负责扫描与规则解析，通过 `virtual:file-routes` 提供懒加载路由表，解析逻辑不进入浏览器；开发时增删页面会刷新。活动入口使用 pages/p1/<code>/index.tsx 形式，目录尽量只放路由组件。
+两个应用通过配置选择 pages 下的 index.tsx，插件本身也支持平铺文件、自定义扩展名、首页名称和 glob 过滤。当前约定自动发现 index.tsx，支持 [id] 动态段与 [...path] 末尾捕获；下划线目录不生成路由，_404/index.tsx 为兜底。路由冲突在构建时报告。`tooling/file-routes` 的 `fileRoutes()` 插件供两个应用共享，统一负责扫描与规则解析，Landing 通过 `virtual:file-routes` 获取懒加载路由，Agreement 通过 `virtual:file-routes/eager` 获取同步页面模块，解析逻辑不进入浏览器；开发时增删页面会刷新。活动入口使用 pages/p1/<code>/index.tsx 形式，目录尽量只放路由组件。
 
 目前只有空白首页和 404，保留加载失败重试页及 HTML 首屏三圆点交接。新增业务页面时不要恢复演示依赖。
 

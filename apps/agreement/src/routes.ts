@@ -1,15 +1,13 @@
-import type { ComponentType } from 'preact';
+import { routes } from 'virtual:file-routes/eager';
 
-const pages = import.meta.glob<{ default: ComponentType; title: string }>(
-  './pages/**/index.tsx',
-  { eager: true },
-);
+export const NotFound = routes.find((route) => route.default)?.page.default;
 
-export const paths = Object.keys(pages).map((file) =>
-  file.replace('./pages', '').replace(/index\.tsx$/, ''),
+export const paths = routes.flatMap((route) =>
+  route.default ? [] : [route.path === '/' ? '/' : route.path + '/'],
 );
 
 export function getPage(path: string) {
-  const normalized = path.replace(/index\.html$/, '').replace(/\/?$/, '/');
-  return pages[`./pages${normalized}index.tsx`];
+  const normalized =
+    path.replace(/\/index\.html$/, '').replace(/\/$/, '') || '/';
+  return routes.find((route) => route.path === normalized)?.page;
 }

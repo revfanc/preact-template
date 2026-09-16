@@ -5,7 +5,7 @@ import { defineConfig } from 'vite';
 import { cssTargets, legacyTargets } from '../../../tooling/compatibility.ts';
 import { createPostcssPlugins } from '../../../tooling/postcss.ts';
 import { landingHtml } from '../build/html.ts';
-import { fileRoutes } from '../build/routes/index.ts';
+import { fileRoutes } from '../../../tooling/file-routes/index.ts';
 
 const theme = fileURLToPath(new URL('../src/theme.css', import.meta.url));
 export default defineConfig(({ mode }) => ({
@@ -22,7 +22,11 @@ export default defineConfig(({ mode }) => ({
   plugins: [
     legacy({ targets: legacyTargets }),
     preact({ reactAliasesEnabled: false }),
-    fileRoutes(),
+    fileRoutes({
+      include: '**/index.tsx',
+      exclude: '**/_*/**',
+      notFound: '_404/index.tsx',
+    }),
     landingHtml(theme),
   ],
   build: {

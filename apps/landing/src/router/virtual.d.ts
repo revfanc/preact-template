@@ -1,6 +1,6 @@
 declare module 'virtual:file-routes' {
   export const routes: Array<
-    import('../../build/routes/patterns').FileRoute & {
+    import('../../../../tooling/file-routes/types').FileRoute & {
       load: () => Promise<{ default: import('preact').ComponentType }>;
     }
   >;

@@ -8,7 +8,7 @@ Preact + Vite 静态协议应用。使用官方 `prerender()` 生成 HTML，浏�
 src/
   main.tsx       唯一入口：浏览器挂载、构建期 prerender
   app.tsx        公共 main 容器、页面组件与未匹配提示
-  routes.ts      页面发现、路径匹配、预渲染路径列表
+  routes.ts      消费共享路由清单、路径匹配、预渲染路径列表
   pages/
     index.tsx    协议首页
   style.css      协议公共样式
@@ -31,7 +31,7 @@ export default function AgreementPage() {
 }
 ```
 
-支持多级目录。`routes.ts` 收集所有页面，不依赖首页是否包含链接；例如 `pages/privacy/index.tsx` 对应 `/agreement/privacy/`，产物为 `dist/privacy/index.html`。协议间使用普通 `<a>` 完整导航，不引入 SPA 路由。暂不支持动态参数路由；生产未知路径返回 404，开发未匹配路径显示提示。
+支持多级目录。共享 `tooling/file-routes` 插件以 eager 模式收集页面，`routes.ts` 提供具体预渲染地址，不依赖首页是否包含链接；例如 `pages/privacy/index.tsx` 对应 `/agreement/privacy/`，产物为 `dist/privacy/index.html`。协议间使用普通 `<a>` 完整导航，不引入 SPA 路由。下划线目录不作为普通页面。动态参数目录在构建时明确报错；生产未知路径返回 404，开发未匹配路径显示提示。
 
 ## 样式与动态内容
 
@@ -55,3 +55,5 @@ export default function AgreementPage() {
 协议暂未启用 legacy，动态交互使用 Vite 默认现代浏览器目标，Chrome 49 / iOS 10 的交互兼容后续补齐。静态样式继续沿用共享 CSS 目标。预渲染模块会输出到产物中，但浏览器启动不调用它；`preact-render-to-string` 由 pnpm 自动安装 peer dependency。
 
 验证使用 `pnpm typecheck`、`pnpm lint`、`pnpm test`。构建后执行 `pnpm check:build test` 与 `pnpm test:browser`；开发回归使用 `pnpm test:browser:dev`。测试覆盖多协议、自定义 base、标题转义、样式内联、静态 404、hydration 复用原节点和动态交互。
+
+文件选择约定由 Vite 中的 fileRoutes 配置声明；完整选项见 [共享文件路由](../../tooling/file-routes/README.md)。如需平铺页面，调整 include，无须修改核心。_404/index.tsx 可提供组件兜底，但不会自动生成部署服务器的 404 文件。
