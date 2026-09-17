@@ -25,7 +25,7 @@ packages/
   feedback/               函数式 Toast / Loading / Modal
   components/             跨应用通用 Preact UI
   theme/                  标准 CSS 主题变量
-tooling/                  文件路由、兼容目标、PostCSS
+tooling/                  文件路由、兼容目标、PostCSS、关键 CSS 内联
 tests/                    单元测试与浏览器验收
 scripts/                  构建产物检查
 ```
@@ -44,16 +44,17 @@ store 的通用能力集中在 `stores/core/index.ts`、`stores/core/hooks.ts`�
 
 ## 文档导航
 
-| 文档                                            | 内容                                     |
-| ----------------------------------------------- | ---------------------------------------- |
-| [Landing 应用](apps/landing/README.md)          | 入口、开发、构建与新增页面               |
-| [Landing 架构](apps/landing/ARCHITECTURE.md)    | 数据、业务、UI 分层和 store 实例生命周期 |
-| [Agreement 应用](apps/agreement/README.md)      | 静态协议、动态脚本与独立部署             |
-| [API 包](packages/api/README.md)                | 公共业务接口与请求客户端边界             |
-| [Request 包](packages/request/README.md)        | Fetch 封装、错误、返回类型与浏览器兼容   |
-| [Feedback 包](packages/feedback/README.md)      | Toast、Loading 和函数式 Modal            |
-| [Browser 包](packages/browser/README.md)        | 返回拦截栈、异步放行及 History 边界      |
-| [Landing 测试夹具](apps/landing/test/README.md) | 独立回归页面与正式应用的区别             |
+| 文档                                                  | 内容                                     |
+| ----------------------------------------------------- | ---------------------------------------- |
+| [Landing 应用](apps/landing/README.md)                | 入口、开发、构建与新增页面               |
+| [Landing 架构](apps/landing/ARCHITECTURE.md)          | 数据、业务、UI 分层和 store 实例生命周期 |
+| [预渲染业务约定](apps/landing/README.md#业务开发约定) | 首帧一致性、动态数据、缓存、交互与验收   |
+| [Agreement 应用](apps/agreement/README.md)            | 静态协议、动态脚本与独立部署             |
+| [API 包](packages/api/README.md)                      | 公共业务接口与请求客户端边界             |
+| [Request 包](packages/request/README.md)              | Fetch 封装、错误、返回类型与浏览器兼容   |
+| [Feedback 包](packages/feedback/README.md)            | Toast、Loading 和函数式 Modal            |
+| [Browser 包](packages/browser/README.md)              | 返回拦截栈、异步放行及 History 边界      |
+| [Landing 测试夹具](apps/landing/test/README.md)       | 独立回归页面与正式应用的区别             |
 
 ## 启动与编辑器
 

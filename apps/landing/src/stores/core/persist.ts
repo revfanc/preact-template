@@ -14,7 +14,7 @@ export interface PersistOptions<State extends object, Key extends keyof State> {
   onError?: (error: unknown) => void;
 }
 
-/** Attach once while constructing the owner, before UI subscribes or requests begin. */
+/** Restores synchronously. Attach once in a client effect for prerendered owners, before edits or requests. */
 export function persistStore<State extends object, Key extends keyof State>(
   store: ReadableStore<State> & {
     update: (reduce: (current: Readonly<State>) => State) => void;

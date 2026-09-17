@@ -90,7 +90,7 @@ src/
 
 DOM 引用、计时器、AbortController、取消函数属于实例私有资源，不放进响应式快照。局部 hover、动画、布局测量可留在 UI hook。路由参数以路由为准；持久化是单独的业务决策，不自动把全部 store 写入 localStorage。
 
-需要持久化时由业务工厂显式接入 `stores/core/persist.ts` 的 `persistStore`，传入固定业务 key、版本、字段白名单、同步 storage getter 和恢复校验器；有效期可选。`createStore` 保持内存容器，持久化扩展在创建阶段同步恢复选中字段并订阅变化，存储失败不阻断内存更新。销毁停止同步与清缓存是两个动作，由实例所有者协调；具体契约与示例见 [Stores 持久化说明](src/stores/README.md#可选持久化)。
+需要持久化时由业务 store 的客户端初始化 action 接入 `stores/core/persist.ts` 的 `persistStore`，传入固定业务 key、版本、字段白名单、同步 storage getter 和恢复校验器；有效期可选。`createStore` 保持内存容器，持久化扩展在调用时同步恢复选中字段并订阅变化。参与预渲染的 store 工厂不直接恢复缓存；所有者在 effect 中启动，恢复完成前不允许编辑或发起依赖草稿的请求，存储失败仍可使用内存。销毁停止同步与清缓存是两个动作，由实例所有者协调；具体契约与示例见 [Stores 持久化说明](src/stores/README.md#可选持久化)。
 
 持久化不代表跨标签同步或请求缓存。不同渠道/用户/订单需要不同 key；同一 key 的多实例写入仍会覆盖。默认不保存 Loading、请求错误、渠道初始化结果，也不依据缓存认定订单完成。页面独立恢复优先考虑 sessionStorage，localStorage 仅用于明确需要跨页面共享的数据。
 
@@ -131,4 +131,4 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 ## 渲染边界
 
-Landing 使用预渲染 + hydration + SPA。App store 按渲染实例创建；共享业务状态不得成为模块单例。浏览器请求、缓存恢复、History 注册及埋点在 effect 中启动，清理由所属作用域负责。首帧不读取渠道查询或缓存来改变预渲染结构；hydration 后再更新。预渲染路径和部署规则见 [Landing README](README.md#预渲染与-spa)。
+Landing 使用预渲染 + hydration + SPA。工厂创建稳定初始状态，客户端 effect 启动业务，所属实例清理资源；预渲染路径和部署规则见 [Landing README](README.md#预渲染与-spa)。首次渲染、渠道数据、缓存恢复、CSS 与业务验收统一遵循 [预渲染业务约定](README.md#业务开发约定)。

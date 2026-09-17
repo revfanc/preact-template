@@ -42,6 +42,8 @@ export default function AgreementPage() {
 
 正文应能静态渲染。浏览器查询参数、缓存和请求放到 effect 中，首次渲染与静态 HTML 保持一致。无 JavaScript 时仍能阅读正文。
 
+组件与依赖的构建期执行、首帧一致性和客户端初始化遵循 [预渲染业务约定](../landing/README.md#业务开发约定)。Agreement 使用完整页面导航和整份公共 CSS 内联，不使用 Landing 的 SPA 状态共享与 Beasties 提取流程。
+
 接口按需使用工作区请求包。静态资源使用 Vite 标准 public 目录。
 
 ## 开发和部署

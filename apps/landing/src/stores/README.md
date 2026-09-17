@@ -61,43 +61,71 @@ const { state, store } = useLocalLoadingStore();
 
 ## 可选持久化
 
-`createStore` 默认只使用内存。需要刷新恢复的业务，在工厂内部调用一次 `persistStore(state, options)`；它是独立扩展，不是自动开启的全局插件。必须在 UI 订阅、异步请求开始前接入：同步读取缓存、校验后仅恢复选中字段，再订阅后续变化。当前 Loading 和空的 app 集合不启用持久化。
+`createStore` 默认只使用内存。`persistStore(state, options)` 是独立扩展，调用时同步读取缓存、校验后仅恢复选中字段，再订阅后续变化。当前 Loading 和空的 app 集合不启用持久化。
+
+参与预渲染的业务通过显式 action 接入一次，由所有者在客户端 effect 中调用，不在 store 工厂内立即恢复。这样构建与浏览器首帧都使用相同初始值；恢复结束前禁用编辑和提交，并延后依赖草稿的请求。仅给 storage getter 加 `typeof window` 判断不能解决首帧不同的问题。完整边界见 [预渲染业务约定](../../README.md#业务开发约定)。
 
 ```ts
 import { createStore, persistStore } from '@/stores/core';
 
 // 仅为接入示例，不在生产应用预置草稿模块。
 export function createDraftStore(channelCode: string) {
-  const state = createStore({ name: '', pending: false });
-  const persistence = persistStore(state, {
-    key: `landing:draft:${encodeURIComponent(channelCode)}`,
-    version: 1,
-    pick: ['name'],
-    storage: () =>
-      typeof window === 'undefined' ? undefined : window.sessionStorage,
-    maxAgeMs: 30 * 60 * 1000,
-    validate: (value): value is { name: string } =>
-      typeof value === 'object' &&
-      value !== null &&
-      'name' in value &&
-      typeof value.name === 'string',
-  });
+  const state = createStore({ name: '', ready: false });
+  let persistence: ReturnType<typeof persistStore> | undefined;
+  let disposed = false;
 
   return {
     getSnapshot: state.getSnapshot,
     subscribe: state.subscribe,
+    startPersistence() {
+      if (disposed || persistence) return;
+      persistence = persistStore(state, {
+        key: `landing:draft:${encodeURIComponent(channelCode)}`,
+        version: 1,
+        pick: ['name'],
+        storage: () => window.sessionStorage,
+        maxAgeMs: 30 * 60 * 1000,
+        validate: (value): value is { name: string } =>
+          typeof value === 'object' &&
+          value !== null &&
+          'name' in value &&
+          typeof value.name === 'string',
+      });
+      state.update((current) => ({ ...current, ready: true }));
+    },
     setName(name: string) {
+      if (!state.getSnapshot().ready) return;
       state.update((current) => ({ ...current, name }));
     },
     reset() {
-      state.update(() => ({ name: '', pending: false }));
-      persistence.clear();
+      state.update((current) => ({ ...current, name: '' }));
+      persistence?.clear();
     },
     dispose() {
-      persistence.dispose();
+      disposed = true;
+      persistence?.dispose();
       state.dispose();
     },
   };
+}
+```
+
+配套的 `stores/draft/hooks.ts` 示例如下，UI 使用 `state.ready` 控制编辑与提交。`channelCode` 由所有者明确传入并在该实例生命周期内固定；渠道变化时重建所有者，工厂参数不会自动更新。
+
+```ts
+import { useEffect } from 'preact/hooks';
+import { useStore, useStoreInstance } from '@/stores/core/hooks';
+import { createDraftStore } from './index';
+
+// draft 是上方业务示例，不是模板现有模块。
+export function useLocalDraftStore(channelCode: string) {
+  const store = useStoreInstance(() => createDraftStore(channelCode));
+  const state = useStore(store);
+  useEffect(() => {
+    store.startPersistence();
+  }, [store]);
+  // useStoreInstance 在所有者卸载时调用 store.dispose()。
+  return { state, store };
 }
 ```
 
