@@ -8,7 +8,6 @@ export default function NotFound() {
       </p>
       <h1>{title}</h1>
       <p>该协议不存在或已失效，请确认链接后重试。</p>
-      <a href={import.meta.env.BASE_URL}>返回协议首页</a>
     </section>
   );
 }

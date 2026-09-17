@@ -31,7 +31,7 @@ export default defineConfig({
     {
       command: `pnpm preview:${mode}`,
       cwd: fileURLToPath(new URL('./apps/agreement', import.meta.url)),
-      url: 'http://127.0.0.1:4174/agreement/',
+      url: 'http://127.0.0.1:4174/agreement/privacy-policy/',
       reuseExistingServer: false,
     },
     {

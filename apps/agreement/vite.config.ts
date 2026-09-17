@@ -29,6 +29,17 @@ export default defineConfig(({ mode, command, isPreview }) => {
         staticOnly: true,
       }),
       preact({ prerender: { enabled: true, renderTarget: '#app' } }),
+      {
+        name: 'agreement-output',
+        apply: 'build',
+        generateBundle: {
+          order: 'post',
+          handler(_options, bundle) {
+            // Required as a prerender template, but not a public page.
+            delete bundle['index.html'];
+          },
+        },
+      },
     ],
   };
 });

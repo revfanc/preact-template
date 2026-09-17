@@ -16,8 +16,9 @@ it('generates every document with inline CSS, custom base and hydration entries'
       file.replace(/\\/g, '/'),
     );
     expect(files.filter((file) => file.endsWith('.html')).sort()).toEqual([
-      'index.html',
+      'privacy-policy/index.html',
       'terms/index.html',
+      'user-agreement/index.html',
     ]);
     expect(
       files.filter(
@@ -56,6 +57,7 @@ it('generates every document with inline CSS, custom base and hydration entries'
         );
       }
       expect((await fetch(`${origin}/legal/missing/`)).status).toBe(404);
+      expect((await fetch(`${origin}/legal/`)).status).toBe(404);
     } finally {
       await new Promise<void>((resolve, reject) =>
         server.httpServer.close((error) => (error ? reject(error) : resolve())),

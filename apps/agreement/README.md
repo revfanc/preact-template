@@ -2,6 +2,8 @@
 
 Preact 静态协议应用。Vite 在构建期发现页面，官方预渲染插件生成 HTML，浏览器通过 preact-iso hydration 接管组件。
 
+提供两份示例协议：`/agreement/privacy-policy/`（隐私政策）和 `/agreement/user-agreement/`（用户协议）。正文仅用于模板展示，接入业务时替换为实际内容。没有首页或空白入口产物，生产根地址 `/agreement/` 返回 404。
+
 ## 结构
 
 ```text
@@ -10,15 +12,16 @@ src/
   app.tsx        只接受 children，提供 main 容器
   routes.ts      静态页面匹配与地址列表
   pages/
-    index.tsx    协议首页
+    privacy-policy/index.tsx   隐私政策
+    user-agreement/index.tsx   用户协议
   components/
-    not-found/index.tsx  页面不存在提示与返回首页入口
+    not-found/index.tsx  页面不存在提示
   style.css      公共样式
   theme.css      主题覆盖
   virtual.d.ts  构建生成页面模块的类型
 ```
 
-入口负责匹配页面，将 JSX 内容传给 App；预渲染和浏览器使用同一份页面组件。未知构建地址直接报错，浏览器未匹配时显示 404 内容。
+入口通过 `getPage()` 查找页面，将 JSX 内容传给 App；预渲染和浏览器使用同一份页面组件。文件扫描和路径生成在构建期完成，浏览器启动时只做一次路径查找，不接入 SPA Router。未知构建地址直接报错，浏览器未匹配时显示 404 内容。
 
 ## 新增页面
 
@@ -34,7 +37,7 @@ export default function AgreementPage() {
 
 支持多级目录。例如 `privacy/index.tsx` 对应 `/agreement/privacy/`，输出 `dist/privacy/index.html`。页面发现由 [pages 插件](../../tooling/pages/README.md) 在构建期完成，不依赖首页链接。动态参数在构建时拒绝；辅助文件通过 `exclude` glob 排除。
 
-页面之间使用普通 `<a>` 完整导航。`components/not-found/index.tsx` 仅用于开发环境或客户端未匹配提示，不生成静态错误页。构建只输出真实协议页面，生产未知地址由服务器返回 HTTP 404。
+页面之间使用普通 `<a>` 完整导航。`components/not-found/index.tsx` 仅用于开发环境或客户端未匹配提示，不生成静态错误页。构建只输出实际协议页面，生产未知地址由服务器返回 HTTP 404。
 
 ## 样式和交互
 
@@ -48,10 +51,14 @@ export default function AgreementPage() {
 
 ## 开发和部署
 
-- `pnpm dev:agreement`：http://127.0.0.1:5174/agreement/
+- `pnpm dev:agreement`：http://127.0.0.1:5174/agreement/privacy-policy/
 - `pnpm --filter @apps/agreement build:test`：构建 test。
 - `pnpm --filter @apps/agreement build:prod`：构建 prod。
-- `pnpm --filter @apps/agreement preview:test`：http://127.0.0.1:4174/agreement/
+- `pnpm --filter @apps/agreement preview:test`：http://127.0.0.1:4174/agreement/privacy-policy/
+
+用户协议将上述地址中的 `privacy-policy` 替换为 `user-agreement`。
+
+应用根目录的 `index.html` 仅作为 Vite 构建模板。官方预渲染器从 `/` 开始收集协议路径，`agreement-output` 在输出前移除模板产物；`dist` 不保留根 `index.html`，也不提供 SPA fallback。无需 `src/pages/index.tsx`。
 
 两种环境均输出 dist，以最后一次构建为准。VITE_BASE_PATH 控制部署前缀，VITE_APP_ENV 必须与 mode 一致。部署按目录提供静态文件，正式链接带末尾斜杠，未知地址由服务器返回 404。
 

@@ -66,7 +66,8 @@ pnpm dev
 ```
 
 - Landing 活动示例：http://127.0.0.1:5173/landing/p1/p2026091101/
-- Agreement：http://127.0.0.1:5174/agreement/
+- Agreement 隐私政策：http://127.0.0.1:5174/agreement/privacy-policy/
+- Agreement 用户协议：http://127.0.0.1:5174/agreement/user-agreement/
 - 单独启动：pnpm dev:landing / pnpm dev:agreement
 - 开发时两个应用使用各自地址，协议直接访问 5174；Landing 的 5173 端口不转发协议请求。预览服务通过代理访问 4174。
 

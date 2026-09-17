@@ -26,6 +26,8 @@ if (typeof window !== 'undefined') {
 }
 
 export async function prerender({ url }: { url: string }) {
+  if (url === '/') return { html: '', links: new Set(paths) };
+
   const page = getPage(url);
   if (!page) throw new Error(`Unknown agreement page: ${url}`);
   const { default: Page, title } = page;

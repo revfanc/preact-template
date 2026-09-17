@@ -5,10 +5,10 @@ test('agreement dev entry and refresh keep static styles without example request
 }) => {
   const requests: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
-  await page.goto('http://127.0.0.1:5174/agreement/');
-  await expect(page).toHaveURL(/:5174\/agreement\//);
+  await page.goto('http://127.0.0.1:5174/agreement/privacy-policy/');
+  await expect(page).toHaveTitle('隐私政策');
   await expect(
-    page.getByRole('heading', { name: '协议', exact: true }),
+    page.getByRole('heading', { name: '隐私政策', exact: true }),
   ).toBeVisible();
   await expect(page.locator('body')).toHaveCSS('font-size', '16px');
   await expect(page.locator('h1')).toHaveCSS('font-size', '28px');
@@ -23,15 +23,23 @@ test('agreement dev entry and refresh keep static styles without example request
   expect(requests.some((url) => url.includes('site-config'))).toBe(false);
 });
 
-test('unknown agreement routes show the 404 page and can return home', async ({
+test('unknown agreement routes show the 404 page without a home link', async ({
   page,
 }) => {
   await page.goto('http://127.0.0.1:5174/agreement/missing/');
   await expect(page).toHaveTitle('页面不存在');
   await expect(page.getByRole('heading', { name: '页面不存在' })).toBeVisible();
-  await page.getByRole('link', { name: '返回协议首页' }).click();
-  await expect(page).toHaveURL('http://127.0.0.1:5174/agreement/');
+  await expect(page.getByRole('link')).toHaveCount(0);
+});
+
+test('agreement has no home route and user agreement renders directly', async ({
+  page,
+}) => {
+  await page.goto('http://127.0.0.1:5174/agreement/');
+  await expect(page.getByRole('heading', { name: '页面不存在' })).toBeVisible();
+  await page.goto('http://127.0.0.1:5174/agreement/user-agreement/');
+  await expect(page).toHaveTitle('用户协议');
   await expect(
-    page.getByRole('heading', { name: '协议', exact: true }),
+    page.getByRole('heading', { name: '用户协议', exact: true }),
   ).toBeVisible();
 });

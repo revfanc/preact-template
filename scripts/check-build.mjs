@@ -103,7 +103,11 @@ const appRoot = path.join(root, 'apps/agreement');
 const directory = path.join(appRoot, 'dist');
 const files = await readdir(directory, { recursive: true });
 const pages = files.filter((file) => file.endsWith('.html'));
-assert(pages.includes('index.html'), 'agreement: missing index.html');
+assert(pages.length > 0, 'agreement: missing document pages');
+assert(
+  !pages.includes('index.html'),
+  'agreement: root page must not be published',
+);
 let inlineCss = '';
 const scripts = new Set();
 const base =

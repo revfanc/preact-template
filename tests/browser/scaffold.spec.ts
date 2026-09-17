@@ -70,54 +70,62 @@ test('production prerendered shell remains visible while hydration loads', async
   }
 });
 
-test('static agreement is readable without JS and no example data is published', async ({
-  browser,
-}) => {
-  const context = await browser.newContext({ javaScriptEnabled: false });
-  try {
-    const page = await context.newPage();
-    await page.goto('http://127.0.0.1:4173/agreement/');
-    await expect(
-      page.getByRole('heading', { name: '协议', exact: true }),
-    ).toBeVisible();
-    await expect(page.locator('h1')).toHaveCSS('font-size', '28px');
-    await expect(page.locator('body')).toHaveCSS('margin', '0px');
-    await expect(page.locator('main')).toHaveCSS('padding', '32px 24px');
-    await expect(
-      page.locator('#company-name, #display-name, #retry-config'),
-    ).toHaveCount(0);
-    expect(await page.locator('body').textContent()).not.toContain('示例');
-  } finally {
-    await context.close();
-  }
-});
+for (const [path, title] of [
+  ['privacy-policy', '隐私政策'],
+  ['user-agreement', '用户协议'],
+]) {
+  test(`${path} is readable without JavaScript`, async ({ browser }) => {
+    const context = await browser.newContext({ javaScriptEnabled: false });
+    try {
+      const page = await context.newPage();
+      await page.goto(`http://127.0.0.1:4173/agreement/${path}/`);
+      await expect(page).toHaveTitle(title!);
+      await expect(
+        page.getByRole('heading', { name: title, exact: true }),
+      ).toBeVisible();
+      await expect(page.locator('h1')).toHaveCSS('font-size', '28px');
+      await expect(page.locator('body')).toHaveCSS('margin', '0px');
+      await expect(page.locator('main')).toHaveCSS('padding', '32px 24px');
+      await expect(
+        page.locator('#company-name, #display-name, #retry-config'),
+      ).toHaveCount(0);
+      await expect(page.getByRole('heading', { level: 2 })).toHaveCount(5);
+      const response = await page.request.get(
+        'http://127.0.0.1:4173/agreement/',
+      );
+      expect(response.status()).toBe(404);
+    } finally {
+      await context.close();
+    }
+  });
 
-test('agreement style is stable before and after hydration and refresh', async ({
-  page,
-}) => {
-  let release!: () => void;
-  const gate = new Promise<void>((resolve) => {
-    release = resolve;
+  test(`${path} style is stable before and after hydration and refresh`, async ({
+    page,
+  }) => {
+    let release!: () => void;
+    const gate = new Promise<void>((resolve) => {
+      release = resolve;
+    });
+    const requests: string[] = [];
+    page.on('request', (request) => requests.push(request.url()));
+    await page.route('**/*', async (route) => {
+      if (route.request().resourceType() === 'script') await gate;
+      await route.continue();
+    });
+    try {
+      await page.goto(`/agreement/${path}/`, { waitUntil: 'commit' });
+      await expect(page.locator('h1')).toHaveCSS('font-size', '28px');
+      const bounds = await page.locator('h1').boundingBox();
+      release();
+      await page.waitForLoadState('load');
+      expect(await page.locator('h1').boundingBox()).toEqual(bounds);
+      await page.reload();
+      expect(await page.locator('h1').boundingBox()).toEqual(bounds);
+      expect(requests.some((url) => url.includes('site-config.json'))).toBe(
+        false,
+      );
+    } finally {
+      release();
+    }
   });
-  const requests: string[] = [];
-  page.on('request', (request) => requests.push(request.url()));
-  await page.route('**/*', async (route) => {
-    if (route.request().resourceType() === 'script') await gate;
-    await route.continue();
-  });
-  try {
-    await page.goto('/agreement/', { waitUntil: 'commit' });
-    await expect(page.locator('h1')).toHaveCSS('font-size', '28px');
-    const bounds = await page.locator('h1').boundingBox();
-    release();
-    await page.waitForLoadState('load');
-    expect(await page.locator('h1').boundingBox()).toEqual(bounds);
-    await page.reload();
-    expect(await page.locator('h1').boundingBox()).toEqual(bounds);
-    expect(requests.some((url) => url.includes('site-config.json'))).toBe(
-      false,
-    );
-  } finally {
-    release();
-  }
-});
+}

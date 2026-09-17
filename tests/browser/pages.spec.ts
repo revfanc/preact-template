@@ -25,7 +25,7 @@ test('landing configuration, keyboard form and agreement navigation', async ({
   await expect(page.locator('.pkg-ui-toast')).toHaveCount(0);
   await page.getByRole('link', { name: '阅读示例协议' }).click();
   await expect(
-    page.getByRole('heading', { name: '协议', exact: true }),
+    page.getByRole('heading', { name: '用户协议', exact: true }),
   ).toBeVisible();
   expect(errors).toEqual([]);
 });
@@ -261,7 +261,7 @@ for (const capabilityCase of [
     await page.getByLabel('你的称呼').fill('旧版浏览器');
     await page.getByRole('link', { name: '阅读示例协议' }).click();
     await expect(
-      page.getByRole('heading', { name: '协议', exact: true }),
+      page.getByRole('heading', { name: '用户协议', exact: true }),
     ).toBeVisible();
     await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
     expect(loaded).toContain(
