@@ -1,7 +1,6 @@
 import { execFile } from 'node:child_process';
 import {
   cp,
-  mkdir,
   mkdtemp,
   readFile,
   rm,
@@ -38,9 +37,8 @@ export async function createAgreementFixture() {
       path.join(directory, '.env.prod'),
       'VITE_APP_ENV=prod\nVITE_BASE_PATH=/legal/\n',
     );
-    await mkdir(path.join(directory, 'src/pages/terms'), { recursive: true });
     await writeFile(
-      path.join(directory, 'src/pages/terms/index.tsx'),
+      path.join(directory, 'src/pages/terms.tsx'),
       `
       import { useEffect, useState } from 'preact/hooks';
       export const title = '条款 & <说明>';
@@ -51,6 +49,10 @@ export async function createAgreementFixture() {
         return <><h1 class="terms">静态正文</h1><button disabled={!ready} onClick={() => setCount(count + 1)}>计数 {count}</button></>;
       }
     `,
+    );
+    await writeFile(
+      path.join(directory, 'src/pages/ignored.spec.tsx'),
+      `throw new Error('Excluded page was evaluated'); export default () => null;`,
     );
     await writeFile(
       path.join(directory, 'src/style.css'),

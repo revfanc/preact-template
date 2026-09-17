@@ -4,7 +4,8 @@ import { PageError } from '@/components/page-error';
 
 const base = import.meta.env.BASE_URL.replace(/\/$/, '');
 export const routes = files.map(({ load, ...route }) => ({
-  ...(route.default ? route : { ...route, path: base + route.path }),
+  ...route,
+  path: base + route.path,
   component: lazy(() =>
     load()
       .then((module) => {

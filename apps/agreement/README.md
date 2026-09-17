@@ -8,10 +8,11 @@ Preact 静态协议应用。Vite 在构建期发现页面，官方预渲染插�
 src/
   main.tsx       浏览器入口和 prerender：选页面、设置标题、渲染
   app.tsx        只接受 children，提供 main 容器
-  routes.ts      页面匹配、静态地址列表与 404 回退
+  routes.ts      静态页面匹配与地址列表
   pages/
     index.tsx    协议首页
-    _404/index.tsx  页面不存在提示与返回首页入口
+  components/
+    not-found/index.tsx  页面不存在提示与返回首页入口
   style.css      公共样式
   theme.css      主题覆盖
   virtual.d.ts  构建生成页面模块的类型
@@ -21,7 +22,7 @@ src/
 
 ## 新增页面
 
-创建 `src/pages/<name>/index.tsx`：
+创建 `src/pages/<name>.tsx` 或 `src/pages/<name>/index.tsx`：
 
 ```tsx
 export const title = '协议标题';
@@ -31,9 +32,9 @@ export default function AgreementPage() {
 }
 ```
 
-支持多级目录。例如 `privacy/index.tsx` 对应 `/agreement/privacy/`，输出 `dist/privacy/index.html`。页面发现由 [pages 插件](../../tooling/pages/README.md) 在构建期完成，不依赖首页链接。动态参数在构建时拒绝。
+支持多级目录。例如 `privacy/index.tsx` 对应 `/agreement/privacy/`，输出 `dist/privacy/index.html`。页面发现由 [pages 插件](../../tooling/pages/README.md) 在构建期完成，不依赖首页链接。动态参数在构建时拒绝；辅助文件通过 `exclude` glob 排除。
 
-页面之间使用普通 `<a>` 完整导航。`_404/index.tsx` 仅用于开发环境或客户端未匹配提示，不生成静态错误页。构建只输出真实协议页面，生产未知地址由服务器返回 HTTP 404。
+页面之间使用普通 `<a>` 完整导航。`components/not-found/index.tsx` 仅用于开发环境或客户端未匹配提示，不生成静态错误页。构建只输出真实协议页面，生产未知地址由服务器返回 HTTP 404。
 
 ## 样式和交互
 

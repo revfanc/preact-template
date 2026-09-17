@@ -43,7 +43,7 @@ useLocalLoadingStore、useStore、useStoreInstance 由 stores/index.ts 导出，
 
 ## 新增页面
 
-使用 `src/pages/p1/<code>/index.tsx` 等目录形式，路由入口装配 `src/components/<name>/index.tsx`。组件样式放同目录的 `index.module.css`。`[id]` 支持动态参数，`[...path]` 支持末尾捕获；下划线目录不生成业务路由，`_404/index.tsx` 为兜底。
+支持 `src/pages/about.tsx` 和 `src/pages/about/index.tsx`。活动入口使用 `src/pages/p1/<code>/index.tsx` 等目录形式，路由入口装配 `src/components/<name>/index.tsx`。组件样式放同目录的 `index.module.css`。`[id]` 支持必填参数，末尾 `[[id]]` 支持可选参数，`[...path]` 捕获零段或多段路径；`[...path]/index.tsx` 为兜底。辅助文件通过 `exclude` glob 排除；下划线名称没有特殊含义。文件约定与边界见 [pages 说明](../../tooling/pages/README.md)。
 
 先确定状态的共享范围和销毁时机，再增加业务 store、实际接口和所需场景 hook。目前 `stores/loading/index.ts` 是已接入的 Loading 状态实例。公共业务接口放在 [packages/api](../../packages/api/README.md)，应用专属接口可留在 `src/api/`。
 
@@ -76,7 +76,7 @@ export default function ActivityPage() {
 
 - 官方插件始终预渲染首页 `/`；其他页面只有声明 `prerender = true` 才生成 HTML。未声明或为 `false` 时保留 SPA 路由，页面链接不会自动扩展构建列表。
 - `prerender` 是 [pages 插件](../../tooling/pages/README.md) 的构建标记，必须单独直接导出 `true` 或 `false`。不支持表达式、变量引用或转导出；标记在构建期解析，组件保持按需加载。
-- 当前只支持具体的静态路由。`[id]`、`[...path]` 和 `_404` 不可标记为 `true`，否则构建报错。首页属于官方固定入口，不能通过 `false` 关闭。
+- 当前只支持具体的静态路由。`[id]`、`[[id]]` 和 `[...path]` 不可标记为 `true`，否则构建报错。首页属于官方固定入口，不能通过 `false` 关闭。
 - `200.html` 是空的 SPA 入口，不参与 hydration。部署先匹配静态文件和目录 `index.html`，然后把页面请求回退到 `/landing/200.html`；缺失 JS/CSS 应返回 404。Vite 预览默认回退首页；预览已生成的页面请使用带末尾 `/` 的地址。
 - 首屏 HTML 在 hydration 期间持续展示，后续路由懒加载使用公共 Loading。
 - CSS 使用 Vite 的 `cssCodeSplit: false` 输出公共样式文件，由 HTML 提前加载；JS 继续按页分包。页面数量增长时应关注公共 CSS 体积。

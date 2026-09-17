@@ -19,7 +19,7 @@ export default defineConfig(({ mode }) => ({
   css: { postcss: { plugins: createPostcssPlugins(true, theme) } },
   plugins: [
     preact({ reactAliasesEnabled: false }),
-    pages({ pattern: '**/index.tsx' }),
+    pages({ exclude: ['**/*.test.*', '**/*.spec.*'] }),
   ],
   build: {
     rolldownOptions: {

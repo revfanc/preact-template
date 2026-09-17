@@ -22,8 +22,8 @@ export async function createLandingFixture() {
       });
     }
     await cp(
-      path.join(source, 'src/pages/_404'),
-      path.join(directory, 'src/pages/_404'),
+      path.join(source, 'src/pages/[...path]'),
+      path.join(directory, 'src/pages/[...path]'),
       { recursive: true },
     );
     await symlink(
@@ -53,7 +53,10 @@ export async function createLandingFixture() {
           useEffect(() => setReady(true), []);
           return <main class="fixture"><h1>静态首屏</h1><button disabled={!ready} onClick={() => setCount(count + 1)}>计数 {count}</button><a href="/campaign/offer/">活动</a><a href="/campaign/detail/7?channel=A">动态页</a><a href="/campaign/client/">客户端页面</a></main>;
         }`,
-      'offer/index.tsx': `import '../fixture.css'; export const prerender = true; export default function Offer() { return <main class="fixture"><h1>预渲染活动</h1><a href="/campaign/">首页</a></main>; }`,
+      'offer.tsx': `import './fixture.css'; export const prerender = true; export default function Offer() { return <main class="fixture"><h1>预渲染活动</h1><a href="/campaign/">首页</a></main>; }`,
+      'optional/[[id]]/index.tsx': `export default function Optional({ id }: { id?: string }) { return <main><h1>可选 {id ?? '空'}</h1></main>; }`,
+      'files/[...path]/index.tsx': `export default function Files({ params }: { params: { path?: string } }) { return <main><h1>捕获 {params.path ?? '空'}</h1></main>; }`,
+      'ignored.test.tsx': `throw new Error('Excluded page was evaluated'); export const prerender = 'not metadata';`,
       'client/index.tsx': `export default function Client() { return <main><h1>客户端页面</h1></main>; }`,
       'disabled/index.tsx': `export const prerender = false; export default function Disabled() { throw new Error('Not a prerendered page'); }`,
       'detail/[id]/index.tsx': `export default function Detail({ id, query }: { id: string; query: Record<string, string> }) { return <main><h1>动态 {id}</h1><p>{query.channel}</p></main>; }`,

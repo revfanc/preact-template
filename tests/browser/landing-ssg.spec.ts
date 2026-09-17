@@ -127,3 +127,27 @@ test('nested prerendered page is styled without JavaScript', async ({
     await context.close();
   }
 });
+
+test('optional and catch-all routes match empty and populated paths after refresh', async ({
+  page,
+}) => {
+  const errors: string[] = [];
+  page.on('pageerror', (error) => errors.push(error.message));
+  for (const [route, heading] of [
+    ['optional', '可选 空'],
+    ['optional/', '可选 空'],
+    ['optional/7', '可选 7'],
+    ['optional/7/', '可选 7'],
+    ['files', '捕获 空'],
+    ['files/', '捕获 空'],
+    ['files/a/%E4%B8%AD%E6%96%87', '捕获 a/中文'],
+    ['files/a/b/', '捕获 a/b'],
+    ['unknown/nested', '页面不存在'],
+  ]) {
+    await page.goto(`${origin}/campaign/${route}`);
+    await expect(page.getByRole('heading')).toHaveText(heading!);
+    await page.reload();
+    await expect(page.getByRole('heading')).toHaveText(heading!);
+  }
+  expect(errors).toEqual([]);
+});

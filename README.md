@@ -101,7 +101,7 @@ Landing 部署优先匹配路由对应的静态 HTML（含目录 index.html）�
 
 ## 路由、样式与兼容
 
-两个应用共用 [pages 构建插件](tooling/pages/README.md)，从 `src/pages/**/index.tsx` 生成路由。Landing 懒加载页面，Agreement 同步导入静态页面；目录扫描与规则解析在构建期完成。活动入口使用 `pages/p1/<code>/index.tsx`，只负责路由组件装配。
+两个应用共用 [pages 构建插件](tooling/pages/README.md)，从 `src/pages/**/*.{tsx,jsx}` 生成路由，支持普通文件和目录首页，通过 `exclude` glob 排除辅助文件。Landing 懒加载页面，Agreement 同步导入静态页面；目录扫描与规则解析在构建期完成。活动入口使用 `pages/p1/<code>/index.tsx`，只负责路由组件装配。
 
 Landing 使用官方预渲染 + hydration + SPA，默认预渲染首页；活动页通过独立的 `export const prerender = true` 声明加入构建，无需逐页配置 Vite。`/landing/p1/p2026091101/` 提供活动示例。未标记的页面及 404 由客户端路由处理。保留加载失败重试页，首次 hydration 不使用全屏 Loading，后续懒加载路由仍显示三圆点。页面约定和限制见 [Landing 说明](apps/landing/README.md#预渲染与-spa)。
 

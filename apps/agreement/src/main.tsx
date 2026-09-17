@@ -1,6 +1,7 @@
 import { hydrate, prerender as render } from 'preact-iso';
 import { App } from './app';
-import { getPage, notFound, paths } from './routes';
+import { getPage, paths } from './routes';
+import * as notFound from './components/not-found';
 import stylesheet from './style.css?inline';
 
 function mount() {

@@ -43,7 +43,7 @@ export default defineConfig(({ mode }) => {
           renderTarget: '#app',
         },
       }),
-      pages({ pattern: '**/index.tsx' }),
+      pages({ exclude: ['**/*.test.*', '**/*.spec.*'] }),
     ],
   };
 });

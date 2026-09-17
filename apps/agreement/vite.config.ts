@@ -23,7 +23,11 @@ export default defineConfig(({ mode, command, isPreview }) => {
     css: { postcss: { plugins: createPostcssPlugins(false, theme) } },
     build: { target: buildTargets, cssTarget: buildTargets },
     plugins: [
-      pages({ pattern: '**/index.tsx', eager: true, staticOnly: true }),
+      pages({
+        exclude: ['**/*.test.*', '**/*.spec.*'],
+        eager: true,
+        staticOnly: true,
+      }),
       preact({ prerender: { enabled: true, renderTarget: '#app' } }),
     ],
   };

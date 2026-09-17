@@ -65,40 +65,55 @@ async function workspace(
   };
 }
 
-it('discovers flat and directory pages and emits lazy imports with stable precedence', async () => {
+// File conventions: https://uvr.esm.is/guide/file-based-routing
+it('generates flat and directory routes with required, optional and catch-all parameters', async () => {
   const app = await workspace([
     'index.tsx',
     'about.jsx',
     'p1/p2026090901/index.tsx',
     'detail/[...path].tsx',
+    'detail/[[id]].tsx',
     'detail/[id]/index.tsx',
     'detail/new.tsx',
-    '_404/index.tsx',
-    '_parts/card.tsx',
+    '[...path]/index.tsx',
   ]);
   const entries = await app.read();
   expect(
-    entries.map(
-      ({
-        file,
-        path,
-        default: fallback,
-      }: {
-        file: string;
-        path?: string;
-        default?: boolean;
-      }) => [file, path, fallback],
-    ),
+    entries.map(({ file, path }: { file: string; path: string }) => [
+      file,
+      path,
+    ]),
   ).toEqual([
-    ['index.tsx', '/', undefined],
-    ['about.jsx', '/about', undefined],
-    ['detail/new.tsx', '/detail/new', undefined],
-    ['p1/p2026090901/index.tsx', '/p1/p2026090901', undefined],
-    ['detail/[id]/index.tsx', '/detail/:id', undefined],
-    ['detail/[...path].tsx', '/detail/:path+', undefined],
-    ['_404/index.tsx', undefined, true],
+    ['index.tsx', '/'],
+    ['about.jsx', '/about'],
+    ['detail/new.tsx', '/detail/new'],
+    ['p1/p2026090901/index.tsx', '/p1/p2026090901'],
+    ['detail/[id]/index.tsx', '/detail/:id'],
+    ['detail/[[id]].tsx', '/detail/:id?'],
+    ['detail/[...path].tsx', '/detail/:path*'],
+    ['[...path]/index.tsx', '/:path*'],
   ]);
   expect((await entries[1].load()).title).toBe('Test');
+});
+
+it('uses explicit glob exclusions instead of special underscore names', async () => {
+  const app = await workspace(
+    {
+      'index.tsx': 'export default () => null;',
+      '_private/index.tsx': 'export default () => null;',
+      'components/card.tsx': 'export const prerender = "not metadata";',
+      'about.test.tsx': 'export const prerender = "not metadata";',
+    },
+    { exclude: ['src/pages/components/**', '**/*.test.*'] },
+  );
+  expect(
+    (await app.read()).map((entry: { path: string }) => entry.path),
+  ).toEqual(['/', '/_private']);
+  expect(await app.readPrerenderPaths()).toEqual([]);
+  const module = await app.server.ssrLoadModule(
+    path.join(app.folder, 'components/card.tsx'),
+  );
+  expect(module.prerender).toBe('not metadata');
 });
 
 it('collects literal prerender opt-ins without executing page modules', async () => {
@@ -153,7 +168,7 @@ it.each([
   },
 );
 
-it.each(['[id].tsx', '[...path]/index.tsx', '_404/index.tsx'])(
+it.each(['[id].tsx', '[[id]].tsx', '[...path]/index.tsx'])(
   'rejects prerendering a route without a concrete path: %s',
   async (file) => {
     const app = await workspace({ [file]: 'export const prerender = true;' });
@@ -181,6 +196,7 @@ it('preserves module exports in eager mode with a custom folder and glob', async
     {
       directory: 'documents',
       pattern: '**/index.ts',
+      exclude: '**/_private/**',
       eager: true,
       staticOnly: true,
     },
@@ -196,24 +212,32 @@ it('preserves module exports in eager mode with a custom folder and glob', async
 });
 
 it.each([
-  ['about.tsx', 'about/index.jsx'],
+  ['about/index.tsx', 'about/index.jsx'],
   ['[id].tsx', '[name]/index.tsx'],
   ['[...path].tsx', '[...rest].jsx'],
-  ['_404.tsx', '_404/index.tsx'],
+  ['[[id]].tsx', '[[name]].tsx'],
 ])('rejects conflicting records: %s, %s', async (a, b) => {
   const app = await workspace([a, b]);
   await expect(app.read()).rejects.toThrow('Conflicting pages:');
 });
 
-it.each(['[id]/[id].tsx', '[...path]/edit.tsx', '[[id]].tsx', 'bad name.tsx'])(
-  'rejects invalid page %s',
-  async (file) => {
-    const app = await workspace([file]);
-    await expect(app.read()).rejects.toThrow();
-  },
-);
+it.each([
+  '[id]/[id].tsx',
+  '[...path]/edit.tsx',
+  '[[id]]/edit.tsx',
+  'bad name.tsx',
+  'users.[id].tsx',
+  'user-[id].tsx',
+  '(group)/index.tsx',
+  'index@aside.tsx',
+  '[ids]+.tsx',
+  '[[ids]]+.tsx',
+])('rejects invalid page %s', async (file) => {
+  const app = await workspace([file]);
+  await expect(app.read()).rejects.toThrow();
+});
 
-it.each(['[id].tsx', '[...path].tsx'])(
+it.each(['[id].tsx', '[[id]].tsx', '[...path].tsx'])(
   'rejects unexpanded static routes: %s',
   async (file) => {
     const app = await workspace([file], { eager: true, staticOnly: true });
@@ -254,3 +278,37 @@ it.each([false, true])(
     await expect.poll(readCode, { timeout: 5000 }).not.toContain('contact.tsx');
   },
 );
+
+it.each(['users/index.tsx', 'users/[id].tsx'])(
+  'rejects implicit nested layouts rather than flattening them: %s',
+  async (child) => {
+    const app = await workspace(['users.tsx', child]);
+    await expect(app.read()).rejects.toThrow(
+      'Nested layouts are not supported',
+    );
+  },
+);
+
+it('ignores excluded additions, changes and deletions in development', async () => {
+  const app = await workspace(['index.tsx'], { exclude: '**/*.test.*' });
+  await app.read();
+  const send = vi.spyOn(app.server.ws, 'send');
+  const file = path.join(app.folder, 'about.test.tsx');
+  for (const event of ['add', 'change', 'unlink']) {
+    const watched = new Promise<void>((resolve) => {
+      const listener = (name: string, filename: string) => {
+        if (name !== event || filename !== file) return;
+        app.server.watcher.off('all', listener);
+        resolve();
+      };
+      app.server.watcher.on('all', listener);
+    });
+    if (event === 'unlink') await rm(file);
+    else await writeFile(file, `export const value = '${event}';`);
+    await watched;
+    expect(
+      (await app.read()).map((entry: { path: string }) => entry.path),
+    ).toEqual(['/']);
+  }
+  expect(send).not.toHaveBeenCalledWith({ type: 'full-reload' });
+});
