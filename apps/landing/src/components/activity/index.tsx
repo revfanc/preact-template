@@ -51,7 +51,6 @@ export function Activity() {
       </section>
       <footer class={styles.footer}>
         <span>美好，不必等到明天。</span>
-        <a href={import.meta.env.BASE_URL}>返回首页</a>
       </footer>
     </main>
   );

@@ -65,7 +65,7 @@ pnpm install --frozen-lockfile
 pnpm dev
 ```
 
-- Landing：http://127.0.0.1:5173/landing/
+- Landing 活动示例：http://127.0.0.1:5173/landing/p1/p2026091101/
 - Agreement：http://127.0.0.1:5174/agreement/
 - 单独启动：pnpm dev:landing / pnpm dev:agreement
 - 开发时两个应用使用各自地址，协议直接访问 5174；Landing 的 5173 端口不转发协议请求。预览服务通过代理访问 4174。
@@ -98,13 +98,13 @@ test 和 prod 都写入各应用的 `dist/`，后一次构建覆盖前一次产�
 - VITE_BASE_PATH：独立部署的 URL 前缀。
 - Landing 的 VITE_API_BASE_URL：业务接口地址；空值使用应用路径。
 
-Landing 部署优先匹配路由对应的静态 HTML（含目录 index.html），未预渲染的页面路径回退到 /landing/200.html；Agreement 按输出目录提供静态文件。不要把未命中的静态 JS 资源也回退成 HTML。发布新版本时保留旧 hash 资源供已打开页面继续加载，HTML 应及时重新验证。
+Landing 部署优先匹配路由对应的静态 HTML（含目录 index.html），未预渲染的页面路径回退到 `/landing/index.html`。这个文件保留空的 `#app`，作为 SPA 启动入口，不包含首页或 404 正文。应用没有业务首页，直接访问 `/landing/` 会由客户端显示 404，详见 [Landing 部署约定](apps/landing/README.md#预渲染与-spa)。Agreement 按输出目录提供静态文件。不要把未命中的静态 JS/CSS 资源也回退成 HTML。发布新版本时保留旧 hash 资源供已打开页面继续加载，HTML 应及时重新验证。
 
 ## 路由、样式与兼容
 
 两个应用共用 [pages 构建插件](tooling/pages/README.md)，从 `src/pages/**/*.{tsx,jsx}` 生成路由，支持普通文件和目录首页，通过 `exclude` glob 排除辅助文件。Landing 懒加载页面，Agreement 同步导入静态页面；目录扫描与规则解析在构建期完成。活动入口使用 `pages/p1/<code>/index.tsx`，只负责路由组件装配。
 
-Landing 使用官方预渲染 + hydration + SPA，默认预渲染首页；活动页通过独立的 `export const prerender = true` 声明加入构建，无需逐页配置 Vite。`/landing/p1/p2026091101/` 提供活动示例。未标记的页面及 404 由客户端路由处理。保留加载失败重试页，首次 hydration 不使用全屏 Loading，后续懒加载路由仍显示三圆点。页面约定和限制见 [Landing 说明](apps/landing/README.md#预渲染与-spa)。
+Landing 使用官方预渲染 + hydration + SPA；活动页通过独立的 `export const prerender = true` 声明加入构建，无需逐页配置 Vite。`/landing/p1/p2026091101/` 提供活动示例。根 `index.html` 只作空白启动入口，未标记的页面及 404 由客户端路由处理。保留加载失败重试页，首次 hydration 不使用全屏 Loading，后续懒加载路由仍显示三圆点。页面约定和限制见 [Landing 说明](apps/landing/README.md#预渲染与-spa)。
 
 原生 CSS / CSS Modules，业务组件独立目录。主题使用标准 CSS 变量；packages/theme 提供默认值，各应用 theme.css 覆盖，变量名称使用单个单词。构建时生成旧浏览器可用的颜色值。
 
@@ -118,7 +118,7 @@ tooling/compatibility.ts 统一管理两个应用及测试夹具的 JS、CSS 和
 - api：按真实业务逐项增加接口，客户端由应用注入，不依赖页面或全局 store。
 - browser：register(handler) 返回精确注销函数，done 消费当前层；主动修改 History 前等待注销。详情见 [Browser 文档](packages/browser/README.md)。
 - feedback：Toast、Loading、Modal 及类型统一从 @packages/feedback 导入，使用方需安装 Preact 10。Toast 与 Loading 共用实例；Modal 内容由 render 提供，动态组件通过 AsyncModalContent 统一处理加载、超时、失败重试和关闭。详情见 [Feedback 文档](packages/feedback/README.md)。
-- components：PageState 等通用展示组件；具体活动 UI 留在应用内。
+- components：PageState 等通用展示组件；同时传入 actionText 和 onAction 时展示操作按钮，具体导航由应用处理。具体活动 UI 留在应用内。
 - 公共包直接导出源码，由消费应用构建；不发布到 npm。
 
 ## 验证

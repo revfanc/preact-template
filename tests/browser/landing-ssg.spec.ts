@@ -47,7 +47,7 @@ test('prerendered pages hydrate without replacing the first screen, then navigat
     await route.continue();
   });
   try {
-    await page.goto(`${origin}/campaign/`, { waitUntil: 'commit' });
+    await page.goto(`${origin}/campaign/start/`, { waitUntil: 'commit' });
     const main = page.locator('main');
     await expect(page.getByRole('heading')).toHaveText('静态首屏');
     expect(
@@ -98,23 +98,23 @@ test('prerendered pages hydrate without replacing the first screen, then navigat
     await page.getByRole('link', { name: '客户端页面' }).click();
     await expect(main).toHaveCSS('color', 'rgb(12, 34, 56)');
     await expect(page.locator('body')).toHaveAttribute('data-session', 'same');
-    await page.getByRole('link', { name: '首页', exact: true }).click();
+    await page.getByRole('link', { name: '起始页', exact: true }).click();
     await page.getByRole('link', { name: '动态页' }).click();
     await expect(page.getByRole('heading')).toHaveText('动态 7');
     await expect(page.locator('main p')).toHaveText('A');
     await expect(page.locator('body')).toHaveAttribute('data-session', 'same');
     await page.reload();
     await expect(page.getByRole('heading')).toHaveText('动态 7');
-    // Exercise the recommended deployment fallback, independently of Vite's index fallback.
-    await page.route('**/campaign/detail/9?channel=B', async (route) => {
-      const response = await route.fetch({
-        url: `${origin}/campaign/200.html`,
-      });
-      await route.fulfill({ response });
-    });
-    await page.goto(`${origin}/campaign/detail/9?channel=B`);
+    // A deep link receives the empty SPA entry, then mounts its own route.
+    const response = await page.goto(`${origin}/campaign/detail/9?channel=B`);
+    expect(await response!.text()).toMatch(/<div id="app">\s*<\/div>/);
     await expect(page.getByRole('heading')).toHaveText('动态 9');
     await expect(page.locator('main p')).toHaveText('B');
+    await expect(page.getByRole('button', { name: '计数 0' })).toHaveCount(0);
+    await expect(page.locator('#app > [data-page]')).toHaveAttribute(
+      'data-page',
+      '/campaign/detail/9',
+    );
     expect(errors).toEqual([]);
   } finally {
     release();

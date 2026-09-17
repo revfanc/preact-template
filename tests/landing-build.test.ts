@@ -11,13 +11,16 @@ it('inlines matching prerendered styles and preserves split CSS for SPA navigati
       file.replace(/\\/g, '/'),
     );
     expect(files.filter((file) => file.endsWith('.html')).sort()).toEqual([
-      '200.html',
       'index.html',
       'offer/index.html',
+      'start/index.html',
     ]);
+    const fallback = await readFile(path.join(output, 'index.html'), 'utf8');
+    expect(fallback).toMatch(/<div id="app">\s*<\/div>/);
+    expect(fallback).not.toContain('type="isodata"');
     for (const [file, text, route, own, other] of [
-      ['index.html', '静态首屏', '/campaign', '.home', '.offer'],
-      ['offer/index.html', '预渲染活动', '/campaign/offer', '.offer', '.home'],
+      ['start/index.html', '静态首屏', '/campaign/start', '.start', '.offer'],
+      ['offer/index.html', '预渲染活动', '/campaign/offer', '.offer', '.start'],
     ]) {
       const html = await readFile(path.join(output, file!), 'utf8');
       expect(html).toContain(text);
@@ -41,12 +44,9 @@ it('inlines matching prerendered styles and preserves split CSS for SPA navigati
         cssFiles.map((file) => readFile(path.join(output, file), 'utf8')),
       )
     ).join('');
-    for (const selector of ['.fixture', '.home', '.offer', '.client-only']) {
+    for (const selector of ['.fixture', '.start', '.offer', '.client-only']) {
       expect(externalCss).toContain(selector);
     }
-    const fallback = await readFile(path.join(output, '200.html'), 'utf8');
-    expect(fallback).toContain('<div id="app"></div>');
-    expect(fallback).not.toContain('type="isodata"');
   } finally {
     await cleanup();
   }

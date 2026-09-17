@@ -42,18 +42,22 @@ function checkTheme(css, app) {
     `${app}: asset URLs must use ${base}`,
   );
   assert(
-    html.includes('type="isodata"') && html.includes('data-page='),
-    'landing: missing prerendered app',
+    /<div id="app">\s*<\/div>/.test(html) && !html.includes('type="isodata"'),
+    'landing: index.html must be an empty SPA entry',
   );
+  const pages = (await readdir(directory, { recursive: true })).filter(
+    (file) => file.endsWith('.html') && file !== 'index.html',
+  );
+  for (const page of pages) {
+    const output = await readFile(path.join(directory, page), 'utf8');
+    assert(
+      output.includes('type="isodata"') && output.includes('data-page='),
+      `landing/${page}: missing prerendered app`,
+    );
+  }
   assert(
     !html.includes('data-initial-loading'),
     'landing: startup must not cover prerendered content',
-  );
-  const fallback = await readFile(path.join(directory, '200.html'), 'utf8');
-  assert(
-    fallback.includes('<div id="app"></div>') &&
-      !fallback.includes('type="isodata"'),
-    'landing: SPA fallback must be empty',
   );
   const assets = await readdir(path.join(directory, 'assets'));
   const scripts = assets.filter((name) => name.endsWith('.js'));

@@ -9,7 +9,7 @@ if (typeof window !== 'undefined') {
   const root = document.getElementById('app')!;
   const path = location.pathname.replace(/\/$/, '') || '/';
   const initial = root.firstElementChild?.getAttribute('data-page');
-  // A host may serve index.html as its fallback instead of the empty 200.html.
+  // Only hydrate matching static HTML; the SPA fallback has an empty root.
   const hydrating =
     initial === path && !!root.querySelector('script[type="isodata"]');
   if (!hydrating) root.textContent = '';
@@ -17,12 +17,14 @@ if (typeof window !== 'undefined') {
 }
 
 export async function prerender({ url }: { url: string }) {
-  if (url === '/200.html') return { html: '' };
+  const links = new Set(prerenderPaths);
+  if (url === '/') return { html: '', links };
+
   const { default: render, locationStub } =
     await import('preact-iso/prerender');
   const base = import.meta.env.BASE_URL.replace(/\/$/, '');
   locationStub(base + url);
   const { html } = await render(<App />);
   // The build plugin collects page opt-ins; business links do not expand the crawl.
-  return { html, links: new Set(['/200.html', ...prerenderPaths]) };
+  return { html, links };
 }

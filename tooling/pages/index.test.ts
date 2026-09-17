@@ -96,6 +96,17 @@ it('generates flat and directory routes with required, optional and catch-all pa
   expect((await entries[1].load()).title).toBe('Test');
 });
 
+it.each([false, true])(
+  'serves the browser route manifest without a root index; eager=%s',
+  async (eager) => {
+    const app = await workspace(['about.tsx', 'terms/index.tsx'], { eager });
+    await app.server.environments.client.moduleGraph.ensureEntryFromUrl(app.id);
+    const result = await app.server.transformRequest(app.id);
+    expect(result?.code).toContain('about.tsx');
+    expect(result?.code).toContain('terms/index.tsx');
+  },
+);
+
 it('uses explicit glob exclusions instead of special underscore names', async () => {
   const app = await workspace(
     {

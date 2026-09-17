@@ -1,16 +1,16 @@
 import { expect, test } from '@playwright/test';
 
-test('production landing is empty, makes no example request and keeps its responsive shell', async ({
+test('production activity makes no example request and keeps its responsive shell', async ({
   page,
 }) => {
   const requests: string[] = [];
   const errors: string[] = [];
   page.on('request', (request) => requests.push(request.url()));
   page.on('pageerror', (error) => errors.push(error.message));
-  await page.goto('/landing/');
-  await expect(page.getByRole('main', { name: '落地页' })).toBeVisible();
+  await page.goto('/landing/p1/p2026091101/');
+  await expect(page.getByRole('main')).toBeVisible();
   await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
-  await expect(page.getByRole('main')).toBeEmpty();
+  await expect(page.getByRole('heading', { level: 1 })).toContainText('慢下来');
   for (const width of [320, 375, 540, 1024]) {
     await page.setViewportSize({ width, height: 812 });
     const box = await page.getByRole('main').boundingBox();
@@ -22,11 +22,12 @@ test('production landing is empty, makes no example request and keeps its respon
   expect(errors).toEqual([]);
 });
 
-test('removed example routes show 404 and return to the empty home', async ({
+test('root and unknown routes show 404 without a home action', async ({
   page,
 }) => {
-  for (const path of ['browser', 'result', 'detail/1']) {
-    await page.goto('/landing/' + path);
+  for (const path of ['', 'browser', 'result', 'detail/1']) {
+    const response = await page.goto('/landing/' + path);
+    expect(await response!.text()).toMatch(/<div id="app">\s*<\/div>/);
     await expect(
       page.getByRole('heading', { name: '页面不存在' }),
     ).toBeVisible();
@@ -34,9 +35,8 @@ test('removed example routes show 404 and return to the empty home', async ({
     await expect(
       page.getByRole('heading', { name: '页面不存在' }),
     ).toBeVisible();
+    await expect(page.getByRole('button')).toHaveCount(0);
   }
-  await page.getByRole('button', { name: '返回首页' }).click();
-  await expect(page.getByRole('main', { name: '落地页' })).toBeVisible();
 });
 
 test('production prerendered shell remains visible while hydration loads', async ({
@@ -51,8 +51,8 @@ test('production prerendered shell remains visible while hydration loads', async
     await route.continue();
   });
   try {
-    await page.goto('/landing/', { waitUntil: 'commit' });
-    const main = page.getByRole('main', { name: '落地页' });
+    await page.goto('/landing/p1/p2026091101/', { waitUntil: 'commit' });
+    const main = page.getByRole('main');
     await expect(main).toBeVisible();
     await expect(page.locator('.pkg-ui-loading')).toHaveCount(0);
     const original = await main.elementHandle();

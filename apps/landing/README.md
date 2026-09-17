@@ -1,6 +1,6 @@
 # Landing
 
-Preact + Vite 预渲染 + SPA 应用，默认部署在 `/landing/`。提供文件路由、404、页面加载失败重试、首屏 hydration 与兼容构建。`/p1/p2026091101` 是一个按页面约定开启预渲染的活动示例。
+Preact + Vite 预渲染 + SPA 应用，默认部署在 `/landing/`。提供文件路由、404、页面加载失败重试、首屏 hydration 与兼容构建。应用没有业务首页，活动通过各自路径访问；`/p1/p2026091101` 是一个按页面约定开启预渲染的活动示例。
 
 ## 开发与构建
 
@@ -12,10 +12,10 @@ pnpm --filter @apps/landing build:test
 pnpm --filter @apps/landing preview:test
 ```
 
-- 开发地址：`http://127.0.0.1:5173/landing/`。
-- 预览地址：`http://127.0.0.1:4173/landing/`，读取 `dist`；修改源码后需重新构建。
+- 活动示例开发地址：`http://127.0.0.1:5173/landing/p1/p2026091101/`。
+- 活动示例预览地址：`http://127.0.0.1:4173/landing/p1/p2026091101/`，读取 `dist`；修改源码后需重新构建。
 - prod 使用 `build:prod` / `preview:prod`，输出 `dist`。
-- 部署时优先匹配静态文件，未预渲染的页面路径回退到 `/landing/200.html`。
+- 部署时优先匹配静态文件，未预渲染的页面路径回退到 `/landing/index.html`。
 
 `.env.test` / `.env.prod` 中的 `VITE_BASE_PATH` 控制部署前缀，`VITE_APP_ENV` 与构建模式一致。`VITE_API_BASE_URL` 是公开接口地址，空值使用应用路径。本地覆盖使用 `.env.<mode>.local`，不要在 `VITE_` 变量中保存秘密。
 
@@ -74,10 +74,12 @@ export default function ActivityPage() {
 }
 ```
 
-- 官方插件始终预渲染首页 `/`；其他页面只有声明 `prerender = true` 才生成 HTML。未声明或为 `false` 时保留 SPA 路由，页面链接不会自动扩展构建列表。
+- 官方插件从根路径 `/` 开始构建；`prerender()` 对该路径返回空正文及待预渲染路径，生成的 `index.html` 保留空的 `#app` 作为 SPA 启动入口，不渲染 Router。无需 `src/pages/index.tsx`；直接访问 `/landing/` 由客户端显示 404。
+- 活动页面只有声明 `prerender = true` 才生成 HTML。未声明或为 `false` 时保留 SPA 路由，页面链接不会自动扩展构建列表。
 - `prerender` 是 [pages 插件](../../tooling/pages/README.md) 的构建标记，必须单独直接导出 `true` 或 `false`。不支持表达式、变量引用或转导出；标记在构建期解析，组件保持按需加载。
-- 当前只支持具体的静态路由。`[id]`、`[[id]]` 和 `[...path]` 不可标记为 `true`，否则构建报错。首页属于官方固定入口，不能通过 `false` 关闭。
-- `200.html` 是空的 SPA 入口，不参与 hydration。部署先匹配静态文件和目录 `index.html`，然后把页面请求回退到 `/landing/200.html`；缺失 JS/CSS 应返回 404。Vite 预览默认回退首页；预览已生成的页面请使用带末尾 `/` 的地址。
+- 当前只支持具体的静态路由。`[id]`、`[[id]]` 和 `[...path]` 不可标记为 `true`，否则构建报错。根路径保留为空白启动入口。
+- 部署先匹配静态文件和目录 `index.html`，未预渲染的页面路径回退到 `/landing/index.html`；缺失 JS/CSS 应返回 404。Vite 预览同样使用这个空白入口；预览已生成的页面请使用带末尾 `/` 的地址。
+- 入口核对 HTML 的 `data-page` 与访问路径：一致且带预渲染标记时 hydration，否则清空容器并按 SPA 渲染目标路由。空白入口不会先显示首页或 404，但需等待 JS 才能展示目标页面；重要落地页应预渲染并确保部署直接命中对应 HTML。
 
 活动示例访问地址为 `/landing/p1/p2026091101/`，构建输出 `dist/p1/p2026091101/index.html`。架构测试使用独立临时页面验证页面标记、静态正文、样式、DOM 接管、点击事件、SPA 导航和动态路由刷新。
 
@@ -124,7 +126,7 @@ export default function ActivityPage() {
 
 ### 新页面验收
 
-1. 构建后直达该页面并刷新，确认返回对应正文 HTML；也从首页通过 SPA 进入，不能只验证一种入口。尾斜杠、base 与 fallback 按上方部署约定处理。
+1. 构建后直达该页面并刷新，确认返回对应正文 HTML；也从其他页面通过 SPA 进入，不能只验证一种入口。尾斜杠、base 与 fallback 按上方部署约定处理。
 2. 限速或阻断 JS/CSS，检查静态首屏样式、禁用按钮和占位；恢复加载后确认 DOM 正常接管、事件可用、没有明显布局跳动。
 3. 分别用不同渠道 query、空缓存和已有缓存刷新，检查首帧一致、数据隔离、缓存恢复及错误重试；快速切换业务身份，确认旧响应不会回写。
 4. 检查前进后退、离开再进入、重复点击和任务清理；确认构建期间无业务请求或埋点，HTML 不含用户数据。

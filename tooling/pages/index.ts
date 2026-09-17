@@ -63,7 +63,6 @@ export function pages({
     },
     async load(id) {
       if (id !== internal) return;
-      this.addWatchFile(folder);
       const list: string[] = [];
       for await (const entry of glob(pattern, {
         cwd: folder,

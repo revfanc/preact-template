@@ -4,8 +4,8 @@ export interface PageStateProps {
   code?: string;
   title: string;
   description: string;
-  actionText: string;
-  onAction: () => void;
+  actionText?: string;
+  onAction?: () => void;
   role?: 'alert' | 'status';
 }
 
@@ -53,9 +53,11 @@ export function PageState({
         </div>
         <h1>{title}</h1>
         <p>{description}</p>
-        <button class={styles.action} type="button" onClick={onAction}>
-          {actionText}
-        </button>
+        {actionText && onAction && (
+          <button class={styles.action} type="button" onClick={onAction}>
+            {actionText}
+          </button>
+        )}
       </section>
     </main>
   );

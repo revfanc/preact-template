@@ -11,7 +11,6 @@ src/
   pages/                  路由入口，只装配参数、状态、UI 与导航
     p1/<code>/index.tsx    活动页入口
   components/             应用 UI；每个组件单独目录
-    home/index.tsx        空白首页
     activity/index.tsx    活动示例
     page-error/index.tsx  页面加载失败
   api/index.ts            应用请求实例，绑定公共业务接口
@@ -36,6 +35,8 @@ src/
 ```
 
 不提前创建虚构的渠道、登录、订单字段或无实际职责的转发层。新业务出现时，在 stores 下按业务名称增加目录，测试就近放置。目录按业务职责组织，全局或局部作用域由实例所有者决定，不另建 global/local 目录。公共能力的测试交互位于 `test/fixture`。
+
+Landing 不设业务首页。根 `index.html` 保留空的启动容器，作为未预渲染地址的 SPA 回退；活动页面按各自路径预渲染，未知地址由 `[...path]` 显示 404。
 
 ## 导入约定
 
