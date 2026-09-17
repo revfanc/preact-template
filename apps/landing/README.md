@@ -79,7 +79,8 @@ export default function ActivityPage() {
 - 当前只支持具体的静态路由。`[id]`、`[[id]]` 和 `[...path]` 不可标记为 `true`，否则构建报错。首页属于官方固定入口，不能通过 `false` 关闭。
 - `200.html` 是空的 SPA 入口，不参与 hydration。部署先匹配静态文件和目录 `index.html`，然后把页面请求回退到 `/landing/200.html`；缺失 JS/CSS 应返回 404。Vite 预览默认回退首页；预览已生成的页面请使用带末尾 `/` 的地址。
 - 首屏 HTML 在 hydration 期间持续展示，后续路由懒加载使用公共 Loading。
-- CSS 使用 Vite 的 `cssCodeSplit: false` 输出公共样式文件，由 HTML 提前加载；JS 继续按页分包。页面数量增长时应关注公共 CSS 体积。
+- CSS 保持 Vite 默认分包。构建完成后，`tooling/critical-css.ts` 使用 Beasties 将匹配预渲染 HTML 的样式内联，包括懒加载页面的 CSS；首屏无需等待外部 CSS 或 JS。原始 CSS 完整保留，供 hydration 和后续 SPA 跳转使用。
+- Beasties 按整份 HTML 的选择器提取样式，不测量浏览器首屏范围。页面样式使用 CSS Modules；全局样式统一放在 `src/style.css`，避免不同页面的同名全局选择器互相影响。开发模式继续使用 Vite 原生样式加载。
 - 页面、store 工厂和渲染过程必须可在 Node 中执行。请求、埋点、History 注册、持久化恢复等浏览器初始化放在 effect 中；不要在模块顶层或 render 中运行。构建期间每次渲染创建独立 App store，不能使用模块级业务单例。
 - 构建和客户端第一次渲染必须使用一致的内容。渠道配置、查询参数、缓存和倒计时应在 hydration 后更新，不能把某个渠道的动态价格烘焙到所有渠道共用的 HTML。渲染错误直接导致构建失败。
 

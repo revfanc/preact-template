@@ -2,6 +2,7 @@ import { fileURLToPath } from 'node:url';
 import preact from '@preact/preset-vite';
 import { defineConfig, loadEnv } from 'vite';
 import { buildTargets } from '../../tooling/compatibility.ts';
+import { criticalCss } from '../../tooling/critical-css.ts';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
 import { pages } from '../../tooling/pages/index.ts';
 
@@ -26,7 +27,6 @@ export default defineConfig(({ mode }) => {
     build: {
       target: buildTargets,
       cssTarget: buildTargets,
-      cssCodeSplit: false,
     },
     server: { host: '127.0.0.1', port: 5173, strictPort: true },
     preview: {
@@ -44,6 +44,7 @@ export default defineConfig(({ mode }) => {
         },
       }),
       pages({ exclude: ['**/*.test.*', '**/*.spec.*'] }),
+      criticalCss(),
     ],
   };
 });

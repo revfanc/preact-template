@@ -34,6 +34,7 @@
     "@types/postcss-pxtorem": "6.1.0",
     "acorn": "^8.18.0",
     "autoprefixer": "^10.5.5",
+    "beasties": "0.5.4",
     "jsdom": "^30.0.1",
     "oxlint": "^1.82.0",
     "postcss": "^8.5.28",

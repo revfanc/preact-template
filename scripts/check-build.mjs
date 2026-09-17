@@ -56,10 +56,6 @@ function checkTheme(css, app) {
     'landing: SPA fallback must be empty',
   );
   const assets = await readdir(path.join(directory, 'assets'));
-  assert(
-    /<link\b[^>]*rel="stylesheet"/.test(html),
-    'landing: missing first-paint stylesheet',
-  );
   const scripts = assets.filter((name) => name.endsWith('.js'));
   assert(
     scripts.length > 0 && !scripts.some((name) => name.includes('-legacy-')),
@@ -72,6 +68,11 @@ function checkTheme(css, app) {
   const inlineCss = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)]
     .map((match) => match[1])
     .join('\n');
+  assert(
+    inlineCss.includes('box-sizing:border-box') &&
+      inlineCss.includes('font-size'),
+    'landing: missing inline first-paint styles',
+  );
   const css =
     inlineCss +
     (

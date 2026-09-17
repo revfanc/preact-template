@@ -47,17 +47,18 @@ export async function createLandingFixture() {
       'index.tsx': `
         import { useEffect, useState } from 'preact/hooks';
         import './fixture.css';
+        import './home.css';
         export default function Home() {
           const [count, setCount] = useState(0);
           const [ready, setReady] = useState(false);
           useEffect(() => setReady(true), []);
-          return <main class="fixture"><h1>静态首屏</h1><button disabled={!ready} onClick={() => setCount(count + 1)}>计数 {count}</button><a href="/campaign/offer/">活动</a><a href="/campaign/detail/7?channel=A">动态页</a><a href="/campaign/client/">客户端页面</a></main>;
+          return <main class="fixture home"><h1>静态首屏</h1><button disabled={!ready} onClick={() => setCount(count + 1)}>计数 {count}</button><a href="/campaign/offer/">活动</a><a href="/campaign/detail/7?channel=A">动态页</a><a href="/campaign/client/">客户端页面</a></main>;
         }`,
-      'offer.tsx': `import './fixture.css'; export const prerender = true; export default function Offer() { return <main class="fixture"><h1>预渲染活动</h1><a href="/campaign/">首页</a></main>; }`,
+      'offer.tsx': `import './fixture.css'; import './offer.css'; export const prerender = true; export default function Offer() { return <main class="fixture offer"><h1>预渲染活动</h1><a href="/campaign/">首页</a></main>; }`,
       'optional/[[id]]/index.tsx': `export default function Optional({ id }: { id?: string }) { return <main><h1>可选 {id ?? '空'}</h1></main>; }`,
       'files/[...path]/index.tsx': `export default function Files({ params }: { params: { path?: string } }) { return <main><h1>捕获 {params.path ?? '空'}</h1></main>; }`,
       'ignored.test.tsx': `throw new Error('Excluded page was evaluated'); export const prerender = 'not metadata';`,
-      'client/index.tsx': `export default function Client() { return <main><h1>客户端页面</h1></main>; }`,
+      'client/index.tsx': `import './style.css'; export default function Client() { return <main class="client-only"><h1>客户端页面</h1><a href="/campaign/">首页</a></main>; }`,
       'disabled/index.tsx': `export const prerender = false; export default function Disabled() { throw new Error('Not a prerendered page'); }`,
       'detail/[id]/index.tsx': `export default function Detail({ id, query }: { id: string; query: Record<string, string> }) { return <main><h1>动态 {id}</h1><p>{query.channel}</p></main>; }`,
     })) {
@@ -68,6 +69,19 @@ export async function createLandingFixture() {
     await writeFile(
       path.join(directory, 'src/pages/fixture.css'),
       '.fixture { padding: 17px; color: var(--primary); }',
+    );
+    for (const [name, css] of Object.entries({
+      'home.css': '.home { border-top: 3px solid red; }',
+      'offer.css':
+        '.offer { border-top: 5px solid blue; background-image: url("/banner.svg"); }',
+      'client/style.css': '.client-only { color: rgb(12, 34, 56); }',
+    })) {
+      await writeFile(path.join(directory, 'src/pages', name), css);
+    }
+    await mkdir(path.join(directory, 'public'));
+    await writeFile(
+      path.join(directory, 'public/banner.svg'),
+      '<svg xmlns="http://www.w3.org/2000/svg" width="1" height="1"/>',
     );
     await promisify(execFile)(
       process.execPath,

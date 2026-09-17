@@ -3,6 +3,8 @@ import { expect, test } from '@playwright/test';
 import { preview, type PreviewServer } from 'vite';
 import { createLandingFixture } from '../helpers/landing';
 
+test.describe.configure({ mode: 'default' });
+
 let fixture: Awaited<ReturnType<typeof createLandingFixture>>;
 let server: PreviewServer;
 let origin: string;
@@ -40,7 +42,7 @@ test('prerendered pages hydrate without replacing the first screen, then navigat
   const gate = new Promise<void>((resolve) => {
     release = resolve;
   });
-  await page.route('**/*.js', async (route) => {
+  await page.route(/\.(?:js|css)$/, async (route) => {
     await gate;
     await route.continue();
   });
@@ -51,6 +53,13 @@ test('prerendered pages hydrate without replacing the first screen, then navigat
     expect(
       await main.evaluate((node) => parseFloat(getComputedStyle(node).padding)),
     ).toBeCloseTo(17, 2);
+    await expect(main).toHaveCSS('border-top-color', 'rgb(255, 0, 0)');
+    expect(
+      await main.evaluate((node) =>
+        parseFloat(getComputedStyle(node).borderTopWidth),
+      ),
+    ).toBeCloseTo(3, 2);
+    await expect(page.locator('body')).toHaveCSS('margin', '0px');
     const bounds = await main.boundingBox();
     const original = await main.elementHandle();
     await expect(page.getByRole('button')).toBeDisabled();
@@ -83,8 +92,13 @@ test('prerendered pages hydrate without replacing the first screen, then navigat
       finishRoute();
     }
     await expect(page.getByRole('heading')).toHaveText('预渲染活动');
+    await expect(main).toHaveCSS('border-top-color', 'rgb(0, 0, 255)');
     await expect(page.locator('body')).toHaveAttribute('data-session', 'same');
     await page.goBack();
+    await page.getByRole('link', { name: '客户端页面' }).click();
+    await expect(main).toHaveCSS('color', 'rgb(12, 34, 56)');
+    await expect(page.locator('body')).toHaveAttribute('data-session', 'same');
+    await page.getByRole('link', { name: '首页', exact: true }).click();
     await page.getByRole('link', { name: '动态页' }).click();
     await expect(page.getByRole('heading')).toHaveText('动态 7');
     await expect(page.locator('main p')).toHaveText('A');
@@ -107,7 +121,7 @@ test('prerendered pages hydrate without replacing the first screen, then navigat
   }
 });
 
-test('nested prerendered page is styled without JavaScript', async ({
+test('nested prerendered page is styled without JavaScript or external CSS', async ({
   browser,
 }) => {
   const context = await browser.newContext({
@@ -116,6 +130,7 @@ test('nested prerendered page is styled without JavaScript', async ({
   });
   try {
     const page = await context.newPage();
+    await page.route('**/*.css', (route) => route.abort());
     await page.goto(`${origin}/campaign/offer/`);
     await expect(page.getByRole('heading')).toHaveText('预渲染活动');
     expect(
@@ -123,6 +138,14 @@ test('nested prerendered page is styled without JavaScript', async ({
         .locator('main')
         .evaluate((node) => parseFloat(getComputedStyle(node).padding)),
     ).toBeCloseTo(17, 2);
+    await expect(page.locator('main')).toHaveCSS(
+      'border-top-color',
+      'rgb(0, 0, 255)',
+    );
+    await expect(page.locator('main')).toHaveCSS(
+      'background-image',
+      `url("${origin}/campaign/banner.svg")`,
+    );
   } finally {
     await context.close();
   }
