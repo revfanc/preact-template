@@ -10,6 +10,7 @@
   "oxc.lint.run": "onType",
   "oxc.fixKind": "safe_fix",
   "eslint.enable": false,
+  "prettier.enable": false,
   "js/ts.tsdk.path": "node_modules/typescript/lib",
   "js/ts.tsdk.promptToUseWorkspaceVersion": true,
   "npm.packageManager": "pnpm",
