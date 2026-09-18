@@ -7,7 +7,8 @@ export interface PersistOptions<State extends object, Key extends keyof State> {
   pick: readonly Key[];
   /** A getter also lets us catch browser access errors. No browser globals at import time. */
   storage: () =>
-    Pick<Storage, 'getItem' | 'setItem' | 'removeItem'> | undefined;
+    | Pick<Storage, 'getItem' | 'setItem' | 'removeItem'>
+    | undefined;
   validate: (data: unknown) => data is Pick<State, Key>;
   /** Restoration TTL measured from the last successful write. Omit for no expiry. */
   maxAgeMs?: number;

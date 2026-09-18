@@ -71,9 +71,9 @@ pnpm dev
 - 单独启动：pnpm dev:landing / pnpm dev:agreement
 - 开发时两个应用使用各自地址，协议直接访问 5174；Landing 的 5173 端口不转发协议请求。预览服务通过代理访问 4174。
 
-VS Code 打开仓库根目录并安装推荐的 Oxc、Prettier 扩展。项目配置启用 Oxc 实时检查、手动保存时安全修复及 Prettier 保存时格式化；禁用 ESLint 检查和 Oxfmt。首次提示时选择工作区 TypeScript。
+VS Code 打开仓库根目录并安装推荐的 Oxc 扩展。项目配置启用 Oxlint 实时检查、手动保存时安全修复及 Oxfmt 保存时格式化。首次提示时选择工作区 TypeScript。
 
-Oxlint 使用默认插件与 correctness: error，补充 no-debugger、no-var、prefer-const、ban-ts-comment、no-explicit-any。格式化由 Prettier 负责，类型检查由两个应用各自的 tsc 负责。
+Oxlint 使用默认插件与 correctness: error，补充 no-debugger、no-var、prefer-const、ban-ts-comment、no-explicit-any。Oxfmt 统一格式化 TS/TSX、JS、CSS、HTML、JSON、YAML 和 Markdown，配置集中在 `.oxfmtrc.json`，保留单引号、80 列换行和 package.json 字段顺序；默认遵循 `.gitignore` 并忽略锁文件。使用 `pnpm format` 格式化，`pnpm format:check` 检查格式，类型检查继续由 tsc 负责。
 
 ## 环境与部署
 
