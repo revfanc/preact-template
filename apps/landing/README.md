@@ -35,7 +35,7 @@ pnpm --filter @apps/landing preview:test
 
 业务、表单、请求结果及 pending/error 统一由所属作用域的 store 管理。store 使用工厂创建，不默认全局共享；所有者通过 `useLocalLoadingStore()` 等绑定 hook 创建、订阅并清理实例，消费者通过 `useStore(store)` 订阅传入的同一个实例。分别调用绑定 hook 会创建不同实例。局部动画和布局测量可保留在 UI 内。
 
-应用内跨模块引用使用 `@/`，例如 `import { useLocalLoadingStore } from '@/stores'`；同模块文件和样式保留 `./`，公共包使用 `@packages/*`。别名映射统一定义在根 tsconfig，Vite 和 Vitest 读取同一份配置。
+应用内跨模块引用使用 `@/`，例如 `import { useLocalLoadingStore } from '@/stores'`；同模块文件和样式保留 `./`，公共包使用 `@packages/*`。别名映射定义在本应用的 `tsconfig.json`，Vite 和 Vitest 读取同一份配置；公共编译选项继承根 `tsconfig.base.json`。
 
 useLocalLoadingStore、useStore、useStoreInstance 由 stores/index.ts 导出，纯数据容器位于 stores/core/index.ts。store 不直接展示提示、弹窗或导航；这些交给场景 hook / 页面。store action 调用 API 并管理请求状态，场景 hook 组织用户操作流程。纯校验和计算使用普通函数，不为简单请求增加转发层。完整规则见[架构说明](ARCHITECTURE.md)。
 
@@ -109,6 +109,7 @@ export default function ActivityPage() {
 沿用 UI → 场景 hook → store action → API：工厂只创建稳定初始状态；页面的 effect 取得并校验渠道等上下文，再调用数据 action；store 保存 pending/error/结果，场景 hook 处理反馈和导航。当前模板没有自动渠道初始化或“提前请求”模块，需要业务显式接入。
 
 - 默认不在构建期请求渠道、登录和订单接口，也不在 render 中发请求。构建可执行多次渲染，不能把导入或渲染次数当成业务访问次数。
+- 应用请求实例可以安全地被预渲染页面及 store 导入；浏览器使用兼容适配器，Node 使用标准客户端。安全导入不代表允许在 render 或 store 工厂中发起业务请求。
 - store 按所有者创建，禁止模块级业务单例。应用共享实例跨路由保留；页面或弹窗实例按自身生命周期销毁。预渲染时 effect 不运行，不能依赖卸载回调清理构建期间启动的任务。
 - `persistStore()` 调用时立即恢复缓存，必须在该页面的客户端 effect 中通过业务 action 接入。只给 storage getter 加 `window` 判断仍会导致首帧数据不同。恢复完成前禁止编辑和提交，避免晚到的缓存覆盖用户输入；具体示例见 [持久化说明](src/stores/README.md#可选持久化)。
 - 渠道、用户或订单身份变化时，显式重置或重建所属实例和缓存 key，取消旧请求。不能只依赖空依赖数组 effect：SPA 切换 query 或同一动态路由参数时组件可能复用，业务初始化应响应真正的身份变化。
@@ -125,6 +126,8 @@ export default function ActivityPage() {
 - JS 语法构建目标不补齐浏览器 API。SDK、动态导入的依赖与新增 API 仍要遵守[兼容目标](../../README.md#路由样式与兼容)，预渲染可读不等于旧设备动态交互可用。
 
 ### 新页面验收
+
+错误和性能采集使用[官方 ARMS RUM](../../docs/monitoring.md)，未配置 endpoint 时关闭。构建错误继续直接抛出；客户端错误边界与路由加载失败会输出原始错误，供 SDK 的 consoleError 采集器捕获，不增加另一套全局异常监听。
 
 1. 构建后直达该页面并刷新，确认返回对应正文 HTML；也从其他页面通过 SPA 进入，不能只验证一种入口。尾斜杠、base 与 fallback 按上方部署约定处理。
 2. 限速或阻断 JS/CSS，检查静态首屏样式、禁用按钮和占位；恢复加载后确认 DOM 正常接管、事件可用、没有明显布局跳动。

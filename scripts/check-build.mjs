@@ -2,6 +2,7 @@ import assert from 'node:assert/strict';
 import { readFile, readdir } from 'node:fs/promises';
 import { fileURLToPath } from 'node:url';
 import path from 'node:path';
+import { gzipSync } from 'node:zlib';
 import { parse } from 'acorn';
 import { loadEnv } from 'vite';
 import postcss from 'postcss';
@@ -9,6 +10,34 @@ import postcss from 'postcss';
 const mode = process.argv[2] ?? 'test';
 assert(['test', 'prod'].includes(mode), 'mode must be test or prod');
 const root = fileURLToPath(new URL('..', import.meta.url));
+const budgets = JSON.parse(
+  await readFile(path.join(root, 'tooling/budgets.json'), 'utf8'),
+);
+
+// Sum compressed JS/CSS across the application; HTML is capped per document.
+for (const [app, budget] of Object.entries(budgets)) {
+  const directory = path.join(root, 'apps', app, 'dist');
+  const sizes = { javascript: 0, css: 0, html: 0 };
+  for (const file of await readdir(directory, { recursive: true })) {
+    const kind = file.endsWith('.js')
+      ? 'javascript'
+      : file.endsWith('.css')
+        ? 'css'
+        : file.endsWith('.html')
+          ? 'html'
+          : undefined;
+    if (!kind) continue;
+    const size = gzipSync(await readFile(path.join(directory, file))).length;
+    sizes[kind] =
+      kind === 'html' ? Math.max(sizes[kind], size) : sizes[kind] + size;
+  }
+  for (const [kind, size] of Object.entries(sizes))
+    assert(
+      size <= budget[kind],
+      `${app}: ${kind} gzip ${size} B exceeds ${budget[kind]} B budget`,
+    );
+  console.log(`${app}: gzip bytes ${JSON.stringify(sizes)}`);
+}
 
 function checkTheme(css, app) {
   postcss.parse(css).walkDecls((declaration) => {
@@ -100,6 +129,7 @@ function checkTheme(css, app) {
 }
 
 const appRoot = path.join(root, 'apps/agreement');
+const appEnv = loadEnv(mode, appRoot, 'VITE_');
 const directory = path.join(appRoot, 'dist');
 const files = await readdir(directory, { recursive: true });
 const pages = files.filter((file) => file.endsWith('.html'));
@@ -111,7 +141,7 @@ assert(
 let inlineCss = '';
 const scripts = new Set();
 const base =
-  `/${(loadEnv(mode, appRoot, 'VITE_').VITE_BASE_PATH || '/agreement/').replace(/^\/+|\/+$/g, '')}/`.replace(
+  `/${(appEnv.VITE_BASE_PATH || '/agreement/').replace(/^\/+|\/+$/g, '')}/`.replace(
     '//',
     '/',
   );
@@ -136,6 +166,11 @@ for (const page of pages) {
   for (const [, source] of html.matchAll(
     /<script\b[^>]*\b(?:src|data-src)="([^"]+)"/g,
   )) {
+    if (
+      appEnv.VITE_ARMS_ENDPOINT &&
+      source === 'https://sdk.rum.aliyuncs.com/v2/browser-sdk.js'
+    )
+      continue;
     assert(source.startsWith(base), `${page}: script has wrong base`);
     const script = source.slice(base.length);
     assert(

@@ -34,7 +34,9 @@ scripts/                  构建产物检查
 
 store action 处理数据变化并调用 API；场景 hook 组织用户操作流程、展示 Toast、Loading、Modal 或执行导航。store 和 API 不直接控制 UI。校验与计算使用普通函数，不为简单请求增加转发层，也不提前创建虚构订单字段或模拟接口。
 
-Landing 使用 `@/` 引用 `apps/landing/src/` 下的跨模块代码，同模块保留 `./`，公共包使用 `@packages/*`。映射统一在根 `tsconfig.json`，Landing 开发/构建、测试夹具和 Vitest 通过 Vite 8 的 `resolve.tsconfigPaths` 读取；该别名仅供 Landing 使用，公共包不得依赖它，Agreement 使用独立配置。
+Landing 使用 `@/` 引用 `apps/landing/src/` 下的跨模块代码，同模块保留 `./`，公共包使用 `@packages/*`。公共编译选项在 `tsconfig.base.json`，应用分别维护自己的 `tsconfig.json`。Landing 别名只定义在应用配置中，开发/构建、测试夹具和 Vitest 通过 Vite 8 的 `resolve.tsconfigPaths` 读取。根配置检查公共包与工具，不包含应用别名；浏览器测试配置显式继承 Landing 的映射。
+
+`tests/workspace-boundaries.test.ts` 检查正式源码的跨应用引用、公共包反向依赖应用、绕过 exports 的导入、未声明依赖和工作区依赖循环。公共包依赖使用 `workspace:*`；业务运行时依赖由实际使用它的应用或包声明，根依赖只维护开发工具。已有 store 分层检查继续独立执行。
 
 store 的通用能力集中在 `stores/core/index.ts`、`stores/core/hooks.ts`，由 `stores/index.ts` 导出。业务 store 直接引用纯 TypeScript 的 core；组件从 stores 入口使用 `useLocalLoadingStore()` 等绑定 hook，一次获取 state 和 store；共享消费者使用 `useStore(store)` 订阅同一实例。顶层 hooks 只保留具体场景的接入逻辑，每个组合函数放入 `hooks/use-<name>/index.ts(x)`，调用方导入目录，测试就近放置。
 
@@ -43,6 +45,9 @@ store 的通用能力集中在 `stores/core/index.ts`、`stores/core/hooks.ts`�
 `app.tsx` 持有应用共享实例：`stores/app/index.ts` 创建独立的业务 store 集合，`stores/app/context.tsx` 只定义 Context 和 Provider，`stores/app/hooks.ts` 提供读取 hook。`useAppStores()` 只获取已有集合，`useLocalXxxStore()` 明确创建局部实例，`useXxxStore()` 留给读取共享业务实例的 hook。集合按渠道、会话等业务拆分成员。申请数据归流程、临时编辑归页面或弹窗，生命周期不匹配的数据不提升为应用全局。详细命名和作用域规则见 [Stores 说明](apps/landing/src/stores/README.md)。
 
 ## 文档导航
+
+- [质量检查与验收](docs/quality.md)：CI、资源预算、浏览器与真机验收范围。
+- [ARMS RUM 接入](docs/monitoring.md)：官方 SDK、应用配置、加载边界和启用步骤。
 
 | 文档                                                  | 内容                                     |
 | ----------------------------------------------------- | ---------------------------------------- |
@@ -98,6 +103,8 @@ test 和 prod 都写入各应用的 `dist/`，后一次构建覆盖前一次产�
 - VITE_APP_ENV：test / prod，必须与构建模式一致。
 - VITE_BASE_PATH：独立部署的 URL 前缀。
 - Landing 的 VITE_API_BASE_URL：业务接口地址；空值使用应用路径。
+- VITE_ARMS_ENDPOINT：可选的新版 ARMS RUM endpoint；未配置时完全不加载监控 SDK。
+- VITE_APP_VERSION：启用 RUM 时填写的应用版本，用于定位问题。
 
 Landing 部署优先匹配路由对应的静态 HTML（含目录 index.html），未预渲染的页面路径回退到 `/landing/index.html`。这个文件保留空的 `#app`，作为 SPA 启动入口，不包含首页或 404 正文。应用没有业务首页，直接访问 `/landing/` 会由客户端显示 404，详见 [Landing 部署约定](apps/landing/README.md#预渲染与-spa)。Agreement 按输出目录提供静态文件。不要把未命中的静态 JS/CSS 资源也回退成 HTML。发布新版本时保留旧 hash 资源供已打开页面继续加载，HTML 应及时重新验证。
 
@@ -139,9 +146,11 @@ pnpm check:build prod
 
 构建检查覆盖环境、首屏 HTML、CSS、ES 模块语法解析（不等于浏览器兼容性证明）和静态协议资源。单元测试覆盖请求、文件路由、反馈、History 与 store 实例隔离/清理。浏览器测试验证正式入口、预渲染接管和独立交互夹具。
 
+GitHub Actions 的 `Quality checks` 在 PR 和 main 提交时检查两个应用的 test/prod 构建、资源预算和浏览器回归，仅做质量检查。`pnpm check:build` 使用 `tooling/budgets.json` 约束 gzip 后的 JS/CSS 总量和单页 HTML；阈值与测试范围见[质量说明](docs/quality.md)。
+
 正式应用预览使用 4173/4174；History 夹具使用 4175，交互夹具使用 4176。测试启动服务前应保持对应端口空闲。夹具永远不随应用发布，其欢迎语和弹窗交互用于回归测试，见 [夹具说明](apps/landing/test/README.md)。
 
-浏览器测试默认使用本机 Chrome，可通过 PLAYWRIGHT_CHANNEL=msedge 切换 Edge。开发验收使用 5173/5174，本地可复用开发服务。CI 中不得用跳过失败测试代替问题修复。
+浏览器测试包括 Chromium 完整回归和 WebKit 的预渲染、hydration、请求回归。首次运行 `pnpm exec playwright install chromium webkit`；本地 Chromium 项目默认使用 Chrome，可通过 PLAYWRIGHT_CHANNEL=msedge 切换 Edge，CI 使用 Playwright Chromium。单独检查 Chrome 可在测试命令后加 `--project=chromium`。开发验收使用 5173/5174，本地可复用开发服务。现代 WebKit 不等同于旧版 iOS 真机。
 
 `test:browser` 自动构建两个测试夹具，但不构建正式应用；先执行对应的 `build:test` 或 `build:prod`。默认验收正式应用的 test 产物，验收 prod 产物时在 PowerShell 执行：
 

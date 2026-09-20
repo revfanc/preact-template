@@ -2,7 +2,10 @@ import { expect, test } from '@playwright/test';
 import type { FetchError } from '../../packages/request/src/index';
 
 for (const mode of ['native', 'no-abort', 'no-fetch'] as const) {
-  test(`request transport works with ${mode}`, async ({ page }) => {
+  test(`request transport works with ${mode}`, async ({
+    page,
+    browserName,
+  }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.addInitScript((mode) => {
@@ -99,7 +102,11 @@ for (const mode of ['native', 'no-abort', 'no-fetch'] as const) {
       }),
     ).toEqual({
       name: 'FetchError',
-      cause: mode === 'native' ? 'TimeoutError' : 'AbortError',
+      // WebKit's in-flight fetch abort uses AbortError even when signal.reason is TimeoutError.
+      cause:
+        mode === 'native' && browserName !== 'webkit'
+          ? 'TimeoutError'
+          : 'AbortError',
     });
     expect(
       await page.evaluate(async () => {

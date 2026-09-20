@@ -5,6 +5,7 @@ import { buildTargets } from '../../tooling/compatibility.ts';
 import { criticalCss } from '../../tooling/critical-css.ts';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
 import { pages } from '../../tooling/pages/index.ts';
+import { rum } from '../../tooling/rum.ts';
 
 const root = import.meta.dirname;
 const theme = fileURLToPath(new URL('./src/theme.css', import.meta.url));
@@ -36,6 +37,13 @@ export default defineConfig(({ mode }) => {
       proxy: { '/agreement/': 'http://127.0.0.1:4174' },
     },
     plugins: [
+      rum({
+        app: 'landing',
+        endpoint: env.VITE_ARMS_ENDPOINT,
+        version: env.VITE_APP_VERSION,
+        env: mode === 'prod' ? 'prod' : 'daily',
+        spa: true,
+      }),
       preact({
         reactAliasesEnabled: false,
         prerender: {

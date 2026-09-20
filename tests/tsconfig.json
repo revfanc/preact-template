@@ -1,0 +1,11 @@
+{
+  "extends": "../apps/landing/tsconfig.json",
+  "include": [
+    ".",
+    "../tooling/env.d.ts",
+    "../apps/landing/src/router/virtual.d.ts",
+    "../apps/landing/test/fixture",
+    "../packages/browser/test/fixture"
+  ],
+  "exclude": []
+}

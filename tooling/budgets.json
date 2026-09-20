@@ -1,0 +1,4 @@
+{
+  "landing": { "javascript": 65536, "css": 16384, "html": 20480 },
+  "agreement": { "javascript": 32768, "css": 8192, "html": 16384 }
+}

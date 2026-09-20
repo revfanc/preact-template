@@ -7,7 +7,8 @@ export default defineConfig({
   reporter: 'list',
   use: {
     baseURL: 'http://127.0.0.1:5173/landing/',
-    channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
+    channel:
+      process.env.PLAYWRIGHT_CHANNEL || (process.env.CI ? undefined : 'chrome'),
     viewport: { width: 375, height: 812 },
   },
   webServer: [

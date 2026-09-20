@@ -70,11 +70,13 @@ HTTP 4xx/5xx 和发送阶段的网络/取消错误由 ofetch 的 `FetchError` �
 
 序列化、解析器、响应体读取及 hook 抛出的异常不保证是 FetchError；调用方捕获 unknown 后再收窄。错误 message 可能包含 URL，不直接作为用户提示。
 
-旧版取消补丁不保存 abort reason，所以超时可能以 AbortError 为 cause；不能跨设备仅凭 cause.name 区分手动取消与超时。已由自己持有的 controller 取消时，使用其 signal.aborted 判断。
+旧版取消补丁不保存 abort reason，WebKit 的进行中请求取消也可能以 AbortError 为 cause；不能跨设备仅凭 cause.name 区分手动取消与超时。已由自己持有的 controller 取消时，使用其 signal.aborted 判断。
 
 ## 旧设备与协议应用
 
 浏览器入口检测原生 fetch 是否支持取消：支持时用原生传输，否则注入基于 XHR 的 whatwg-fetch 及匹配的 Headers；缺少 AbortController 时注入 abort-controller。补丁静态导入，不增加异步加载阶段，也不强制覆盖可用的原生 fetch。
+
+`whatwg-fetch.js` 与同名声明文件为上游无 TypeScript 类型的导出提供本地类型入口，声明随模块解析，不要求消费应用包含包内的全局声明文件。Landing 在 Node 预渲染阶段使用默认请求工厂，在浏览器使用此兼容入口；两者创建实例时都不发送网络请求。
 
 应用构建负责语法转换；Promise、Symbol、Set、URLSearchParams 使用目标浏览器原生能力。目标为 Chrome 64、Safari 11.1 / iOS 11.3、Firefox 67、Edge 79；browser 入口保留 Fetch 与 AbortController 的能力检测及降级。XHR 补丁不提供流式响应、keepalive、完整的 cache/redirect 控制；本模板旧设备场景使用普通 JSON、文本和表单请求。
 
@@ -88,6 +90,6 @@ HTTP 4xx/5xx 和发送阶段的网络/取消错误由 ofetch 的 `FetchError` �
 
 运行 `pnpm test`、`pnpm typecheck`、`pnpm lint`。浏览器回归见 `tests/browser/request.spec.ts`：独立测试入口验证原生、缺少取消 API、缺少整个 Fetch API 三种情况。运行方式见根 README；测试页面不进入正式应用。
 
-测试在现代 Chrome 中模拟能力缺失，不替代 Chrome 64 或 iOS 11.3 真机验收。
+测试在现代 Chrome 和 WebKit 中模拟能力缺失，不替代 Chrome 64 或 iOS 11.3 真机验收。
 
 参考：[ofetch v1 文档](https://github.com/unjs/ofetch/tree/v1)、[whatwg-fetch 兼容说明](https://github.com/JakeChampion/fetch)。升级时核对实际安装的发布产物及测试，不能以开发分支行为代替锁定版本。

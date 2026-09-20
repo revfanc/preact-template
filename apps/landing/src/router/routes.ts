@@ -15,6 +15,7 @@ export const routes = files.map(({ load, ...route }) => ({
       })
       .catch((error) => {
         if (typeof window === 'undefined') throw error;
+        console.error(error);
         return PageError;
       }),
   ),

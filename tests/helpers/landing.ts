@@ -4,7 +4,7 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-export async function createLandingFixture() {
+export async function createLandingFixture(options: { rum?: boolean } = {}) {
   const root = fileURLToPath(new URL('../..', import.meta.url));
   const source = path.join(root, 'apps/landing');
   const directory = await mkdtemp(path.join(root, 'apps/.landing-ssg-'));
@@ -33,12 +33,15 @@ export async function createLandingFixture() {
     );
     await writeFile(
       path.join(directory, '.env.prod'),
-      'VITE_APP_ENV=prod\nVITE_BASE_PATH=/campaign/\n',
+      'VITE_APP_ENV=prod\nVITE_BASE_PATH=/campaign/\n' +
+        (options.rum
+          ? 'VITE_ARMS_ENDPOINT=https://example.invalid/rum\nVITE_APP_VERSION=fixture\n'
+          : ''),
     );
     await writeFile(
       path.join(directory, 'tsconfig.json'),
       JSON.stringify({
-        extends: '../../tsconfig.json',
+        extends: '../../tsconfig.base.json',
         compilerOptions: { paths: { '@/*': ['./src/*'] } },
         include: ['src'],
       }),
@@ -46,14 +49,16 @@ export async function createLandingFixture() {
     for (const [name, source] of Object.entries({
       'start.tsx': `
         import { useEffect, useState } from 'preact/hooks';
+        import { createProbeStore } from '../stores/probe';
         import './fixture.css';
         import './start.css';
         export const prerender = true;
         export default function Start() {
+          const [store] = useState(createProbeStore);
           const [count, setCount] = useState(0);
           const [ready, setReady] = useState(false);
           useEffect(() => setReady(true), []);
-          return <main class="fixture start"><h1>静态首屏</h1><button disabled={!ready} onClick={() => setCount(count + 1)}>计数 {count}</button><a href="/campaign/offer/">活动</a><a href="/campaign/detail/7?channel=A">动态页</a><a href="/campaign/client/">客户端页面</a></main>;
+          return <main class="fixture start" data-request={store.ready}><h1>静态首屏</h1><button disabled={!ready} onClick={() => setCount(count + 1)}>计数 {count}</button><a href="/campaign/offer/">活动</a><a href="/campaign/detail/7?channel=A">动态页</a><a href="/campaign/client/">客户端页面</a></main>;
         }`,
       'offer.tsx': `import './fixture.css'; import './offer.css'; export const prerender = true; export default function Offer() { return <main class="fixture offer"><h1>预渲染活动</h1><a href="/campaign/start/">起始页</a></main>; }`,
       'optional/[[id]]/index.tsx': `export default function Optional({ id }: { id?: string }) { return <main><h1>可选 {id ?? '空'}</h1></main>; }`,
@@ -67,6 +72,11 @@ export async function createLandingFixture() {
       await mkdir(path.dirname(file), { recursive: true });
       await writeFile(file, source);
     }
+    await mkdir(path.join(directory, 'src/stores/probe'));
+    await writeFile(
+      path.join(directory, 'src/stores/probe/index.ts'),
+      `import { request } from '@/api'; export function createProbeStore() { return { ready: typeof request.raw === 'function' }; }`,
+    );
     await writeFile(
       path.join(directory, 'src/pages/fixture.css'),
       '.fixture { padding: 17px; color: var(--primary); }',

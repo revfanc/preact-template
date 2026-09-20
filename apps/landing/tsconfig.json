@@ -1,0 +1,8 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "paths": { "@/*": ["./src/*"] }
+  },
+  "include": ["src", "test", "vite.config.ts", "../../tooling/env.d.ts"],
+  "exclude": ["dist", "test/dist", "node_modules"]
+}

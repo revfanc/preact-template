@@ -33,6 +33,18 @@ test.afterAll(async () => {
   }
 });
 
+test('keeps error recovery visible when a route chunk fails to load', async ({
+  page,
+}) => {
+  await page.goto(`${origin}/campaign/start/`);
+  await expect(page.getByRole('button')).toBeEnabled();
+  await page.route('**/offer-*.js', (route) => route.abort());
+  await page.getByRole('link', { name: '活动', exact: true }).click();
+  await expect(
+    page.getByRole('button', { name: '重新加载页面' }),
+  ).toBeVisible();
+});
+
 test('prerendered pages hydrate without replacing the first screen, then navigate as an SPA', async ({
   page,
 }) => {
@@ -167,9 +179,11 @@ test('optional and catch-all routes match empty and populated paths after refres
     ['files/a/b/', '捕获 a/b'],
     ['unknown/nested', '页面不存在'],
   ]) {
-    await page.goto(`${origin}/campaign/${route}`);
+    await page.goto(`${origin}/campaign/${route}`, {
+      waitUntil: 'domcontentloaded',
+    });
     await expect(page.getByRole('heading')).toHaveText(heading!);
-    await page.reload();
+    await page.reload({ waitUntil: 'domcontentloaded' });
     await expect(page.getByRole('heading')).toHaveText(heading!);
   }
   expect(errors).toEqual([]);

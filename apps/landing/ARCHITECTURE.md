@@ -43,7 +43,7 @@ Landing 不设业务首页。根 `index.html` 保留空的启动容器，作为�
 - Landing 跨模块使用 `@/`，映射到 `apps/landing/src/`；模块内部文件和样式使用 `./`。
 - 公共包通过 `@packages/*` 的公开入口引用，不通过应用别名或相对路径穿透包源码。
 - 别名仅缩短路径，不改变依赖边界：业务 store 使用 `@/stores/core`，不能通过 `@/stores` 反向引用聚合入口。
-- 根 `tsconfig.json` 是当前 Landing 路径映射的唯一来源；正式应用、测试夹具及 Vitest 启用 `resolve.tsconfigPaths`。测试夹具的 `@/` 同样指向正式 Landing 源码；夹具内部继续使用相对路径。
+- `apps/landing/tsconfig.json` 是 Landing 路径映射的唯一来源，继承根 `tsconfig.base.json` 的公共编译选项；正式应用、测试夹具及 Vitest 启用 `resolve.tsconfigPaths`。测试夹具的 `@/` 同样指向正式 Landing 源码；夹具内部继续使用相对路径。
 - `tooling/pages/` 的 Vite 插件负责扫描、解析和校验 `src/pages/`，通过 `virtual:pages` 输出懒加载路由表。文件约定采用 unplugin-vue-router 的基础子集，使用 `exclude` glob 排除辅助文件，末尾 `[...path]` 页面承担兜底。页面可独立导出 `const prerender = true` 声明预渲染；插件静态收集路径并消费该元数据导出。运行时不扫描目录、不解析文件命名规则或页面标记；开发时新增或删除页面会刷新路由。
 
 ## 文件与依赖规则
@@ -53,6 +53,10 @@ Landing 不设业务首页。根 `index.html` 保留空的启动容器，作为�
 `core` 只提供通用能力，`app` 只组装应用共享实例，其他目录按业务组织。业务数据模块不读取整个应用集合；需要其他实例时由所有者传入依赖。共享业务 hook 可以读取 app Context 再订阅对应成员。内部文件不反向导入顶层 stores 聚合入口。
 
 `pnpm test` 中的 `tests/store-boundaries.test.ts` 检查上述关键依赖边界及 hook 文件位置；包括禁止数据模块导入 Preact、反馈/展示组件、场景 hooks、路由及 store 接入文件，禁止 core 依赖业务模块、业务数据依赖 app、内部模块引用聚合入口。检查静态依赖和可识别的动态导入，不能代替对 action 语义、实例生命周期的审查。
+
+仓库级依赖由 `tests/workspace-boundaries.test.ts` 检查：应用互不引用，公共包不依赖应用，跨包导入必须经过公开 exports，并在所属 package.json 中声明。正式源码不依赖测试夹具。构建插件生成模块的 `.d.ts` 可以引用 tooling 的类型，业务运行时代码不引用 tooling。
+
+`api/index.ts` 在浏览器选用兼容请求适配器，在 Node 预渲染选用普通请求客户端。导入和创建客户端不发请求；store 工厂只初始化状态，请求仍从客户端 effect/事件触发。预渲染构建测试覆盖“页面 → store → 真实 API 入口”的导入链。
 
 ## 状态归属
 

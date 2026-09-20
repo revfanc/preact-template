@@ -67,3 +67,7 @@ export default function AgreementPage() {
 JS 与 CSS 使用仓库统一目标：Chrome 64+、Safari 11.1+ / iOS 11.3+、Firefox 67+、Edge 79+。输出原生 ES 模块；最低版本尚需真机验收。
 
 验证：类型检查、Lint、多页与自定义 base 构建测试、浏览器 hydration 及刷新样式稳定性测试。
+
+本应用的 `tsconfig.json` 继承根 `tsconfig.base.json`，独立检查，不使用 Landing 的别名或应用源码。公共能力通过工作区包公开入口引入。
+
+监控使用[官方 ARMS RUM](../../docs/monitoring.md)。在本应用的环境文件配置 `VITE_ARMS_ENDPOINT` 和 `VITE_APP_VERSION` 后，构建 HTML 才会引入异步 SDK；不启用 SPA 采集模式。未配置时没有监控脚本或上报请求。资源预算与 Chromium/WebKit 验收范围见[质量说明](../../docs/quality.md)。

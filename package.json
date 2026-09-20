@@ -15,7 +15,7 @@
     "build:prod": "pnpm --fail-if-no-match --filter @apps/* build:prod",
     "preview:test": "pnpm --parallel --fail-if-no-match --filter @apps/* preview:test",
     "preview:prod": "pnpm --parallel --fail-if-no-match --filter @apps/* preview:prod",
-    "typecheck": "tsc --noEmit && pnpm --filter @apps/agreement check",
+    "typecheck": "tsc --noEmit && pnpm --filter @apps/* check && tsc --noEmit -p tests/tsconfig.json",
     "lint": "oxlint .",
     "lint:fix": "oxlint --fix .",
     "format": "oxfmt",

@@ -2,6 +2,18 @@ import { expect, it, vi } from 'vitest';
 import { createApi } from './fixture/src/api/fixture-api';
 import { createRequestClient } from '@packages/request';
 
+it('can import the real application client during prerender without making a request', async () => {
+  const fetcher = vi.spyOn(globalThis, 'fetch');
+  try {
+    const { request } = await import('../src/api');
+    expect(typeof request).toBe('function');
+    expect(typeof request.raw).toBe('function');
+    expect(fetcher).not.toHaveBeenCalled();
+  } finally {
+    fetcher.mockRestore();
+  }
+});
+
 it('uses the configured endpoint and rejects malformed configuration', async () => {
   const config = {
     title: '欢迎',

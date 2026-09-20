@@ -8,10 +8,14 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const source = resolve(root, 'apps/landing/src');
 const stores = resolve(source, 'stores');
 const config = ts.readConfigFile(
-  resolve(root, 'tsconfig.json'),
+  resolve(root, 'apps/landing/tsconfig.json'),
   ts.sys.readFile,
 );
-const { options } = ts.parseJsonConfigFileContent(config.config, ts.sys, root);
+const { options } = ts.parseJsonConfigFileContent(
+  config.config,
+  ts.sys,
+  resolve(root, 'apps/landing'),
+);
 const normalize = (path: string) => path.replace(/\\/g, '/');
 const files = readdirSync(stores, { recursive: true })
   .map(String)

@@ -3,7 +3,7 @@ import AbortControllerPolyfill from 'abort-controller/dist/abort-controller.js';
 import {
   fetch as fetchPolyfill,
   Headers as HeadersPolyfill,
-} from 'whatwg-fetch';
+} from './whatwg-fetch.js';
 import { createRequestClient, type FetchOptions } from './index';
 
 export function createBrowserRequestClient(options: FetchOptions = {}) {

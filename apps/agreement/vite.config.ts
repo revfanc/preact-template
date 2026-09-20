@@ -4,6 +4,7 @@ import { defineConfig, loadEnv } from 'vite';
 import { buildTargets } from '../../tooling/compatibility.ts';
 import { pages } from '../../tooling/pages/index.ts';
 import { createPostcssPlugins } from '../../tooling/postcss.ts';
+import { rum } from '../../tooling/rum.ts';
 
 const root = import.meta.dirname;
 const theme = fileURLToPath(new URL('./src/theme.css', import.meta.url));
@@ -23,6 +24,12 @@ export default defineConfig(({ mode, command, isPreview }) => {
     css: { postcss: { plugins: createPostcssPlugins(false, theme) } },
     build: { target: buildTargets, cssTarget: buildTargets },
     plugins: [
+      rum({
+        app: 'agreement',
+        endpoint: env.VITE_ARMS_ENDPOINT,
+        version: env.VITE_APP_VERSION,
+        env: mode === 'prod' ? 'prod' : 'daily',
+      }),
       pages({
         exclude: ['**/*.test.*', '**/*.spec.*'],
         eager: true,

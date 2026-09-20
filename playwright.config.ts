@@ -8,14 +8,31 @@ if (mode !== 'test' && mode !== 'prod')
 export default defineConfig({
   testDir: './tests/browser',
   fullyParallel: true,
-  workers: 2,
+  // Keep a single active WebKit window on Windows to avoid delayed frame callbacks.
+  workers: process.platform === 'win32' ? 1 : 2,
   reporter: 'list',
   use: {
     baseURL: 'http://127.0.0.1:4173/landing/',
-    channel: process.env.PLAYWRIGHT_CHANNEL || 'chrome',
     viewport: { width: 375, height: 812 },
     screenshot: 'only-on-failure',
   },
+  projects: [
+    {
+      name: 'chromium',
+      use: {
+        browserName: 'chromium',
+        channel:
+          process.env.PLAYWRIGHT_CHANNEL ||
+          (process.env.CI ? undefined : 'chrome'),
+      },
+    },
+    {
+      name: 'webkit',
+      timeout: 60000,
+      testMatch: /(?:scaffold|agreement|landing-ssg|request)\.spec\.ts/,
+      use: { browserName: 'webkit' },
+    },
+  ],
   webServer: [
     {
       command:
