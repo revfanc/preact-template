@@ -19,9 +19,12 @@ src/
       index.ts            最小状态容器与公共类型，不依赖 Preact
       hooks.ts            通用创建/订阅 hooks，不导入业务模块
     app/
-      index.ts            应用共享实例集合，目前无业务成员
+      index.ts            应用共享实例集合，持有 channel
       context.tsx         Context 与 Provider，只传递实例
       hooks.ts            useAppStores 获取已有集合
+    channel/
+      index.ts            URL 渠道上下文、解析与同步 action
+      hooks.ts            useChannelStore 读取并订阅已有实例
     loading/
       index.ts            独立的 Loading 状态
       hooks.ts            useLocalLoadingStore 局部绑定
@@ -71,7 +74,9 @@ Landing 不设业务首页。根 `index.html` 保留空的启动容器，作为�
 
 所有 store 使用工厂创建；禁止在模块顶层无意创建共享单例。一个所有者只创建一次实例，子组件通过 props 或 Context 获取这个实例。子组件调用同一工厂会得到另一份状态，不会自动共享。
 
-`app.tsx` 已在 Router 外接入应用共享空壳：通过 `useStoreInstance(createAppStores)` 持有集合，`AppStoresProvider` 只传递集合，`useAppStores()` 只读取已有集合；缺少 Provider 时明确报错。集合目前没有渠道、用户或申请字段，不代表已经实现这些业务。
+`app.tsx` 在 Router 外通过 `useStoreInstance(createAppStores)` 持有共享集合，`AppStoresProvider` 只传递集合，`useAppStores()` 只读取已有集合；缺少 Provider 时明确报错。集合的 `channel` 成员保存 URL 渠道上下文，尚未请求渠道配置，也没有用户或申请状态。
+
+`ChannelInitializer` 在 LocationProvider 内、懒加载页面外调用 `useChannel()`，在客户端 layout effect 同步 query。导航通过 `useNavigation()` 统一生成白名单地址，业务上下文的来源始终是 URL；刷新重新解析，不从缓存猜测渠道。具体边界见 [渠道上下文与导航](README.md#渠道上下文与导航)。
 
 全局集合只组装应用范围的业务 store，不能演变成包办所有字段的大快照。以后渠道、会话按业务分别实现；申请表单、协议勾选和银行卡选择属于一次流程，订单结果与轮询属于订单任务。多页面共用的数据应放在最小共同作用域，不因“以后可能复用”就提升到应用全局。
 

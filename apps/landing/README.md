@@ -53,6 +53,41 @@ useLocalLoadingStore、useStore、useStoreInstance 由 stores/index.ts 导出，
 
 样式使用 CSS / CSS Modules，按 375px 设计宽度写 px，构建转换为 rem；固定像素沿用 `no-rem` 约定。主题使用 `src/theme.css` 覆盖公共 CSS 变量，变量名称使用单个单词。旧设备目标与限制见[根 README](../../README.md)。
 
+## 渠道上下文与导航
+
+应用启动和路由 query 变化时，`useChannel()` 在客户端同步 URL 到应用级 `channel` store；它在懒加载页面外只挂载一次，前进后退也会更新。页面通过 `useChannelStore()` 读取 `{ state, store }`，不各自创建实例或恢复渠道缓存。
+
+- `state.initialized` 表示已同步 URL，不表示渠道接口已完成；`context` 为解析后的身份，缺少或空白 `channelCode` 时为 `null`；重复的已知参数会清空上下文并写入 `error`。
+- 懒加载页面可能在上下文同步后才开始 hydration。`useChannelStore()` 为每个消费者保留一致的空首帧，挂载后再读取实时快照；UI 不绕过它直接用 `getSnapshot()` 渲染渠道内容。
+- 当前白名单为 `channelCode`、`undertakePageConfigId`、`clickid`、`linkId`，忽略其他字段。同一上下文不因参数顺序或无关 query 变化重复更新。`clickid` 保留 URL 原字段，未来请求接口时再按契约转换为 `unionId`。
+- 当前只接入上下文和导航，不请求渠道接口、不提供默认渠道、不持久化 query 或配置。业务需要渠道时应显式处理未初始化、参数错误和渠道缺失；后续配置请求接入 channel 的数据 action，沿用现有 API/请求层。
+
+业务链接和代码跳转使用同一个 `useNavigation()`；`nextPath` 是业务提供的目标路径：
+
+```tsx
+import { useChannelStore } from '@/stores';
+import { useNavigation } from '@/hooks/use-navigation';
+
+const { state } = useChannelStore();
+const { href, navigate } = useNavigation();
+const ready = state.initialized && !state.error && !!state.context;
+
+// 普通链接支持浏览器的新标签页操作；按钮事件可调用 navigate(nextPath)。
+<a href={ready ? href(nextPath) : undefined} aria-disabled={!ready}>
+  下一步
+</a>;
+// navigate(nextPath, true) 使用 replace，不增加一条历史记录。
+```
+
+`href()` 在 URL 尚未同步或参数错误时返回 `undefined`，此时链接没有可跳转的 href；`navigate()` 在这种状态下抛错，调用它的按钮需按就绪条件禁用。预渲染不知道访问者的 query，依赖渠道的链接因此需要客户端同步后启用，不能声称禁用 JavaScript 时仍可保留渠道跳转。固定、不依赖上下文的链接可直接使用普通 href。
+
+`createHref(to, from, base?)` 位于 `src/router/href.ts`，供非 hook 场景使用；`from` 明确传入当前路径和 query，不读取浏览器全局变量。
+
+- `p2/example/` 等相对路径从应用 base 拼接；`/landing/p2/example/` 等根路径原样使用，`/p2/example/` 不会自动补 `/landing/`。这些是地址写法示例，并非模板已有路由。
+- 应用内新页面只继承白名单，目标显式参数优先；目标显式换成另一渠道或清空渠道时，不再继承旧的活动编号和归因参数。不能把全部 query、token 或一次性回调参数默认带到下一页。
+- `?step=2` 留在当前路径并继承白名单；`#section` 留在当前页面并保留原查询串。query-only 导航中想移除渠道需显式指定 `channelCode=`。
+- 外部 URL 和应用范围外的根路径不追加上下文；`navigate()` 仅支持本应用内地址，外部跳转使用普通链接。直接使用 Router、`history.pushState` 或自己拼 href 不会自动保留参数；History 保护已启用时，修改历史前还需按 Browser 包约定等待注销。
+
 ## 验证
 
 在根目录执行 `pnpm lint`、`pnpm typecheck`、`pnpm test`；使用 `pnpm build:test` 构建两应用后，执行 `pnpm check:build test` 和 `pnpm test:browser`。后者同时检查正式页面和[独立测试夹具](test/README.md)，需要 4173–4176 端口空闲，完整环境切换方法见根 README。
@@ -108,7 +143,7 @@ export default function ActivityPage() {
 
 ### 请求、store 与缓存
 
-沿用 UI → 场景 hook → store action → API：工厂只创建稳定初始状态；页面的 effect 取得并校验渠道等上下文，再调用数据 action；store 保存 pending/error/结果，场景 hook 处理反馈和导航。当前模板没有自动渠道初始化或“提前请求”模块，需要业务显式接入。
+沿用 UI → 场景 hook → store action → API：工厂只创建稳定初始状态；客户端取得并校验渠道等上下文，再调用数据 action；store 保存 pending/error/结果，场景 hook 处理反馈和导航。当前模板自动同步 URL 渠道上下文，尚未接入渠道配置请求或“提前请求”模块。
 
 - 默认不在构建期请求渠道、登录和订单接口，也不在 render 中发请求。构建可执行多次渲染，不能把导入或渲染次数当成业务访问次数。
 - 应用请求实例可以安全地被预渲染页面及 store 导入；浏览器使用兼容适配器，Node 使用标准客户端。安全导入不代表允许在 render 或 store 工厂中发起业务请求。
@@ -122,7 +157,7 @@ export default function ActivityPage() {
 
 - HTML 可见时 JS 可能尚未就绪。依赖 JS 的提交按钮默认禁用，客户端接管且业务条件满足后启用；非提交按钮使用 `type="button"`，表单显式处理提交。不要依赖框架重放 hydration 前的点击，也不要用整页 Loading 遮住已经可读的静态首屏。
 - 路由 Loading 只表示页面模块正在加载，不代表业务接口完成；业务区域按自己的 pending/error 展示状态。图片、表单及动态数据占位保留合理尺寸，减少数据更新后的布局位移。
-- 普通链接在 JS 接管前也能导航，必须指向可直接访问的 URL。链接使用 `import.meta.env.BASE_URL` 组成部署路径，不从当前深层路径相对拼接；需要保留的渠道参数由业务显式传递，Router 不自动继承全部 query。
+- 固定普通链接在 JS 接管前也能导航，必须指向可直接访问的 URL。依赖访问者 query 的业务链接使用上方 `useNavigation()`，客户端同步后启用；它按 `BASE_URL` 拼接相对路径并保留指定参数，Router 本身不自动继承 query。
 - CSS 使用 Vite 默认分包，Beasties 在构建后内联匹配整份 HTML 的规则，不测量浏览器首屏范围。页面使用 CSS Modules，全局样式统一放在 `src/style.css`，避免扫描不同页面时同名全局选择器互相影响。
 - 外部 CSS 完整保留，供客户端新状态、弹窗和 SPA 跳转使用。内联规则与后续外链有少量重复是当前取舍，不直接启用 `pruneSource`、删除 CSS 文件或屏蔽 Vite 的 CSS 加载；从其他页面进入时可能没有目标页面的内联样式。
 - JS 语法构建目标不补齐浏览器 API。SDK、动态导入的依赖与新增 API 仍要遵守[兼容目标](../../README.md#路由样式与兼容)，预渲染可读不等于旧设备动态交互可用。

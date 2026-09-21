@@ -1,9 +1,15 @@
 import { useErrorBoundary, useRef } from 'preact/hooks';
 import { LocationProvider, Router, Route } from 'preact-iso';
 import { useLoading } from '@/hooks/use-loading';
+import { useChannel } from '@/hooks/use-channel';
 import { routes } from '@/router/routes';
 import { PageError } from '@/components/page-error';
 import { AppStoresProvider, createAppStores, useStoreInstance } from '@/stores';
+
+function ChannelInitializer() {
+  useChannel();
+  return null;
+}
 
 export function App({ hydrating = false }: { hydrating?: boolean }) {
   const initial = useRef(hydrating);
@@ -26,6 +32,7 @@ export function App({ hydrating = false }: { hydrating?: boolean }) {
   return (
     <AppStoresProvider value={stores}>
       <LocationProvider scope={import.meta.env.BASE_URL}>
+        <ChannelInitializer />
         <div data-page={location.pathname.replace(/\/$/, '') || '/'}>
           <Router
             onLoadStart={() => {

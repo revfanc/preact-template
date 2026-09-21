@@ -12,10 +12,14 @@ stores/
     index.test.ts
     hooks.test.tsx
   app/
-    index.ts          createAppStores 应用共享实例集合，目前为空壳
+    index.ts          createAppStores 应用共享实例集合，持有 channel
     context.tsx       Context 与 AppStoresProvider，只传递实例
     hooks.ts          useAppStores 读取已有集合
     hooks.test.tsx
+  channel/
+    index.ts          URL 渠道上下文、解析与同步 action
+    hooks.ts          useChannelStore 获取并订阅应用已有实例
+    index.test.ts
   loading/
     index.ts          Loading 状态工厂，只管理数据
     hooks.ts          useLocalLoadingStore 局部绑定
@@ -25,7 +29,7 @@ stores/
   README.md
 ```
 
-新增业务时按需增加 `channel/`、`application/`、`order/` 等目录，不提前创建空目录。各模块先用 `index.ts` 放工厂、类型和数据 action，需要 Preact 接入时再增加 `hooks.ts`；复杂到有必要时才拆分其他文件。
+当前 `channel/` 保存 URL 渠道上下文；新增业务时按需增加 `application/`、`order/` 等目录，不提前创建空目录。各模块先用 `index.ts` 放工厂、类型和数据 action，需要 Preact 接入时再增加 `hooks.ts`；复杂到有必要时才拆分其他文件。
 
 不按 global/local 划分目录：同一个业务工厂可以创建不同作用域的实例。`app/` 只负责组装应用共享实例和传递 Context，业务数据仍属于对应模块。
 
@@ -178,10 +182,14 @@ export function useLocalDraftStore(channelCode: string) {
 ```ts
 import { useAppStores } from '@/stores';
 
-const stores = useAppStores(); // 当前只有生命周期入口，尚无业务模块。
+const stores = useAppStores(); // stores.channel 是当前应用的渠道上下文实例。
 ```
 
-以后按业务增加显式成员，例如渠道、会话各自一个 store 工厂，由 `createAppStores` 组装并逐项清理。业务字段留在对应模块中，集合不提供通用 set/update、动态注册表或混合快照；组件只订阅需要的成员。业务绑定写在对应的 `stores/<name>/hooks.ts`，不堆进通用 `core/hooks.ts`。以上渠道、会话和业务读取 hook 目前均未实现。
+`useChannelStore()` 返回 `{ state, store }`，只获取并订阅已有 `channel`，不会新建实例。`state` 包含 `initialized`、`context`、`error`；`sync(search)` 是 URL 同步入口，由应用初始化 hook 调用，业务不另行写入一套渠道身份。字段及跳转规则见 [渠道上下文与导航](../../README.md#渠道上下文与导航)。此 store 只使用内存，没有接口配置或持久化。
+
+`getInitialSnapshot()` 保留该实例的初始空快照，供接入 hook 保证懒加载页面 hydration 的首帧一致；挂载后切换到实时快照。业务 UI 使用 `useChannelStore()`，不直接读取快照绕过该边界。
+
+后续按业务增加会话等显式成员，由 `createAppStores` 组装并逐项清理。业务字段留在对应模块中，集合不提供通用 set/update、动态注册表或混合快照；组件只订阅需要的成员。业务绑定写在对应的 `stores/<name>/hooks.ts`，不堆进通用 `core/hooks.ts`。渠道配置请求和会话业务尚未实现。
 
 | 作用域          | 适合的数据                         | 边界                         |
 | --------------- | ---------------------------------- | ---------------------------- |

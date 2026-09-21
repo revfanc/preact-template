@@ -9,3 +9,4 @@ export { useLocalLoadingStore } from './loading/hooks';
 export { createAppStores, type AppStores } from './app';
 export { AppStoresProvider } from './app/context';
 export { useAppStores } from './app/hooks';
+export { useChannelStore } from './channel/hooks';

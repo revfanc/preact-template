@@ -29,7 +29,7 @@ export default defineConfig({
     {
       name: 'webkit',
       timeout: 60000,
-      testMatch: /(?:scaffold|agreement|landing-ssg|request)\.spec\.ts/,
+      testMatch: /(?:scaffold|agreement|landing-ssg|request|channel)\.spec\.ts/,
       use: { browserName: 'webkit' },
     },
   ],

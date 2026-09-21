@@ -4,7 +4,9 @@ import path from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { promisify } from 'node:util';
 
-export async function createLandingFixture(options: { rum?: boolean } = {}) {
+export async function createLandingFixture(
+  options: { rum?: boolean; channel?: boolean } = {},
+) {
   const root = fileURLToPath(new URL('../..', import.meta.url));
   const source = path.join(root, 'apps/landing');
   const directory = await mkdtemp(path.join(root, 'apps/.landing-ssg-'));
@@ -71,6 +73,37 @@ export async function createLandingFixture(options: { rum?: boolean } = {}) {
       const file = path.join(directory, 'src/pages', name);
       await mkdir(path.dirname(file), { recursive: true });
       await writeFile(file, source);
+    }
+    if (options.channel) {
+      const component = path.join(directory, 'src/components/channel-probe');
+      await mkdir(component);
+      await writeFile(
+        path.join(component, 'index.tsx'),
+        `
+        import { useChannelStore } from '@/stores';
+        import { useNavigation } from '@/hooks/use-navigation';
+        export function ChannelProbe() {
+          const { state } = useChannelStore();
+          const { href, navigate } = useNavigation();
+          return <main><h1>渠道测试</h1>
+            <p data-testid="context">{JSON.stringify(state.context)}</p>
+            <p data-testid="error">{state.error}</p>
+            <a data-testid="same" href={href('channel-next/')}>下一页</a>
+            <a data-testid="change" href={href('channel-next/?channelCode=B')}>渠道 B</a>
+            <a data-testid="clear" href={href('channel/?channelCode=')}>清空渠道</a>
+            <button disabled={!state.initialized || !!state.error} onClick={() => navigate('channel-next/?step=2#form')}>代码跳转</button>
+          </main>;
+        }
+      `,
+      );
+      for (const name of ['channel', 'channel-next']) {
+        const page = path.join(directory, 'src/pages', name);
+        await mkdir(page);
+        await writeFile(
+          path.join(page, 'index.tsx'),
+          `export { ChannelProbe as default } from '@/components/channel-probe'; export const prerender = true;`,
+        );
+      }
     }
     await mkdir(path.join(directory, 'src/stores/probe'));
     await writeFile(

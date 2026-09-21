@@ -1,8 +1,12 @@
+import { createChannelStore } from '@/stores/channel';
+
 /** Own application-wide domain stores here, not one combined state snapshot. */
 export function createAppStores() {
+  const channel = createChannelStore();
   return Object.freeze({
+    channel,
     dispose() {
-      // No domain stores yet. Dispose owned stores here when they are added.
+      channel.dispose();
     },
   });
 }
