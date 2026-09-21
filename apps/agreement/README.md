@@ -4,6 +4,8 @@ Preact 静态协议应用。Vite 在构建期发现页面，官方预渲染插�
 
 提供两份示例协议：`/agreement/privacy-policy/`（隐私政策）和 `/agreement/user-agreement/`（用户协议）。正文仅用于模板展示，接入业务时替换为实际内容。没有首页或空白入口产物，生产根地址 `/agreement/` 返回 404。
 
+新增或修改协议前阅读 [Agreement 开发约束](./AGENTS.md)，其中规定页面组织、正文与交互边界、修改范围及验收要求。
+
 ## 结构
 
 ```text
@@ -25,7 +27,7 @@ src/
 
 ## 新增页面
 
-创建 `src/pages/<name>.tsx` 或 `src/pages/<name>/index.tsx`：
+新增协议统一创建 `src/pages/<name>/index.tsx`：
 
 ```tsx
 export const title = '协议标题';
@@ -35,7 +37,7 @@ export default function AgreementPage() {
 }
 ```
 
-支持多级目录。例如 `privacy/index.tsx` 对应 `/agreement/privacy/`，输出 `dist/privacy/index.html`。页面发现由 [pages 插件](../../tooling/pages/README.md) 在构建期完成，不依赖首页链接。动态参数在构建时拒绝；辅助文件通过 `exclude` glob 排除。
+支持多级目录。例如 `privacy/index.tsx` 对应 `/agreement/privacy/`，输出 `dist/privacy/index.html`。页面发现由 [pages 插件](../../tooling/pages/README.md) 在构建期完成，不依赖首页链接。插件也支持 `<name>.tsx`，本应用新增协议统一采用目录形式；辅助组件放在 `src/components`，动态参数在构建时拒绝。
 
 页面之间使用普通 `<a>` 完整导航。`components/not-found/index.tsx` 仅用于开发环境或客户端未匹配提示，不生成静态错误页。构建只输出实际协议页面，生产未知地址由服务器返回 HTTP 404。
 
