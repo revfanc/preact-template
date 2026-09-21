@@ -76,7 +76,7 @@ Landing 不设业务首页。根 `index.html` 保留空的启动容器，作为�
 
 `app.tsx` 在 Router 外通过 `useStoreInstance(createAppStores)` 持有共享集合，`AppStoresProvider` 只传递集合，`useAppStores()` 只读取已有集合；缺少 Provider 时明确报错。集合的 `channel` 成员保存 URL 渠道上下文，尚未请求渠道配置，也没有用户或申请状态。
 
-`ChannelInitializer` 在 LocationProvider 内、懒加载页面外调用 `useChannel()`，在客户端 layout effect 同步 query。导航通过 `useNavigation()` 统一生成白名单地址，业务上下文的来源始终是 URL；刷新重新解析，不从缓存猜测渠道。具体边界见 [渠道上下文与导航](README.md#渠道上下文与导航)。
+`App` 提供共享 store 和 LocationProvider，内部 `AppContent` 调用 `useChannel()` 并渲染路由、管理页面状态。渠道同步在客户端 layout effect 执行，位于懒加载页面之外。导航通过 `useNavigation()` 统一生成白名单地址，业务上下文的来源始终是 URL；刷新重新解析，不从缓存猜测渠道。具体边界见 [渠道上下文与导航](README.md#渠道上下文与导航)。
 
 全局集合只组装应用范围的业务 store，不能演变成包办所有字段的大快照。以后渠道、会话按业务分别实现；申请表单、协议勾选和银行卡选择属于一次流程，订单结果与轮询属于订单任务。多页面共用的数据应放在最小共同作用域，不因“以后可能复用”就提升到应用全局。
 

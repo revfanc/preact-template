@@ -6,14 +6,20 @@ import { routes } from '@/router/routes';
 import { PageError } from '@/components/page-error';
 import { AppStoresProvider, createAppStores, useStoreInstance } from '@/stores';
 
-function ChannelInitializer() {
-  useChannel();
-  return null;
+export function App({ hydrating = false }: { hydrating?: boolean }) {
+  const stores = useStoreInstance(createAppStores);
+  return (
+    <AppStoresProvider value={stores}>
+      <LocationProvider scope={import.meta.env.BASE_URL}>
+        <AppContent hydrating={hydrating} />
+      </LocationProvider>
+    </AppStoresProvider>
+  );
 }
 
-export function App({ hydrating = false }: { hydrating?: boolean }) {
+function AppContent({ hydrating }: { hydrating: boolean }) {
+  useChannel();
   const initial = useRef(hydrating);
-  const stores = useStoreInstance(createAppStores);
   const { startLoading, finishLoading } = useLoading();
   const [error] = useErrorBoundary((error) => {
     finishLoading();
@@ -30,26 +36,20 @@ export function App({ hydrating = false }: { hydrating?: boolean }) {
   }
 
   return (
-    <AppStoresProvider value={stores}>
-      <LocationProvider scope={import.meta.env.BASE_URL}>
-        <ChannelInitializer />
-        <div data-page={location.pathname.replace(/\/$/, '') || '/'}>
-          <Router
-            onLoadStart={() => {
-              if (!initial.current && typeof window !== 'undefined')
-                startLoading();
-            }}
-            onLoadEnd={() => {
-              initial.current = false;
-              finishLoading();
-            }}
-          >
-            {routes.map(({ file, component, ...props }) => (
-              <Route key={file} {...props} component={component} />
-            ))}
-          </Router>
-        </div>
-      </LocationProvider>
-    </AppStoresProvider>
+    <div data-page={location.pathname.replace(/\/$/, '') || '/'}>
+      <Router
+        onLoadStart={() => {
+          if (!initial.current && typeof window !== 'undefined') startLoading();
+        }}
+        onLoadEnd={() => {
+          initial.current = false;
+          finishLoading();
+        }}
+      >
+        {routes.map(({ file, component, ...props }) => (
+          <Route key={file} {...props} component={component} />
+        ))}
+      </Router>
+    </div>
   );
 }
