@@ -3,6 +3,7 @@ import path from 'node:path';
 import ts from 'typescript';
 import { normalizePath } from 'vite';
 import type { Plugin } from 'vite';
+import { preloadPages } from './preload.ts';
 
 export type PageEntry = { file: string; path: string };
 
@@ -25,6 +26,8 @@ export function pages({
   const internal = '\0' + name;
   let root: string;
   let folder: string;
+  let base: string;
+  let prerenderPages: PageEntry[] = [];
   let dispose: (() => void) | undefined;
   const excluded = Array.isArray(exclude) ? exclude : [exclude];
   const isPageFile = (filename: string) => {
@@ -44,6 +47,7 @@ export function pages({
     configResolved(config) {
       root = config.root;
       folder = path.resolve(root, directory);
+      base = config.base;
     },
     resolveId(id) {
       if (id === name) return internal;
@@ -80,6 +84,7 @@ export function pages({
         routes.map((page) => readFile(path.resolve(folder, page.file), 'utf8')),
       );
       const prerenderPaths: string[] = [];
+      prerenderPages = [];
       const rows = routes.map((page, i) => {
         const filename = normalizePath(path.resolve(folder, page.file));
         this.addWatchFile(filename);
@@ -89,12 +94,19 @@ export function pages({
               `Prerender requires a concrete page path: ${page.file}`,
             );
           prerenderPaths.push(page.path);
+          prerenderPages.push({ file: filename, path: page.path });
         }
         const url = JSON.stringify('/@fs/' + filename);
         if (eager) imports.push(`import * as p${i} from ${url};`);
         return `{...${JSON.stringify(page)}, ${eager ? `page: p${i}` : `load: () => import(${url})`}}`;
       });
       return `${imports.join('\n')}\nexport const pages = [${rows.join(',')}];\nexport const prerenderPaths = ${JSON.stringify(prerenderPaths)};`;
+    },
+    generateBundle: {
+      order: 'post',
+      handler(_options, bundle) {
+        if (!eager) preloadPages(bundle, prerenderPages, base);
+      },
     },
     configureServer(server) {
       server.watcher.add(folder);

@@ -21,6 +21,7 @@ it('inlines matching prerendered styles and preserves split CSS for SPA navigati
     ).toContain('data-request="true"');
     expect(fallback).toMatch(/<div id="app">\s*<\/div>/);
     expect(fallback).not.toContain('type="isodata"');
+    expect(fallback).not.toContain('rel="modulepreload"');
     for (const [file, text, route, own, other] of [
       ['start/index.html', '静态首屏', '/campaign/start', '.start', '.offer'],
       ['offer/index.html', '预渲染活动', '/campaign/offer', '.offer', '.start'],
@@ -34,6 +35,28 @@ it('inlines matching prerendered styles and preserves split CSS for SPA navigati
       expect(html).toContain(text);
       expect(html).toContain(`data-page="${route}"`);
       expect(html).toContain('type="isodata"');
+      const page = path.posix.dirname(file!);
+      const script = files.find((name) =>
+        new RegExp(`^assets/${page}-[^/]+\\.js$`).test(name),
+      );
+      expect(script).toBeDefined();
+      expect(html).toContain(
+        `rel="modulepreload" crossorigin href="/campaign/${script}"`,
+      );
+      const links = [...html.matchAll(/<link\b[^>]*href="([^"]+)"[^>]*>/g)].map(
+        (match) => match[1],
+      );
+      expect(
+        links.some((href) => href?.match(/\/(?:client|detail|disabled)-/)),
+      ).toBe(false);
+      expect(
+        links.some((href) =>
+          href?.includes(`/${page === 'start' ? 'offer' : 'start'}-`),
+        ),
+      ).toBe(false);
+      expect(
+        links.some((href) => href?.match(new RegExp(`/${page}-[^/]+\\.css$`))),
+      ).toBe(true);
       const styles = [...html.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/g)]
         .map((match) => match[1])
         .join('');

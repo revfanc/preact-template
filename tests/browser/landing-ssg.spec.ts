@@ -45,6 +45,46 @@ test('keeps error recovery visible when a route chunk fails to load', async ({
   ).toBeVisible();
 });
 
+test('loads only the current page resources before the main entry finishes', async ({
+  page,
+}) => {
+  const requested: string[] = [];
+  page.on('request', (request) =>
+    requested.push(new URL(request.url()).pathname),
+  );
+  let release!: () => void;
+  const gate = new Promise<void>((resolve) => {
+    release = resolve;
+  });
+  await page.route('**/main-*.js', async (route) => {
+    await gate;
+    await route.continue();
+  });
+  const count = (extension: string) =>
+    requested.filter((url) =>
+      new RegExp(`/start-[^/]+\\.${extension}$`).test(url),
+    ).length;
+  try {
+    await page.goto(`${origin}/campaign/start/`, { waitUntil: 'commit' });
+    await expect(page.getByRole('heading')).toHaveText('静态首屏');
+    await expect.poll(() => count('js')).toBe(1);
+    await expect.poll(() => count('css')).toBe(1);
+    await expect(page.getByRole('button')).toBeDisabled();
+    expect(requested.some((url) => /\/(?:offer|client)-/.test(url))).toBe(
+      false,
+    );
+    release();
+    await expect(page.getByRole('button')).toBeEnabled();
+    await page.getByRole('button').click();
+    await expect(page.getByRole('button')).toHaveText('计数 1');
+    await page.waitForLoadState('networkidle');
+    expect(count('js')).toBe(1);
+    expect(count('css')).toBe(1);
+  } finally {
+    release();
+  }
+});
+
 test('prerendered pages hydrate without replacing the first screen, then navigate as an SPA', async ({
   page,
 }) => {

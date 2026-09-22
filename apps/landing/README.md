@@ -128,6 +128,7 @@ export default function ActivityPage() {
 
 - 官方插件从根路径 `/` 开始构建；`prerender()` 对该路径返回空正文及待预渲染路径，生成的 `index.html` 保留空的 `#app` 作为 SPA 启动入口，不渲染 Router。无需 `src/pages/index.tsx`；直接访问 `/landing/` 由客户端显示 404。
 - 活动页面只有声明 `prerender = true` 才生成 HTML。未声明或为 `false` 时保留 SPA 路由，页面链接不会自动扩展构建列表。
+- 每份预渲染 HTML 自动预加载当前页面的 JS 和静态依赖，并提前加载对应 CSS；关键样式仍内联。其他页面与组件中的动态导入保持按需加载，无需手写资源地址。SPA 回退入口不预加载具体页面。
 - `prerender` 是 [pages 插件](../../tooling/pages/README.md) 的构建标记，必须单独直接导出 `true` 或 `false`。不支持表达式、变量引用或转导出；标记在构建期解析，组件保持按需加载。
 - 当前只支持具体的静态路由。`[id]`、`[[id]]` 和 `[...path]` 不可标记为 `true`，否则构建报错。根路径保留为空白启动入口。
 - 部署先匹配静态文件和目录 `index.html`，未预渲染的页面路径回退到 `/landing/index.html`；缺失 JS/CSS 应返回 404。Vite 预览同样使用这个空白入口；预览已生成的页面请使用带末尾 `/` 的地址。
