@@ -1,14 +1,11 @@
-import {
-  createBrowserRequestClient,
-  createBrowserAbortController,
-} from '@packages/request/browser';
+import { createRequestClient, createAbortController } from '@packages/request';
 
 const fixture = {
-  client: createBrowserRequestClient({
+  client: createRequestClient({
     baseURL: '/landing/__request',
     headers: { 'x-client': 'fixture' },
   }),
-  createController: createBrowserAbortController,
+  createController: createAbortController,
 };
 
 declare global {

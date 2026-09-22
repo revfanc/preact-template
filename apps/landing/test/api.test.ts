@@ -5,9 +5,10 @@ import { createRequestClient } from '@packages/request';
 it('can import the real application client during prerender without making a request', async () => {
   const fetcher = vi.spyOn(globalThis, 'fetch');
   try {
-    const { request } = await import('../src/api');
+    const { request } = await import('../src/request');
     expect(typeof request).toBe('function');
     expect(typeof request.raw).toBe('function');
+    await expect(request('/config')).rejects.toThrow('预渲染');
     expect(fetcher).not.toHaveBeenCalled();
   } finally {
     fetcher.mockRestore();
@@ -24,11 +25,22 @@ it('uses the configured endpoint and rejects malformed configuration', async () 
     .fn<typeof fetch>()
     .mockResolvedValueOnce(Response.json(config))
     .mockResolvedValueOnce(Response.json({ title: 123 }));
+  vi.stubGlobal('window', {
+    fetch,
+    Request,
+    Headers,
+    AbortController,
+    location: { href: 'https://example.test/' },
+  });
   const api = createApi(
     createRequestClient({ baseURL: '/api' }, { fetch: fetcher }),
     { configPath: 'config' },
   );
-  await expect(api.getConfig()).resolves.toEqual(config);
-  expect(fetcher.mock.calls[0]?.[0]).toBe('/api/config');
-  await expect(api.getConfig()).rejects.toThrow('站点配置格式不正确');
+  try {
+    await expect(api.getConfig()).resolves.toEqual(config);
+    expect(fetcher.mock.calls[0]?.[0]).toBe('/api/config');
+    await expect(api.getConfig()).rejects.toThrow('站点配置格式不正确');
+  } finally {
+    vi.unstubAllGlobals();
+  }
 });

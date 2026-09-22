@@ -1,11 +1,36 @@
 import { expect, test } from '@playwright/test';
+import { createServer } from 'node:http';
 import type { FetchError } from '../../packages/request/src/index';
 
+// Send headers before the body to distinguish a complete-request deadline from fetch-only timeout.
+const server = createServer((request, response) => {
+  response.setHeader('Access-Control-Allow-Origin', '*');
+  response.setHeader('Access-Control-Allow-Headers', 'x-client');
+  if (request.method === 'OPTIONS') {
+    response.end();
+    return;
+  }
+  response.setHeader('Content-Type', 'application/json');
+  response.write('{"value":');
+  const timer = setTimeout(() => response.end('1}'), 500);
+  response.on('close', () => clearTimeout(timer));
+});
+let bodyUrl: string;
+test.beforeAll(async () => {
+  await new Promise<void>((resolve) => server.listen(0, '127.0.0.1', resolve));
+  const address = server.address();
+  if (!address || typeof address === 'string')
+    throw new Error('Missing test port');
+  bodyUrl = `http://127.0.0.1:${address.port}/body`;
+});
+test.afterAll(async () => {
+  await new Promise<void>((resolve, reject) =>
+    server.close((error) => (error ? reject(error) : resolve())),
+  );
+});
+
 for (const mode of ['native', 'no-abort', 'no-fetch'] as const) {
-  test(`request transport works with ${mode}`, async ({
-    page,
-    browserName,
-  }) => {
+  test(`request transport works with ${mode}`, async ({ page }) => {
     const errors: string[] = [];
     page.on('pageerror', (error) => errors.push(error.message));
     await page.addInitScript((mode) => {
@@ -102,12 +127,33 @@ for (const mode of ['native', 'no-abort', 'no-fetch'] as const) {
       }),
     ).toEqual({
       name: 'FetchError',
-      // WebKit's in-flight fetch abort uses AbortError even when signal.reason is TimeoutError.
-      cause:
-        mode === 'native' && browserName !== 'webkit'
-          ? 'TimeoutError'
-          : 'AbortError',
+      cause: 'TimeoutError',
     });
+    expect(
+      await page.evaluate(async () => {
+        const controller = window.requestFixture.createController();
+        try {
+          await window.requestFixture.client('/slow', {
+            signal: controller.signal,
+            timeout: 100,
+          });
+        } catch (error) {
+          return {
+            cause: (error as Error & { cause?: Error }).cause?.name,
+            cancelled: controller.signal.aborted,
+          };
+        }
+      }),
+    ).toEqual({ cause: 'TimeoutError', cancelled: false });
+    expect(
+      await page.evaluate(async (url) => {
+        try {
+          await window.requestFixture.client(url, { timeout: 100 });
+        } catch (error) {
+          return (error as Error & { cause?: Error }).cause?.name;
+        }
+      }, bodyUrl),
+    ).toBe('TimeoutError');
     expect(
       await page.evaluate(async () => {
         const controller = window.requestFixture.createController();

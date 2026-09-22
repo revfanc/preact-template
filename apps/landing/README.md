@@ -31,7 +31,7 @@ pnpm --filter @apps/landing preview:test
 | `src/components/`      | 应用 UI，每个组件独立目录                       |
 | `src/stores/`          | 状态容器、实例 action、资源清理和通用 hooks     |
 | `src/hooks/`           | 组合函数独立目录，入口 `use-<name>/index.ts(x)` |
-| `src/api/`             | 应用请求客户端，按需绑定公共业务接口            |
+| `src/request.ts`       | 应用请求客户端，配置请求地址                    |
 | `src/router/`          | 消费生成的路由表并接入懒加载                    |
 | `../../tooling/pages/` | Vite 文件路由插件：扫描、规则校验、生成路由表   |
 
@@ -146,7 +146,7 @@ export default function ActivityPage() {
 沿用 UI → 场景 hook → store action → API：工厂只创建稳定初始状态；客户端取得并校验渠道等上下文，再调用数据 action；store 保存 pending/error/结果，场景 hook 处理反馈和导航。当前模板自动同步 URL 渠道上下文，尚未接入渠道配置请求或“提前请求”模块。
 
 - 默认不在构建期请求渠道、登录和订单接口，也不在 render 中发请求。构建可执行多次渲染，不能把导入或渲染次数当成业务访问次数。
-- 应用请求实例可以安全地被预渲染页面及 store 导入；浏览器使用兼容适配器，Node 使用标准客户端。安全导入不代表允许在 render 或 store 工厂中发起业务请求。
+- 应用请求实例位于 `src/request.ts`，可安全地被预渲染页面及 store 导入。请求包内部处理浏览器兼容，Node 实际调用会明确报错；不要在 render 或 store 工厂中发起业务请求。`signal` 与 `timeout` 同时生效，生命周期清理由请求包处理。
 - store 按所有者创建，禁止模块级业务单例。应用共享实例跨路由保留；页面或弹窗实例按自身生命周期销毁。预渲染时 effect 不运行，不能依赖卸载回调清理构建期间启动的任务。
 - `persistStore()` 调用时立即恢复缓存，必须在该页面的客户端 effect 中通过业务 action 接入。只给 storage getter 加 `window` 判断仍会导致首帧数据不同。恢复完成前禁止编辑和提交，避免晚到的缓存覆盖用户输入；具体示例见 [持久化说明](src/stores/README.md#可选持久化)。
 - 渠道、用户或订单身份变化时，显式重置或重建所属实例和缓存 key，取消旧请求。不能只依赖空依赖数组 effect：SPA 切换 query 或同一动态路由参数时组件可能复用，业务初始化应响应真正的身份变化。

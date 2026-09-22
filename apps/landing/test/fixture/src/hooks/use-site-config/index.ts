@@ -1,6 +1,6 @@
 import { useLayoutEffect, useState } from 'preact/hooks';
 import type { SiteConfig } from '../../api/fixture-api';
-import { createBrowserAbortController } from '@packages/request/browser';
+import { createAbortController } from '@packages/request';
 import { loading } from '@packages/feedback';
 import { api } from '../../api';
 
@@ -11,7 +11,7 @@ export function useSiteConfig() {
 
   // Register before Router's layout effect releases its handle, keeping one indicator.
   useLayoutEffect(() => {
-    const controller = createBrowserAbortController();
+    const controller = createAbortController();
     const closeLoading = loading();
     let active = true;
     setError(false);

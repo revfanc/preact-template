@@ -13,7 +13,7 @@ src/
   components/             应用 UI；每个组件单独目录
     activity/index.tsx    活动示例
     page-error/index.tsx  页面加载失败
-  api/index.ts            应用请求实例，绑定公共业务接口
+  request.ts              应用请求实例，配置请求地址
   stores/
     core/
       index.ts            最小状态容器与公共类型，不依赖 Preact
@@ -59,7 +59,7 @@ Landing 不设业务首页。根 `index.html` 保留空的启动容器，作为�
 
 仓库级依赖由 `tests/workspace-boundaries.test.ts` 检查：应用互不引用，公共包不依赖应用，跨包导入必须经过公开 exports，并在所属 package.json 中声明。正式源码不依赖测试夹具。构建插件生成模块的 `.d.ts` 可以引用 tooling 的类型，业务运行时代码不引用 tooling。
 
-`api/index.ts` 在浏览器选用兼容请求适配器，在 Node 预渲染选用普通请求客户端。导入和创建客户端不发请求；store 工厂只初始化状态，请求仍从客户端 effect/事件触发。预渲染构建测试覆盖“页面 → store → 真实 API 入口”的导入链。
+`request.ts` 通过 `@packages/request` 创建请求实例，浏览器适配由包内部完成。Node 预渲染允许导入和创建实例，实际调用请求会报错；store 工厂只初始化状态，请求从客户端 effect/事件触发。预渲染构建测试覆盖“页面 → store → 真实请求入口”的导入链。共享业务接口放在 `packages/api`，应用独有接口按需放入 `src/api/`。
 
 ## 状态归属
 

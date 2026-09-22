@@ -122,7 +122,7 @@ tooling/compatibility.ts 统一管理两个应用及测试夹具的 JS、CSS 和
 
 ## 公共包
 
-- request：ofetch 1.5.1 的项目适配层，使用 `request(url, { body, query })`；完整转导出上游类型（客户端使用 `$Fetch`），运行时只提供项目工厂与 FetchError。默认不重试、不弹 Toast。浏览器使用 @packages/request/browser，缺少可取消的 fetch 时使用 XHR 补丁。超时沿用 ofetch v1 语义：传入 signal 时由调用方管理截止时间。协议静态内容不引入客户端请求代码，详见 [request 说明](packages/request/README.md)。
+- request：ofetch 1.5.1 的项目适配层，统一从 `@packages/request` 创建客户端和取消控制器；应用不区分运行环境。Node 可安全导入/创建，实际请求明确报错。浏览器自动选择原生 Fetch 或 XHR 兼容传输。默认不重试、不弹 Toast；signal 与 timeout 同时生效，总时限覆盖响应体读取和重试。协议静态内容不引入客户端请求代码，详见 [request 说明](packages/request/README.md)。
 - api：按真实业务逐项增加接口，客户端由应用注入，不依赖页面或全局 store。
 - browser：register(handler) 返回精确注销函数，done 消费当前层；主动修改 History 前等待注销。详情见 [Browser 文档](packages/browser/README.md)。
 - feedback：Toast、Loading、Modal 及类型统一从 @packages/feedback 导入，使用方需安装 Preact 10。Toast 与 Loading 共用实例；Modal 内容由 render 提供，动态组件通过 AsyncModalContent 统一处理加载、超时、失败重试和关闭。详情见 [Feedback 文档](packages/feedback/README.md)。

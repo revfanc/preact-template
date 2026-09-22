@@ -1,4 +1,12 @@
-import { afterEach, describe, expect, expectTypeOf, it, vi } from 'vitest';
+import {
+  afterEach,
+  beforeEach,
+  describe,
+  expect,
+  expectTypeOf,
+  it,
+  vi,
+} from 'vitest';
 import {
   createRequestClient,
   FetchError,
@@ -11,7 +19,19 @@ import {
 } from '../packages/request/src/index';
 import * as requestExports from '../packages/request/src/index';
 
-afterEach(() => vi.useRealTimers());
+beforeEach(() =>
+  vi.stubGlobal('window', {
+    fetch,
+    Request,
+    Headers,
+    AbortController,
+    location: { href: 'https://example.test/' },
+  }),
+);
+afterEach(() => {
+  vi.useRealTimers();
+  vi.unstubAllGlobals();
+});
 
 describe('ofetch request client', () => {
   it('exports upstream types while keeping runtime entry points explicit', () => {
@@ -27,6 +47,7 @@ describe('ofetch request client', () => {
     >();
     expect(Object.keys(requestExports).sort()).toEqual([
       'FetchError',
+      'createAbortController',
       'createRequestClient',
     ]);
   });
@@ -222,7 +243,7 @@ describe('ofetch request client', () => {
     expect(vi.getTimerCount()).toBe(0);
   });
 
-  it('uses caller-owned cancellation when signal is supplied, following ofetch v1', async () => {
+  it('keeps the timeout active with a caller signal without aborting the caller controller', async () => {
     vi.useFakeTimers();
     const controller = new AbortController();
     const fetcher = vi.fn<typeof fetch>().mockImplementation(
@@ -241,19 +262,19 @@ describe('ofetch request client', () => {
       request('/slow', { signal: controller.signal }),
     ).rejects.toMatchObject({
       name: 'FetchError',
-      cause: { name: 'AbortError' },
+      cause: { name: 'TimeoutError' },
     });
     await vi.advanceTimersByTimeAsync(101);
+    await pending;
     expect(controller.signal.aborted).toBe(false);
     expect(vi.getTimerCount()).toBe(0);
     controller.abort();
-    await pending;
     await expect(
       request('/cancelled', { signal: controller.signal }),
     ).rejects.toBeInstanceOf(FetchError);
   });
 
-  it('ends the built-in timeout at response headers, following ofetch v1', async () => {
+  it('times out while reading the response body and releases its timer', async () => {
     vi.useFakeTimers();
     let release!: (body: string) => void;
     let reading!: () => void;
@@ -267,15 +288,170 @@ describe('ofetch request client', () => {
         release = resolve;
       });
     });
+    const onResponse = vi.fn();
     const request = createRequestClient(
-      { timeout: 100 },
+      { timeout: 100, onResponse },
       { fetch: vi.fn<typeof fetch>().mockResolvedValue(response) },
     );
-    const pending = request('/slow-body', { responseType: 'text' });
+    const pending = expect(
+      request('/slow-body', { responseType: 'text' }),
+    ).rejects.toMatchObject({
+      name: 'FetchError',
+      cause: { name: 'TimeoutError' },
+    });
     await started;
-    expect(vi.getTimerCount()).toBe(0);
+    expect(vi.getTimerCount()).toBe(1);
     await vi.advanceTimersByTimeAsync(101);
+    await pending;
     release('body');
-    await expect(pending).resolves.toBe('body');
+    await vi.advanceTimersByTimeAsync(0);
+    expect(onResponse).not.toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('allows creation in Node but rejects every execution path before hooks or transport', async () => {
+    vi.unstubAllGlobals();
+    const fetcher = vi.fn<typeof fetch>();
+    const hook = vi.fn();
+    const request = createRequestClient(
+      { onRequest: hook },
+      { fetch: fetcher },
+    );
+    for (const execute of [
+      () => request('/item'),
+      () => request.raw('/item'),
+      () => request.native('/item'),
+      () => request.create({})('/item'),
+    ])
+      await expect(execute()).rejects.toThrow('预渲染');
+    expect(fetcher).not.toHaveBeenCalled();
+    expect(hook).not.toHaveBeenCalled();
+  });
+
+  it('cancels without retrying and removes listeners on success and failure', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const remove = vi.spyOn(controller.signal, 'removeEventListener');
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(
+      (_url, options) =>
+        new Promise((_resolve, reject) => {
+          options!.signal!.addEventListener('abort', () =>
+            reject(options!.signal!.reason),
+          );
+        }),
+    );
+    const request = createRequestClient({ retry: 2 }, { fetch: fetcher });
+    const pending = expect(
+      request('/slow', { signal: controller.signal }),
+    ).rejects.toMatchObject({
+      name: 'FetchError',
+      cause: { name: 'AbortError' },
+    });
+    await vi.advanceTimersByTimeAsync(0);
+    controller.abort();
+    await pending;
+    expect(fetcher).toHaveBeenCalledTimes(1);
+    expect(remove).toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+    const active = new AbortController();
+    const cleanup = vi.spyOn(active.signal, 'removeEventListener');
+    fetcher.mockResolvedValueOnce(Response.json({ ok: true }));
+    await request('/done', { signal: active.signal });
+    expect(cleanup).toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('uses one deadline for retries, with request overrides and timeout zero', async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(async () => {
+      await new Promise((resolve) => setTimeout(resolve, 60));
+      return Response.json({}, { status: 503 });
+    });
+    const request = createRequestClient({ timeout: 1000 }, { fetch: fetcher });
+    const pending = expect(
+      request.raw('/retry', { timeout: 100, retry: 3 }),
+    ).rejects.toMatchObject({
+      name: 'FetchError',
+      cause: { name: 'TimeoutError' },
+    });
+    await vi.advanceTimersByTimeAsync(100);
+    await pending;
+    await vi.advanceTimersByTimeAsync(100);
+    expect(fetcher).toHaveBeenCalledTimes(2);
+    expect(vi.getTimerCount()).toBe(0);
+    fetcher.mockResolvedValueOnce(Response.json({ ok: true }));
+    await expect(request.create({ timeout: 0 })('/item')).resolves.toEqual({
+      ok: true,
+    });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('does not send pre-cancelled requests and isolates concurrent calls', async () => {
+    vi.useFakeTimers();
+    const fetcher = vi.fn<typeof fetch>().mockImplementation(
+      async (_url, options) =>
+        new Promise((resolve, reject) => {
+          const timer = setTimeout(
+            () => resolve(Response.json({ ok: true })),
+            50,
+          );
+          options?.signal?.addEventListener('abort', () => {
+            clearTimeout(timer);
+            reject(new Error('aborted'));
+          });
+        }),
+    );
+    const request = createRequestClient({ timeout: 10 }, { fetch: fetcher });
+    const cancelled = new AbortController();
+    cancelled.abort();
+    await expect(
+      request('/pre', { signal: cancelled.signal }),
+    ).rejects.toMatchObject({ cause: { name: 'AbortError' } });
+    expect(fetcher).not.toHaveBeenCalled();
+    const slow = expect(request('/timeout')).rejects.toMatchObject({
+      cause: { name: 'TimeoutError' },
+    });
+    const other = request.create({ timeout: 0 })('/success');
+    await vi.advanceTimersByTimeAsync(60);
+    await slow;
+    await expect(other).resolves.toEqual({ ok: true });
+    expect(vi.getTimerCount()).toBe(0);
+  });
+
+  it('preserves hook override/array semantics, accepts hook timeout configuration and cleans up thrown response hooks', async () => {
+    vi.useFakeTimers();
+    const controller = new AbortController();
+    const cleanup = vi.spyOn(controller.signal, 'removeEventListener');
+    const defaultHook = vi.fn();
+    const calls: string[] = [];
+    const cause = new Error('response hook failed');
+    const fetcher = vi
+      .fn<typeof fetch>()
+      .mockImplementation(async () => Response.json({ ok: true }));
+    const request = createRequestClient(
+      { onRequest: defaultHook },
+      { fetch: fetcher },
+    );
+    await expect(
+      request('/item', {
+        onRequest: [
+          () => {
+            calls.push('one');
+          },
+          ({ options }) => {
+            calls.push('two');
+            options.signal = controller.signal;
+            options.timeout = 20;
+          },
+        ],
+        onResponse() {
+          throw cause;
+        },
+      }),
+    ).rejects.toBe(cause);
+    expect(defaultHook).not.toHaveBeenCalled();
+    expect(calls).toEqual(['one', 'two']);
+    expect(cleanup).toHaveBeenCalled();
+    expect(vi.getTimerCount()).toBe(0);
   });
 });
