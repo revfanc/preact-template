@@ -159,22 +159,20 @@ export default function ActivityPage() {
 
 ### 图片引用
 
-- 组件自有图片放在组件附近，例如 `components/activity/images/`，默认使用静态 `import`；多个组件共享时按业务归属组织。由 Vite 处理部署前缀、文件哈希和小图片内联，不手写 `dist/assets` 地址或构建后的哈希文件名。
-- 图片较多时可用局部静态对象组织已导入的 URL，但不强制包一层对象，也不创建全应用图片总表；对象本身不保证减少 JS 分包。
+- 项目内图片只能存放在 `apps/landing/public/images/YYYYMMDDNN/`，不放在 `src`、组件目录或 `public/images/` 根目录，也不通过 `import` 引入图片文件。
+- 每次新增一批图片都新建一个目录，同批图片放在同一目录。`YYYYMMDD` 使用新增当天日期；`NN` 每天从 `01` 开始，两位补零，创建前检查同日已有目录，取最大序号加一，不复用旧编号或填补空缺。例如 `2026092201/`、`2026092202/`，次日从 `2026092301/` 开始。
+- 图片 URL 通过 `import.meta.env.BASE_URL` 拼接，可以用组件内的静态对象组织，不创建全应用图片总表。当前应用部署在 `/landing/` 下，不能直接写 `/images/...`，也不能把 `public` 写入访问地址。
 
 ```tsx
-import banner from './images/banner.webp';
+const images = {
+  banner: `${import.meta.env.BASE_URL}images/2026092201/banner.webp`,
+};
 
-<img src={banner} alt="活动介绍" width={750} height={400} />;
+<img src={images.banner} alt="活动介绍" width={750} height={400} />;
 ```
 
-- 仅在需要保留固定文件名时使用 `public/images/`，在 JSX 中通过 `import.meta.env.BASE_URL` 拼接地址。当前应用部署在 `/landing/` 下，不能默认把 `/images/...` 当作本应用资源地址；只有明确部署到域名根 `/images/` 的资源才能这样引用。`public` 文件原样复制、不自动加哈希，更新时需自行管理版本和缓存。
-
-```tsx
-<img src={`${import.meta.env.BASE_URL}images/banner.webp`} alt="活动介绍" />
-```
-
-- 独立 CDN 或后端返回的图片使用完整 URL，不添加应用的 `BASE_URL`。渠道或用户专属图片仍由客户端数据决定，不写入公共预渲染 HTML。
+- `public` 文件原样复制、不自动加哈希。已发布图片更新时使用新目录并修改引用，不覆盖原地址的文件，避免命中旧缓存。上述路径在构建预渲染时就能确定，不影响 HTML 输出真实图片地址。
+- 后端返回的远程图片不属于仓库内资源，使用返回的完整 URL，不添加应用的 `BASE_URL`。渠道或用户专属图片仍由客户端数据决定，不写入公共预渲染 HTML。
 - 对已预渲染的页面，公开首屏图片应在初始 JSX 中提供真实的 `src`（需要时提供 `srcSet` 和 `sizes`），不要等 effect 才赋值。浏览器解析 HTML 就能请求图片；应检查 HTML 响应正文，而不是只检查 JS 执行后的 DOM。
 - 首屏主图不使用 `loading="lazy"`，仅对确认为首屏关键资源的图片按需设置 `fetchPriority="high"`；非首屏图片可懒加载。提供正确的宽高或布局占位，响应式缩放保持原比例，避免图片加载后跳动；不默认预加载所有图片。
 
