@@ -53,6 +53,21 @@ useLocalLoadingStore、useStore、useStoreInstance 由 stores/index.ts 导出，
 
 样式使用 CSS / CSS Modules，按 375px 设计宽度写 px，构建转换为 rem；固定像素沿用 `no-rem` 约定。主题使用 `src/theme.css` 覆盖公共 CSS 变量，变量名称使用单个单词。旧设备目标与限制见[根 README](../../README.md)。
 
+## 应用接口示例
+
+[`src/api/example.ts`](src/api/example.ts) 展示应用独有接口的写法：复用 `@/request`，声明输入/输出类型，透传取消与超时选项，校验业务 code 和响应数据，只返回页面需要的数据。
+
+```ts
+import { getExample } from '@/api/example';
+
+// 由客户端流程触发 store action，再在 action 内调用：
+const detail = await getExample({ id: '1' }, { signal, timeout: 5000 });
+```
+
+示例地址 `/__example__/detail` 不存在真实后端，假定成功响应为 `{ code: 200, data: { id: '1', title: '示例内容' } }`。使用时替换地址、参数、业务成功条件和校验；当前未接入页面、hook 或 store，不自动发送请求。单测通过 mock 验证契约，不需要后端服务。
+
+接口函数不保存状态、不显示 Toast、不执行导航。可复用的业务接口移到 `packages/api` 并由应用传入请求客户端；`request.ts` 继续只配置传输实例。
+
 ## 渠道上下文与导航
 
 应用启动和路由 query 变化时，`useChannel()` 在客户端同步 URL 到应用级 `channel` store；它在懒加载页面外只挂载一次，前进后退也会更新。页面通过 `useChannelStore()` 读取 `{ state, store }`，不各自创建实例或恢复渠道缓存。

@@ -14,6 +14,8 @@ src/
     activity/index.tsx    活动示例
     page-error/index.tsx  页面加载失败
   request.ts              应用请求实例，配置请求地址
+  api/
+    example.ts            应用接口示例：参数、业务 code 与响应校验
   stores/
     core/
       index.ts            最小状态容器与公共类型，不依赖 Preact
