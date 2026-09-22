@@ -157,6 +157,29 @@ export default function ActivityPage() {
 - 模块顶层、组件 render、store 工厂和 `useState` 初始化函数保持无浏览器副作用。DOM 监听、SDK、Toast/Loading/Modal、History 注册和埋点在 effect 或事件中启动；导入时就读取 DOM 的第三方库也应在 effect 中动态导入。
 - 如果页面完全依赖运行时数据，可只预渲染有意义的公共外壳，或保持普通 SPA 路由。不要为了静态输出填入虚假的价格、订单状态或协议主体。
 
+### 图片引用
+
+- 组件自有图片放在组件附近，例如 `components/activity/images/`，默认使用静态 `import`；多个组件共享时按业务归属组织。由 Vite 处理部署前缀、文件哈希和小图片内联，不手写 `dist/assets` 地址或构建后的哈希文件名。
+- 图片较多时可用局部静态对象组织已导入的 URL，但不强制包一层对象，也不创建全应用图片总表；对象本身不保证减少 JS 分包。
+
+```tsx
+import banner from './images/banner.webp';
+
+<img src={banner} alt="活动介绍" width={750} height={400} />;
+```
+
+- 仅在需要保留固定文件名时使用 `public/images/`，在 JSX 中通过 `import.meta.env.BASE_URL` 拼接地址。当前应用部署在 `/landing/` 下，不能默认把 `/images/...` 当作本应用资源地址；只有明确部署到域名根 `/images/` 的资源才能这样引用。`public` 文件原样复制、不自动加哈希，更新时需自行管理版本和缓存。
+
+```tsx
+<img src={`${import.meta.env.BASE_URL}images/banner.webp`} alt="活动介绍" />
+```
+
+- 独立 CDN 或后端返回的图片使用完整 URL，不添加应用的 `BASE_URL`。渠道或用户专属图片仍由客户端数据决定，不写入公共预渲染 HTML。
+- 对已预渲染的页面，公开首屏图片应在初始 JSX 中提供真实的 `src`（需要时提供 `srcSet` 和 `sizes`），不要等 effect 才赋值。浏览器解析 HTML 就能请求图片；应检查 HTML 响应正文，而不是只检查 JS 执行后的 DOM。
+- 首屏主图不使用 `loading="lazy"`，仅对确认为首屏关键资源的图片按需设置 `fetchPriority="high"`；非首屏图片可懒加载。提供正确的宽高或布局占位，响应式缩放保持原比例，避免图片加载后跳动；不默认预加载所有图片。
+
+资源处理依据：[Vite 静态资源文档](https://vite.dev/guide/assets.html)。
+
 ### 请求、store 与缓存
 
 沿用 UI → 场景 hook → store action → API：工厂只创建稳定初始状态；客户端取得并校验渠道等上下文，再调用数据 action；store 保存 pending/error/结果，场景 hook 处理反馈和导航。当前模板自动同步 URL 渠道上下文，尚未接入渠道配置请求或“提前请求”模块。
