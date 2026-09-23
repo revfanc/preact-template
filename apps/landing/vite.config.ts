@@ -8,7 +8,7 @@ import { pages } from '../../tooling/pages/index.ts';
 import { rum } from '../../tooling/rum.ts';
 
 const root = import.meta.dirname;
-const theme = fileURLToPath(new URL('./src/theme.css', import.meta.url));
+const theme = fileURLToPath(new URL('./src/styles/theme.css', import.meta.url));
 
 export default defineConfig(({ mode }) => {
   if (mode !== 'test' && mode !== 'prod')

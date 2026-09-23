@@ -5,7 +5,7 @@ import { createRequestClient } from '@packages/request';
 it('can import the real application client during prerender without making a request', async () => {
   const fetcher = vi.spyOn(globalThis, 'fetch');
   try {
-    const { request } = await import('../src/request');
+    const { request } = await import('../src/lib/request');
     expect(typeof request).toBe('function');
     expect(typeof request.raw).toBe('function');
     await expect(request('/config')).rejects.toThrow('预渲染');

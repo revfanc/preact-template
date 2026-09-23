@@ -1,8 +1,8 @@
 import { beforeEach, expect, it, vi } from 'vitest';
-import { request } from '@/request';
+import { request } from '@/lib/request';
 import { getExample } from './example';
 
-vi.mock('@/request', () => ({ request: vi.fn() }));
+vi.mock('@/lib/request', () => ({ request: vi.fn() }));
 beforeEach(() => {
   vi.mocked(request).mockReset();
 });

@@ -5,7 +5,9 @@ import { buildTargets } from '../../../tooling/compatibility.ts';
 import { createPostcssPlugins } from '../../../tooling/postcss.ts';
 import { pages } from '../../../tooling/pages/index.ts';
 
-const theme = fileURLToPath(new URL('../src/theme.css', import.meta.url));
+const theme = fileURLToPath(
+  new URL('../src/styles/theme.css', import.meta.url),
+);
 export default defineConfig(({ mode }) => ({
   root: fileURLToPath(new URL('./fixture', import.meta.url)),
   base: '/landing/',

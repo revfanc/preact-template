@@ -13,7 +13,12 @@ src/
   components/             应用 UI；每个组件单独目录
     activity/index.tsx    活动示例
     page-error/index.tsx  页面加载失败
-  request.ts              应用请求实例，配置请求地址
+  styles/                 全局样式与应用主题
+    index.css             全局样式入口
+    theme.css             公共主题变量覆盖
+  lib/                    应用基础能力和工具
+    request.ts            应用请求实例、统一响应协议与错误
+    request.test.ts       就近测试
   api/
     example.ts            应用接口示例：输入输出类型、直接返回 request
   stores/
@@ -61,7 +66,7 @@ Landing 不设业务首页。根 `index.html` 保留空的启动容器，作为�
 
 仓库级依赖由 `tests/workspace-boundaries.test.ts` 检查：应用互不引用，公共包不依赖应用，跨包导入必须经过公开 exports，并在所属 package.json 中声明。正式源码不依赖测试夹具。构建插件生成模块的 `.d.ts` 可以引用 tooling 的类型，业务运行时代码不引用 tooling。
 
-`request.ts` 通过 `@packages/request` 创建请求实例，浏览器适配由包内部完成。Node 预渲染允许导入和创建实例，实际调用请求会报错；store 工厂只初始化状态，请求从客户端 effect/事件触发。预渲染构建测试覆盖“页面 → store → 真实请求入口”的导入链。共享业务接口放在 `packages/api`，应用独有接口按需放入 `src/api/`。
+`lib/request.ts` 通过 `@packages/request` 创建请求实例，浏览器适配由包内部完成。Node 预渲染允许导入和创建实例，实际调用请求会报错；store 工厂只初始化状态，请求从客户端 effect/事件触发。预渲染构建测试覆盖“页面 → store → 真实请求入口”的导入链。共享业务接口放在 `packages/api`，应用独有接口按需放入 `src/api/`。
 
 ## 状态归属
 
@@ -109,7 +114,7 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 ## 各层职责
 
 - API：定义地址、方法和输入输出类型，直接返回 `request(...)`，不判断业务 code 或提取数据；不控制 UI、路由或 store 生命周期。
-- 应用请求实例（`src/request.ts`）：检查统一响应外层与成功码，转换业务错误，保留完整响应；不处理具体数据字段、不展示反馈。公共请求包只负责通用传输。
+- 应用请求实例（`src/lib/request.ts`）：检查统一响应外层与成功码，转换业务错误，保留完整响应；不处理具体数据字段、不展示反馈。公共请求包只负责通用传输。
 - Store：管理状态及数据 action，调用 API，校验和整理具体数据、判断业务状态，保存 pending/error 和结果。不得直接展示 Toast、Loading、Modal 或执行导航。
 - Store hooks：`stores/core/hooks.ts` 提供实例创建、订阅和卸载清理，属于 store 的 Preact 接入能力。
 - 场景 Hook：顶层 `hooks/` 连接路由、状态和 UI 行为，组织用户操作流程，持有并清理反馈句柄；不额外维护 pending/error 副本。每个组合函数用独立目录包裹，入口为 `hooks/use-<name>/index.ts`，含 JSX 时使用 `index.tsx`，测试就近放置。单一能力和业务流程按职责区分，不额外增加分类目录。

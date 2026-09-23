@@ -3,7 +3,7 @@ import 'core-js/es/object/from-entries';
 import { hydrate } from 'preact-iso';
 import { prerenderPaths } from 'virtual:pages';
 import { App } from './app';
-import './style.css';
+import './styles/index.css';
 
 if (typeof window !== 'undefined') {
   const root = document.getElementById('app')!;

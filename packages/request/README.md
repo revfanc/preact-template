@@ -31,7 +31,7 @@ const data = await request<unknown>('/orders', {
 
 ## 应用与接口层
 
-应用在 `src/request.ts` 中创建一次客户端，配置自己的 `baseURL`，并可通过 `onResponse` 检查后端统一响应协议、转换业务错误。共享接口放在 `packages/api`，接收客户端及业务参数，直接返回请求结果；具体数据校验和业务状态由调用方处理。实例不固定首次访问的渠道或认证信息，需要动态请求头时每次请求读取最新值：
+应用在 `src/lib/request.ts` 中创建一次客户端，配置自己的 `baseURL`，并可通过 `onResponse` 检查后端统一响应协议、转换业务错误。共享接口放在 `packages/api`，接收客户端及业务参数，直接返回请求结果；具体数据校验和业务状态由调用方处理。实例不固定首次访问的渠道或认证信息，需要动态请求头时每次请求读取最新值：
 
 ```ts
 const request = createRequestClient({

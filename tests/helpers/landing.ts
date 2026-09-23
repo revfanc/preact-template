@@ -108,7 +108,7 @@ export async function createLandingFixture(
     await mkdir(path.join(directory, 'src/stores/probe'));
     await writeFile(
       path.join(directory, 'src/stores/probe/index.ts'),
-      `import { request } from '@/request'; export function createProbeStore() { return { ready: typeof request.raw === 'function' }; }`,
+      `import { request } from '@/lib/request'; export function createProbeStore() { return { ready: typeof request.raw === 'function' }; }`,
     );
     await writeFile(
       path.join(directory, 'src/pages/fixture.css'),

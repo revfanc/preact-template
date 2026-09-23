@@ -1,5 +1,5 @@
 import type { FetchOptions } from '@packages/request';
-import { request, type ApiResponse } from '@/request';
+import { request, type ApiResponse } from '@/lib/request';
 
 export interface ExampleParams {
   id: string;

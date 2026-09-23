@@ -31,11 +31,14 @@ pnpm --filter @apps/landing preview:test
 | `src/components/`      | 应用 UI，每个组件独立目录                       |
 | `src/stores/`          | 状态容器、实例 action、资源清理和通用 hooks     |
 | `src/hooks/`           | 组合函数独立目录，入口 `use-<name>/index.ts(x)` |
-| `src/request.ts`       | 应用请求客户端，配置请求地址                    |
+| `src/styles/`          | 全局样式与应用主题覆盖                          |
+| `src/lib/`             | 应用基础能力和工具，例如请求实例                |
 | `src/router/`          | 消费生成的路由表并接入懒加载                    |
 | `../../tooling/pages/` | Vite 文件路由插件：扫描、规则校验、生成路由表   |
 
 业务、表单、请求结果及 pending/error 统一由所属作用域的 store 管理。store 使用工厂创建，不默认全局共享；所有者通过 `useLocalLoadingStore()` 等绑定 hook 创建、订阅并清理实例，消费者通过 `useStore(store)` 订阅传入的同一个实例。分别调用绑定 hook 会创建不同实例。局部动画和布局测量可保留在 UI 内。
+
+全局样式放在 `styles/index.css`，主题覆盖放在 `styles/theme.css`；组件样式仍与组件就近放置。`lib/` 收纳请求实例、格式转换、校验等基础模块，不承载接口定义、业务状态或场景流程。测试与被测模块同目录，例如 `lib/request.test.ts`；跨模块通过 `@/lib/request` 引入，不增加统一转发入口。
 
 应用内跨模块引用使用 `@/`，例如 `import { useLocalLoadingStore } from '@/stores'`；同模块文件和样式保留 `./`，公共包使用 `@packages/*`。别名映射定义在本应用的 `tsconfig.json`，Vite 和 Vitest 读取同一份配置；公共编译选项继承根 `tsconfig.base.json`。
 
@@ -51,11 +54,11 @@ useLocalLoadingStore、useStore、useStoreInstance 由 stores/index.ts 导出，
 
 需要刷新恢复时使用可选的 `persistStore` 扩展，显式选择字段、存储和业务 key，校验缓存版本与结构，可设置有效期。接入和清理规则见 [Stores 说明](src/stores/README.md#可选持久化)。
 
-样式使用 CSS / CSS Modules，按 375px 设计宽度写 px，构建转换为 rem；固定像素沿用 `no-rem` 约定。主题使用 `src/theme.css` 覆盖公共 CSS 变量，变量名称使用单个单词。旧设备目标与限制见[根 README](../../README.md)。
+样式使用 CSS / CSS Modules，按 375px 设计宽度写 px，构建转换为 rem；固定像素沿用 `no-rem` 约定。主题使用 `src/styles/theme.css` 覆盖公共 CSS 变量，变量名称使用单个单词。旧设备目标与限制见[根 README](../../README.md)。
 
 ## 应用接口示例
 
-[`src/api/example.ts`](src/api/example.ts) 展示应用独有接口的写法：复用 `@/request`，声明地址、方法和输入/输出类型，透传取消与超时选项，直接 `return request<ExampleResponse>(...)`。不额外包裹 `async/await`，不判断业务 code 或提取 `data`。
+[`src/api/example.ts`](src/api/example.ts) 展示应用独有接口的写法：复用 `@/lib/request`，声明地址、方法和输入/输出类型，透传取消与超时选项，直接 `return request<ExampleResponse>(...)`。不额外包裹 `async/await`，不判断业务 code 或提取 `data`。
 
 ```ts
 import { getExample } from '@/api/example';
@@ -71,7 +74,7 @@ const response = await getExample({ id: '1' }, { signal, timeout: 5000 });
 
 ### 统一响应与错误
 
-`src/request.ts` 创建本应用的业务 JSON 请求实例，导出 `ApiResponse<T>`、`BusinessError` 和 `ResponseFormatError`。当前采用示例协议，真实接口接入时集中调整：
+`src/lib/request.ts` 创建本应用的业务 JSON 请求实例，导出 `ApiResponse<T>`、`BusinessError` 和 `ResponseFormatError`。当前采用示例协议，真实接口接入时集中调整：
 
 - HTTP 成功响应必须是非数组对象，`code` 为有限数字，可选 `message` 必须是字符串；数字 `200` 表示成功。外层格式不符（包括无正文的 204）抛出 `ResponseFormatError`。
 - `data` 可缺省或为 `null`，统一请求实例不校验其具体结构，不自动提取它；成功时返回完整响应，其他字段也保留。
@@ -196,7 +199,7 @@ const images = {
 沿用 UI → 场景 hook → store action → API：工厂只创建稳定初始状态；客户端取得并校验渠道等上下文，再调用数据 action；store 保存 pending/error/结果，场景 hook 处理反馈和导航。当前模板自动同步 URL 渠道上下文，尚未接入渠道配置请求或“提前请求”模块。
 
 - 默认不在构建期请求渠道、登录和订单接口，也不在 render 中发请求。构建可执行多次渲染，不能把导入或渲染次数当成业务访问次数。
-- 应用请求实例位于 `src/request.ts`，可安全地被预渲染页面及 store 导入。请求包内部处理浏览器兼容，Node 实际调用会明确报错；不要在 render 或 store 工厂中发起业务请求。`signal` 与 `timeout` 同时生效，生命周期清理由请求包处理。
+- 应用请求实例位于 `src/lib/request.ts`，可安全地被预渲染页面及 store 导入。请求包内部处理浏览器兼容，Node 实际调用会明确报错；不要在 render 或 store 工厂中发起业务请求。`signal` 与 `timeout` 同时生效，生命周期清理由请求包处理。
 - store 按所有者创建，禁止模块级业务单例。应用共享实例跨路由保留；页面或弹窗实例按自身生命周期销毁。预渲染时 effect 不运行，不能依赖卸载回调清理构建期间启动的任务。
 - `persistStore()` 调用时立即恢复缓存，必须在该页面的客户端 effect 中通过业务 action 接入。只给 storage getter 加 `window` 判断仍会导致首帧数据不同。恢复完成前禁止编辑和提交，避免晚到的缓存覆盖用户输入；具体示例见 [持久化说明](src/stores/README.md#可选持久化)。
 - 渠道、用户或订单身份变化时，显式重置或重建所属实例和缓存 key，取消旧请求。不能只依赖空依赖数组 effect：SPA 切换 query 或同一动态路由参数时组件可能复用，业务初始化应响应真正的身份变化。
@@ -208,7 +211,7 @@ const images = {
 - HTML 可见时 JS 可能尚未就绪。依赖 JS 的提交按钮默认禁用，客户端接管且业务条件满足后启用；非提交按钮使用 `type="button"`，表单显式处理提交。不要依赖框架重放 hydration 前的点击，也不要用整页 Loading 遮住已经可读的静态首屏。
 - 路由 Loading 只表示页面模块正在加载，不代表业务接口完成；业务区域按自己的 pending/error 展示状态。图片、表单及动态数据占位保留合理尺寸，减少数据更新后的布局位移。
 - 固定普通链接在 JS 接管前也能导航，必须指向可直接访问的 URL。依赖访问者 query 的业务链接使用上方 `useNavigation()`，客户端同步后启用；它按 `BASE_URL` 拼接相对路径并保留指定参数，Router 本身不自动继承 query。
-- CSS 使用 Vite 默认分包，Beasties 在构建后内联匹配整份 HTML 的规则，不测量浏览器首屏范围。页面使用 CSS Modules，全局样式统一放在 `src/style.css`，避免扫描不同页面时同名全局选择器互相影响。
+- CSS 使用 Vite 默认分包，Beasties 在构建后内联匹配整份 HTML 的规则，不测量浏览器首屏范围。页面使用 CSS Modules，全局样式统一放在 `src/styles/index.css`，避免扫描不同页面时同名全局选择器互相影响。
 - 外部 CSS 完整保留，供客户端新状态、弹窗和 SPA 跳转使用。内联规则与后续外链有少量重复是当前取舍，不直接启用 `pruneSource`、删除 CSS 文件或屏蔽 Vite 的 CSS 加载；从其他页面进入时可能没有目标页面的内联样式。
 - JS 语法构建目标不补齐浏览器 API。SDK、动态导入的依赖与新增 API 仍要遵守[兼容目标](../../README.md#路由样式与兼容)，预渲染可读不等于旧设备动态交互可用。
 

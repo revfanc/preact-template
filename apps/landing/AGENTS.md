@@ -6,7 +6,7 @@
 
 - 活动入口使用 `src/pages/p1/<code>/index.tsx` 等目录形式，只装配参数、状态、UI 和导航。组件使用 `src/components/<name>/index.tsx`，样式就近放 `index.module.css`；辅助组件不放在 `pages` 中。
 - 默认沿用 UI → 场景 hook → store action → API。store 管业务数据、请求结果和 pending/error；hook 组织反馈、导航和用户流程；通用 UI 通过 props/action 通信。简单操作可直接调用 action，不强制增加转发 hook。
-- API 直接返回 `request(...)`；统一响应协议与业务错误由 `src/request.ts` 处理，store 校验具体数据和业务状态，hook 决定异常反馈。协议和例外见 [统一响应与错误](./README.md#统一响应与错误)。
+- API 直接返回 `request(...)`；统一响应协议与业务错误由 `src/lib/request.ts` 处理，store 校验具体数据和业务状态，hook 决定异常反馈。协议和例外见 [统一响应与错误](./README.md#统一响应与错误)。
 - 场景 hook 使用 `src/hooks/use-<name>/index.ts(x)`；store 的接入 hook 放在 `src/stores/<业务>/hooks.ts`，数据工厂和 action 放在该模块 `index.ts`。跨模块用 `@/`，模块内部用 `./`。
 
 ## 状态与生命周期
@@ -29,6 +29,8 @@
 - 提交防重放在 action 内，按钮状态由同一 pending 驱动；重试遵循接口语义，不给提交类操作统一自动重试。接口未知时明确缺少的契约，不猜测请求参数或业务成功条件。
 
 ## 公共能力与样式
+
+- 应用基础能力和工具放在 `src/lib/`，测试与模块就近放置；接口、状态和场景流程分别留在 api、stores、hooks。全局样式和主题覆盖放在 `src/styles/`，组件样式不集中搬入该目录。
 
 - 复用 `@packages/request`、公共 API、反馈、组件、Browser 和主题能力，通过包的公开入口引入并声明依赖；不导入 Agreement 源码或正式代码之外的测试夹具。普通业务不顺带修改共享包和构建配置，确需调整时验证受影响的消费者。
 - 沿用 CSS Modules、375px 设计宽度下 px 转 rem 和单个单词的主题变量。保留外链 CSS 支持 SPA 导航及动态状态，不因部分样式已内联就删除资源；新增浏览器 API 和第三方库需检查仓库兼容目标。

@@ -1,5 +1,9 @@
 import { createRequestClient, createAbortController } from '@packages/request';
-import { request, BusinessError, ResponseFormatError } from '../../src/request';
+import {
+  request,
+  BusinessError,
+  ResponseFormatError,
+} from '../../src/lib/request';
 
 const fixture = {
   business: request.create({ baseURL: '/landing/__request' }),
