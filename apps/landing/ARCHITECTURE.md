@@ -15,7 +15,7 @@ src/
     page-error/index.tsx  页面加载失败
   request.ts              应用请求实例，配置请求地址
   api/
-    example.ts            应用接口示例：参数、业务 code 与响应校验
+    example.ts            应用接口示例：输入输出类型、直接返回 request
   stores/
     core/
       index.ts            最小状态容器与公共类型，不依赖 Preact
@@ -108,8 +108,8 @@ DOM 引用、计时器、AbortController、取消函数属于实例私有资源�
 
 ## 各层职责
 
-- API：定义接口和输入输出、校验/转换后端数据；不控制 UI、路由或 store 生命周期。
-- Store：管理状态及数据 action，调用 API 并保存 pending/error 和结果。不得直接展示 Toast、Loading、Modal 或执行导航。
+- API：定义地址、方法和输入输出类型，直接返回 `request(...)`，不判断业务 code 或提取数据；不控制 UI、路由或 store 生命周期。
+- Store：管理状态及数据 action，调用 API，按业务契约判断结果、校验和整理数据，保存 pending/error 和结果。不得直接展示 Toast、Loading、Modal 或执行导航。
 - Store hooks：`stores/core/hooks.ts` 提供实例创建、订阅和卸载清理，属于 store 的 Preact 接入能力。
 - 场景 Hook：顶层 `hooks/` 连接路由、状态和 UI 行为，组织用户操作流程，持有并清理反馈句柄；不额外维护 pending/error 副本。每个组合函数用独立目录包裹，入口为 `hooks/use-<name>/index.ts`，含 JSX 时使用 `index.tsx`，测试就近放置。单一能力和业务流程按职责区分，不额外增加分类目录。
 - UI：读取状态、触发 action、处理局部视觉交互；通用展示组件通过 props/events 通信，不直接请求接口。

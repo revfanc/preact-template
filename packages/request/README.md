@@ -44,7 +44,7 @@ const request = createRequestClient({
 
 `getCurrentToken` 由应用提供。请求级同名 hook 覆盖实例 hook，需要组合时显式使用函数数组。URL、query、body、headers 合并和响应解析沿用 ofetch，不另设同义 API。绝对 URL 仍会沿用实例请求头，不同服务应使用独立实例。
 
-泛型只提供静态提示，不验证服务端数据。API 函数应校验所需字段；JSON 解析沿用 ofetch 的宽松解析器，非法 JSON 可能返回字符串，无内容响应可能返回 undefined。
+泛型只提供静态提示，不验证服务端数据。API 函数直接返回请求结果，由调用方业务层（例如 Landing 的 store action）按业务契约校验所需字段；JSON 解析沿用 ofetch 的宽松解析器，非法 JSON 可能返回字符串，无内容响应可能返回 undefined。
 
 ## 取消与超时
 
@@ -60,7 +60,7 @@ const request = createRequestClient({
 
 ## 错误
 
-HTTP 4xx/5xx、发送阶段网络错误使用 ofetch `FetchError`，保留 `status`、`data`、`response` 和 cause。业务失败 code 由 API 函数处理。
+HTTP 4xx/5xx、发送阶段网络错误使用 ofetch `FetchError`，保留 `status`、`data`、`response` 和 cause。业务失败 code 由调用方业务层处理，API 函数原样返回请求结果。
 
 取消与超时统一拒绝为 `FetchError`：`error.cause.name` 分别为 `AbortError`、`TimeoutError`，兼容传输下也保持一致。不要直接依赖控制器的 reason 或 AbortSignal.any/timeout 等较新的 API。
 

@@ -55,16 +55,17 @@ useLocalLoadingStore、useStore、useStoreInstance 由 stores/index.ts 导出，
 
 ## 应用接口示例
 
-[`src/api/example.ts`](src/api/example.ts) 展示应用独有接口的写法：复用 `@/request`，声明输入/输出类型，透传取消与超时选项，校验业务 code 和响应数据，只返回页面需要的数据。
+[`src/api/example.ts`](src/api/example.ts) 展示应用独有接口的写法：复用 `@/request`，声明地址、方法和输入/输出类型，透传取消与超时选项，直接 `return request<ExampleResponse>(...)`。不额外包裹 `async/await`，不判断业务 code 或提取 `data`。
 
 ```ts
 import { getExample } from '@/api/example';
 
 // 由客户端流程触发 store action，再在 action 内调用：
-const detail = await getExample({ id: '1' }, { signal, timeout: 5000 });
+const response = await getExample({ id: '1' }, { signal, timeout: 5000 });
+// store action 根据业务契约判断 response.code、校验和整理 response.data。
 ```
 
-示例地址 `/__example__/detail` 不存在真实后端，假定成功响应为 `{ code: 200, data: { id: '1', title: '示例内容' } }`。使用时替换地址、参数、业务成功条件和校验；当前未接入页面、hook 或 store，不自动发送请求。单测通过 mock 验证契约，不需要后端服务。
+示例地址 `/__example__/detail` 不存在真实后端，假定成功响应为 `{ code: 200, data: { id: '1', title: '示例内容' } }`，失败响应的 `data` 可为 `null`。使用时替换地址、参数和响应类型；业务成功判断、必要的响应校验与数据整理在调用方的 store action 中处理，类型声明不代替运行时校验。当前未接入页面、hook 或 store，不自动发送请求。单测通过 mock 验证请求参数、Promise 原样返回及错误透传，不需要后端服务。
 
 接口函数不保存状态、不显示 Toast、不执行导航。可复用的业务接口移到 `packages/api` 并由应用传入请求客户端；`request.ts` 继续只配置传输实例。
 
