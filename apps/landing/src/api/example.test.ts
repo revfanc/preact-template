@@ -26,7 +26,7 @@ it('passes parameters and cancellation options and returns the request promise d
   });
 });
 
-it('leaves business status handling to the caller', async () => {
+it('does not add business status handling on top of the request instance', async () => {
   const response = { code: 400, data: null };
   vi.mocked(request).mockResolvedValue(response);
   await expect(getExample({ id: '1' })).resolves.toBe(response);

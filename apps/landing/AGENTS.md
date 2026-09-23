@@ -6,6 +6,7 @@
 
 - 活动入口使用 `src/pages/p1/<code>/index.tsx` 等目录形式，只装配参数、状态、UI 和导航。组件使用 `src/components/<name>/index.tsx`，样式就近放 `index.module.css`；辅助组件不放在 `pages` 中。
 - 默认沿用 UI → 场景 hook → store action → API。store 管业务数据、请求结果和 pending/error；hook 组织反馈、导航和用户流程；通用 UI 通过 props/action 通信。简单操作可直接调用 action，不强制增加转发 hook。
+- API 直接返回 `request(...)`；统一响应协议与业务错误由 `src/request.ts` 处理，store 校验具体数据和业务状态，hook 决定异常反馈。协议和例外见 [统一响应与错误](./README.md#统一响应与错误)。
 - 场景 hook 使用 `src/hooks/use-<name>/index.ts(x)`；store 的接入 hook 放在 `src/stores/<业务>/hooks.ts`，数据工厂和 action 放在该模块 `index.ts`。跨模块用 `@/`，模块内部用 `./`。
 
 ## 状态与生命周期

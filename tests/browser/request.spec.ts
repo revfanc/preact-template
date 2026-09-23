@@ -77,6 +77,41 @@ for (const mode of ['native', 'no-abort', 'no-fetch'] as const) {
     await page.route('**/__request/slow', () => {});
     await page.goto('http://127.0.0.1:4176/landing/request.html');
     await page.waitForFunction(() => Boolean(window.requestFixture));
+    let businessBody: unknown = { code: 200, data: { id: '1' } };
+    await page.route('**/__request/business', (route) =>
+      route.fulfill({ json: businessBody }),
+    );
+    expect(
+      await page.evaluate(() => window.requestFixture.business('/business')),
+    ).toEqual(businessBody);
+    businessBody = {
+      code: 40301,
+      message: '需要验证码',
+      data: { challenge: '1' },
+    };
+    expect(
+      await page.evaluate(async () => {
+        try {
+          await window.requestFixture.business('/business');
+        } catch (error) {
+          if (!(error instanceof window.requestFixture.BusinessError))
+            throw error;
+          return { code: error.code, message: error.message, data: error.data };
+        }
+        throw new Error('Expected a business error');
+      }),
+    ).toEqual(businessBody);
+    businessBody = { code: '200' };
+    expect(
+      await page.evaluate(async () => {
+        try {
+          await window.requestFixture.business('/business');
+        } catch (error) {
+          return error instanceof window.requestFixture.ResponseFormatError;
+        }
+        return false;
+      }),
+    ).toBe(true);
     expect(
       await page.evaluate(() =>
         window.requestFixture.client('/echo', {

@@ -31,7 +31,7 @@ const data = await request<unknown>('/orders', {
 
 ## 应用与接口层
 
-应用在 `src/request.ts` 中创建一次客户端，配置自己的 `baseURL`。共享业务接口放在 `packages/api`，接收客户端及业务参数，校验响应并处理业务 code。实例不固定首次访问的渠道或认证信息，需要动态请求头时每次请求读取最新值：
+应用在 `src/request.ts` 中创建一次客户端，配置自己的 `baseURL`，并可通过 `onResponse` 检查后端统一响应协议、转换业务错误。共享接口放在 `packages/api`，接收客户端及业务参数，直接返回请求结果；具体数据校验和业务状态由调用方处理。实例不固定首次访问的渠道或认证信息，需要动态请求头时每次请求读取最新值：
 
 ```ts
 const request = createRequestClient({
@@ -60,7 +60,7 @@ const request = createRequestClient({
 
 ## 错误
 
-HTTP 4xx/5xx、发送阶段网络错误使用 ofetch `FetchError`，保留 `status`、`data`、`response` 和 cause。业务失败 code 由调用方业务层处理，API 函数原样返回请求结果。
+HTTP 4xx/5xx、发送阶段网络错误使用 ofetch `FetchError`，保留 `status`、`data`、`response` 和 cause。统一业务 code 可在应用请求实例中检查并转换为业务错误，API 函数原样返回请求结果；场景层决定如何反馈错误。应用的 `onResponse` 不应覆盖原有 HTTP 错误。
 
 取消与超时统一拒绝为 `FetchError`：`error.cause.name` 分别为 `AbortError`、`TimeoutError`，兼容传输下也保持一致。不要直接依赖控制器的 reason 或 AbortSignal.any/timeout 等较新的 API。
 

@@ -62,12 +62,24 @@ import { getExample } from '@/api/example';
 
 // 由客户端流程触发 store action，再在 action 内调用：
 const response = await getExample({ id: '1' }, { signal, timeout: 5000 });
-// store action 根据业务契约判断 response.code、校验和整理 response.data。
+// store action 校验和整理 response.data；统一成功码已由 request 检查。
 ```
 
-示例地址 `/__example__/detail` 不存在真实后端，假定成功响应为 `{ code: 200, data: { id: '1', title: '示例内容' } }`，失败响应的 `data` 可为 `null`。使用时替换地址、参数和响应类型；业务成功判断、必要的响应校验与数据整理在调用方的 store action 中处理，类型声明不代替运行时校验。当前未接入页面、hook 或 store，不自动发送请求。单测通过 mock 验证请求参数、Promise 原样返回及错误透传，不需要后端服务。
+示例地址 `/__example__/detail` 不存在真实后端，假定成功响应为 `{ code: 200, data: { id: '1', title: '示例内容' } }`。`ExampleResponse` 复用 `ApiResponse<ExampleDetail | null>`。使用时替换地址、参数和响应类型；具体 `data` 的校验、整理及业务状态判断由 store action 处理，类型声明不代替运行时校验。当前未接入页面、hook 或 store，不自动发送请求。单测通过 mock 验证请求参数、Promise 原样返回及错误透传，不需要后端服务。
 
-接口函数不保存状态、不显示 Toast、不执行导航。可复用的业务接口移到 `packages/api` 并由应用传入请求客户端；`request.ts` 继续只配置传输实例。
+接口函数不保存状态、不显示 Toast、不执行导航。可复用的业务接口移到 `packages/api` 并由应用传入符合该接口协议的请求客户端。
+
+### 统一响应与错误
+
+`src/request.ts` 创建本应用的业务 JSON 请求实例，导出 `ApiResponse<T>`、`BusinessError` 和 `ResponseFormatError`。当前采用示例协议，真实接口接入时集中调整：
+
+- HTTP 成功响应必须是非数组对象，`code` 为有限数字，可选 `message` 必须是字符串；数字 `200` 表示成功。外层格式不符（包括无正文的 204）抛出 `ResponseFormatError`。
+- `data` 可缺省或为 `null`，统一请求实例不校验其具体结构，不自动提取它；成功时返回完整响应，其他字段也保留。
+- 其他业务 code 抛出 `BusinessError`，保留 `code`、`message` 和 `data`。缺少 message 时提供默认文案。需要验证码等流程分支也通过业务错误传递，调用方可按 code 继续流程。
+- HTTP 错误继续保留请求包的 `FetchError`，不会被响应格式错误覆盖；网络、取消和超时仍按请求包约定处理。
+- store action 管理 pending/error、校验具体数据并把失败传给场景 hook；hook 决定 Toast、弹窗、错误页或静默处理。请求实例不展示反馈、不跳转。
+
+该实例只用于上述统一 JSON 协议。文件下载、第三方或其他响应协议应单独通过 `createRequestClient` 创建实例，不套用本应用规则。`request.raw()` 和未覆盖 hooks 的派生实例同样执行校验；单次 `onResponse` 会覆盖实例 hook，业务接口不要用它替换统一校验，`request.native()` 也不执行这些规则。
 
 ## 渠道上下文与导航
 

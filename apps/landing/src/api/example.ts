@@ -1,5 +1,5 @@
 import type { FetchOptions } from '@packages/request';
-import { request } from '@/request';
+import { request, type ApiResponse } from '@/request';
 
 export interface ExampleParams {
   id: string;
@@ -10,10 +10,7 @@ export interface ExampleDetail {
   title: string;
 }
 
-export interface ExampleResponse {
-  code: number;
-  data: ExampleDetail | null;
-}
+export type ExampleResponse = ApiResponse<ExampleDetail | null>;
 
 /** 示例契约，不对应真实后端；接入业务时替换地址和输入输出类型。 */
 export function getExample(

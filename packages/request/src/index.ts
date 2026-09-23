@@ -29,7 +29,7 @@ async function runHooks<C extends FetchContext>(
     await hook(context);
 }
 
-/** Create an ofetch instance with shared defaults; business policies belong in packages/api. */
+/** Create an ofetch instance with shared defaults; callers supply business policies. */
 export function createRequestClient(
   defaults: FetchOptions = {},
   transport: Omit<CreateFetchOptions, 'defaults'> = {},
